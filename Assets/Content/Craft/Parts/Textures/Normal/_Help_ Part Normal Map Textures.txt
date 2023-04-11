@@ -1,0 +1,1 @@
+Part normal map textures should go here. They should be 1024 x 1024. Most of the texture settings are automatically managed by a special texture importer.

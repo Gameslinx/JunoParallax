@@ -1,0 +1,21 @@
+Welcome to the Juno: New Origins Mod Tools!
+
+This text file, along with the other help text files, provides a bit of information to get started modding Juno: New Origins. For additional help and support, we recommend asking on the forums on our website: https://www.simplerockets.com/Forums/.
+
+Initial Configuration:
+The first thing to do is to remove the TextMeshPro package from your Unity project via Unity's Package Manager. Next, in the player settings, ensure that the Scripting Runtime Version is set to .NET 4.x Equivalent and set the API Compatability Level to .NET 4.x. You may need to restart Unity. If you haven't already, import the SimpleRockets2 ModTools into your project (the name is inherited from how the name was called during Early Access). At this point, there should be no compililation errors and you should be good to go.
+
+Getting Started:
+To get started on a mod, open the Mod Builder Window via the following menu item in the toolbar the top of Unity: SimpleRockets 2 -> Mod Builder Window. In the Mod Builder Window, give your mod a unique name; fill in the author, version, and description; and click 'Start Creating Mod'. This window is used for adding assets other new stuff to your mod (some stuff is automatically added, such as assemblies).
+
+Saving a Mod:
+Using the Mod Builder Window, there are two options for saving your mod: Debug and Release. Using the Save Mod (Debug) option will build the mod for the current Unity platform only and will do so with the DEBUG flag set. Some other shortcuts may be take as well to reduce the build time. It is a much quicker build process and is recommended when working on your mod. When it comes time to release your mod, please do so using the Release build option for the platform you are targeting, such as 'Save Mod (Windows/MacOS)'.
+
+Source Control:
+We recommend (and prefer) that you avoid committing the contents of the ModTools folder into source control. These files can always be restored by re-importing the ModTools package.
+
+Special Folders:
+The mod tools make use of some special folders to automatically include certain things in your mod or to automatically import certain assets correctly. Most or all of these folders should be automatically created when starting your mod, and they typically contain a help file with some more information about the purpose of the folder. A couple other notes regarding special folders... You shouldn't modify anything in the ModTools folder as that may affect the process of importing new versions of the mod tools. As for the 'Resources' folder, we recommend that you avoid using it (but its up to you). In mod projects, some auto-generated assets end up in the 'Resources' folder, based on stuff that is in the 'Content' folder.
+
+Loading Resources:
+Resources can be loaded from your mod's resource loader. This can be accessed via the 'Mod' class (automatically generated) like so: 'Mod.Instance.ResourceLoader'. Under the hood, mods use Unity's AssetBundle system, so when loading resources from a mod, be aware that you are loading an asset from an AssetBundle. As such, the resource paths you use need to be the full path of the asset, beginning with 'Assets/' and ending with the file extension (for example: Assets/Content/TestSphere.prefab).

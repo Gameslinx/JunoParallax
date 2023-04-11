@@ -1,0 +1,1 @@
+Parts defined solely by designer part XML (such as XML created when saving sub-assemblies) can be included in mods. Simply add the XML to the project and then add the XML text asset to the part's list in the mod builder window.

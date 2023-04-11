@@ -1,0 +1,175 @@
+#include "ParallaxLib.cginc"
+
+#pragma kernel DetermineCountLOD0
+#pragma kernel EvaluateCascadesLOD0
+#pragma kernel DetermineCountLOD1
+#pragma kernel EvaluateCascadesLOD1
+#pragma kernel DetermineCountLOD2
+#pragma kernel EvaluateCascadesLOD2
+
+///////////////////////////////
+/////INDIRECT ARGS (LOD0)//////
+///////////////////////////////
+
+RWStructuredBuffer<uint> DispatchArgsLOD0;
+[numthreads(1,1,1)]
+void DetermineCountLOD0(uint3 id : SV_DispatchThreadID)
+{
+    DispatchArgsLOD0[0] = (uint)ceil((float)(DispatchArgsLOD0[0]) / 32.0);
+}
+
+/////////////////////////////////////
+///////EVALUATE POINTS (Cascade)/////
+/////////////////////////////////////
+
+StructuredBuffer<TransformData> Lod0;
+StructuredBuffer<uint> MaxCountLOD0;
+
+AppendStructuredBuffer<TransformData> Lod0Cascade0;
+AppendStructuredBuffer<TransformData> Lod0Cascade1;
+AppendStructuredBuffer<TransformData> Lod0Cascade2;
+AppendStructuredBuffer<TransformData> Lod0Cascade3;
+
+AppendStructuredBuffer<TransformData> LOD0OUT;
+
+[numthreads(32,1,1)]
+void EvaluateCascadesLOD0 (uint3 id : SV_DispatchThreadID)
+{
+    if (id.x > MaxCountLOD0[0] - 1) { return; }
+
+    TransformData pos = Lod0[id.x];
+    float3 worldPos = float3(pos.mat[0].w, pos.mat[1].w, pos.mat[2].w);
+    //float3 worldPos = mul(_ObjectToWorld, localPos).xyz;
+
+    //float4x4 mat = GetTRSMatrix(pos.pos, float3(0, pos.rot, 0), pos.scale);
+    //mat = mul(_ObjectToWorld, mat);
+
+    //TransformData object;
+    //object.mat = mat;
+
+    float4 cascades = GetCascades(worldPos, 10);
+    if (cascades.x > 0)
+    {
+        Lod0Cascade0.Append(pos);
+    }
+    if (cascades.y > 0)
+    {
+        Lod0Cascade1.Append(pos);
+    }
+    if (cascades.z > 0)
+    {
+        Lod0Cascade2.Append(pos);
+    }
+    if (cascades.w > 0)
+    {
+        Lod0Cascade3.Append(pos);
+    }
+    LOD0OUT.Append(pos);
+}
+
+
+///////////////////////////////
+/////INDIRECT ARGS (LOD1)//////
+///////////////////////////////
+
+RWStructuredBuffer<uint> DispatchArgsLOD1;
+[numthreads(1,1,1)]
+void DetermineCountLOD1(uint3 id : SV_DispatchThreadID)
+{
+    DispatchArgsLOD1[0] = (uint)ceil((float)(DispatchArgsLOD1[0]) / 32.0);
+}
+
+/////////////////////////////////////
+///////EVALUATE POINTS (Cascade)/////
+/////////////////////////////////////
+
+StructuredBuffer<TransformData> Lod1;
+StructuredBuffer<uint> MaxCountLOD1;
+
+AppendStructuredBuffer<TransformData> Lod1Cascade0;
+AppendStructuredBuffer<TransformData> Lod1Cascade1;
+AppendStructuredBuffer<TransformData> Lod1Cascade2;
+AppendStructuredBuffer<TransformData> Lod1Cascade3;
+
+AppendStructuredBuffer<TransformData> LOD1OUT;
+
+[numthreads(32,1,1)]
+void EvaluateCascadesLOD1 (uint3 id : SV_DispatchThreadID)
+{
+    if (id.x > MaxCountLOD1[0] - 1) { return; }
+
+    TransformData pos = Lod1[id.x];
+    float3 worldPos = float3(pos.mat[0].w, pos.mat[1].w, pos.mat[2].w);
+
+    float4 cascades = GetCascades(worldPos, 10);
+    if (cascades.x > 0)
+    {
+        Lod1Cascade0.Append(pos);
+    }
+    if (cascades.y > 0)
+    {
+        Lod1Cascade1.Append(pos);
+    }
+    if (cascades.z > 0)
+    {
+        Lod1Cascade2.Append(pos);
+    }
+    if (cascades.w > 0)
+    {
+        Lod1Cascade3.Append(pos);
+    }
+    LOD1OUT.Append(pos);
+}
+
+///////////////////////////////
+/////INDIRECT ARGS (LOD2)//////
+///////////////////////////////
+
+RWStructuredBuffer<uint> DispatchArgsLOD2;
+[numthreads(1,1,1)]
+void DetermineCountLOD2(uint3 id : SV_DispatchThreadID)
+{
+    DispatchArgsLOD2[0] = (uint)ceil((float)(DispatchArgsLOD2[0]) / 32.0);
+}
+
+/////////////////////////////////////
+///////EVALUATE POINTS (Cascade)/////
+/////////////////////////////////////
+
+StructuredBuffer<TransformData> Lod2;
+StructuredBuffer<uint> MaxCountLOD2;
+
+AppendStructuredBuffer<TransformData> Lod2Cascade0;
+AppendStructuredBuffer<TransformData> Lod2Cascade1;
+AppendStructuredBuffer<TransformData> Lod2Cascade2;
+AppendStructuredBuffer<TransformData> Lod2Cascade3;
+
+AppendStructuredBuffer<TransformData> LOD2OUT;
+
+[numthreads(32,1,1)]
+void EvaluateCascadesLOD2 (uint3 id : SV_DispatchThreadID)
+{
+    if (id.x > MaxCountLOD2[0] - 1) { return; }
+
+    TransformData pos = Lod2[id.x];
+    float3 worldPos = float3(pos.mat[0].w, pos.mat[1].w, pos.mat[2].w);
+
+    float4 cascades = GetCascades(worldPos, 10);
+    if (cascades.x > 0)
+    {
+        Lod2Cascade0.Append(pos);
+    }
+    if (cascades.y > 0)
+    {
+        Lod2Cascade1.Append(pos);
+    }
+    if (cascades.z > 0)
+    {
+        Lod2Cascade2.Append(pos);
+    }
+    if (cascades.w > 0)
+    {
+        Lod2Cascade3.Append(pos);
+    }
+    LOD2OUT.Append(pos);
+}

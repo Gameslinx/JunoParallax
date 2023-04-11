@@ -1,0 +1,1 @@
+Part style extensions can be created by the part manager and should end up here. Part style extensions are used for adding custom textures to existing stock part styles. Whenever these assets change, a XML file will be automatically created/updated in the resources directory.

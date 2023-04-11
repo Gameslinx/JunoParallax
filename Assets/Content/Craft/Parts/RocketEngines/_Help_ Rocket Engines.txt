@@ -1,0 +1,37 @@
+When it comes to creating custom rocket engines, it is possible to plug in to and extend the existing system. In the Propulsion.xml file (Assets\Content\Craft\Parts\RocketEngines\Propulsion.xml), you can add entries for custom fuel types, rocket engines, and rocket engine nozzles. The XML file is linked to a schema file for easier XML editing. The propuslion XML file used by the game for stock compontents as been provided for reference (Assets\ModTools\Parts\Propulsion.xml). These custom components can link to prefabs based on naming conventsions as mentioned below. Any custom prefabs used by your custom propulsion XML should be located in this folder ("Assets\Content\Craft\Parts\RocketEngines\") and named appropriately. 
+
+
+Custom Fuels
+
+Fuel XML elements can be added under the Fuels element. Each Fuel element adds a new fuel type to the game. Each fuel may have an optional Visual child element describing the visual look of the exhaust. Fuels can only be used by engine types that include the fuel ID in their list of supported fuels.
+
+
+Custom Engines
+
+RocketEngine XML elements can be added beneath the RocketEngines XML element. A RocketEngine element can optionally list SubType child elements beneath it. If an engine has subtypes, the base type is not selectable as its only purpose is to set common default values shared by all sub types. New subtypes can be added to existing stock engines. If the id of a RocketEngine with no subtypes or an id of a Subtype exactly matches an existing ID, the existing item will be overridden. 
+
+Rocket engines have several attributes that can link them to prefabs (either stock prefabs or custom prefabs). Custom prefabs will need to be manually added to the mod builder window.
+
+prefabId - Chamber: The chamber prefab is the main portion of the engine. The 'prefabId' attribute identifies the prefab to load. The prefab must be in the appropriate folder (mentioned above) and named "Chamber_[prefabId]". The chamber prefab should have an EngineComponentScript on its root game object.
+
+subPrefabId - Cycle: The optional cycle prefab provides extra detail to the chamber prefab. It is a way for engines to share the same chamber but each have unique additional engine details. The 'subPrefabId' attribute, if specified, identifies the prefab to load. The prefab must be in the appropriate folder (mentioned above) and named "Cycle_[subPrefabId]". 
+
+gimbalId - Gimbal: The optional gimbal prefab provides the gimbal actuators that will animate when the engine gimbals. The 'gimbalId' attribute, if specified, identifies the prefab to load. The prefab must be in the appropriate folder (mentioned above) and named "Gimbal_[gimbalId]". There should be one or more EngineActuatorScripts in this prefab. 
+
+audio - Audio: The audio prefab is the prefab that handles the sound effects for the engine. The 'audio' attribute identifies the prefab to load. The prefab must be in the appropriate folder (mentioned above) and named "Audio_[audioId]". The prefab should have a LoopingAudioScript component.
+
+
+Custom Nozzles
+
+RocketNozzle XML elements can be added beneath the RocketNozzles XML element. If the id of a RocketNozzle matches an existing ID, the existing item will be overridden. Rocket nozzles are only available on rocket engines that specify the rocket nozzle id in thier list of comma separated rocket nozzle ids specified with the 'nozzles' attribute on a RocketEngine or SubType. 
+
+Rocket nozzles have a couple attributes that can link them to prefabs (either stock prefabs or custom prefabs).
+
+prefabId - Nozzle: The nozzle prefab is the main portion of the rocket engine nozzle. The 'prefabId' attribute identifies the prefab to load. The prefab must be in the appropriate folder (mentioned above) and named "Nozzle_[prefabId]". The prefab should have an EngineComponentScript on its root game object.
+
+extensionPrefabId - Extension: The nozzle extension prefab is an optional portion of the nozzle that is resizable via the part properties in the in-game designer. The 'extensionPrefabId' attribute identifies the prefab to load. The prefab must be in the appropriate folder (mentioned above) and named "Extension_[extensionPrefabId]". The prefab should have an EngineComponentScript on its root game object.
+
+
+EngineComponentScript
+
+Some prefab components, as mentioned above, should have an EngineComponentScript on their root game object. This script helps position and size the component and collider. Clicking the 'Calculate Bounds' button on this script in the Unity inspector window can help auto-generate the required information, but sometimes you may need to manually enter or tweak values.

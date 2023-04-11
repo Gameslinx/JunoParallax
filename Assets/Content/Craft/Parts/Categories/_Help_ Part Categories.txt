@@ -1,0 +1,1 @@
+Designer part categories can be created by the PartManager and should go here. These are used to create new categories in the part list in the designer.

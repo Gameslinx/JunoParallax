@@ -1,0 +1,1 @@
+Part detail textures should go here. They should be 1024 x 1024. The base color of the detail texture should be 0.5. Color values above 0.5 will lighten the player's selected part color and values below 0.5 will darken it. Most of the texture settings are automatically managed by a special texture importer.

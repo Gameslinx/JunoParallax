@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 462600611, guid: a67a49df4508efd41b25d5ea1d54bed1, type: 3}
+  m_Name: UIResourceDatabase
+  m_EditorClassIdentifier: 
+  PathPrefix: Parallax2/
+  MonitorContainingFolder: 1
+  folders:
+  - Content/XML UI
+  AutomaticallyRemoveEntries: 1
+  entries:
+  - path: Parallax2/UIResourceDatabase
+    resource: {fileID: 11400000}

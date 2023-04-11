@@ -1,0 +1,125 @@
+/////////////////////////
+////DISTRIBUTE POINTS////
+/////////////////////////
+
+#pragma kernel Distribute
+#pragma kernel Evaluate
+#pragma kernel DetermineCount
+
+#include "ParallaxLib.cginc"
+
+RWStructuredBuffer<uint> Triangles;         //Local space
+RWStructuredBuffer<float3> Vertices;        //Local space
+RWStructuredBuffer<float3> Normals;         //Local space
+AppendStructuredBuffer<PositionData> Positions;
+
+uint _PopulationMultiplier;
+uint _MaxCount;
+float _Seed;
+
+[numthreads(32,1,1)]
+void Distribute (uint3 id : SV_DispatchThreadID)
+{
+    if ((id.x * _PopulationMultiplier) > _MaxCount - 1)     //Early return if the max count has been exceeded - Runs for each triangle and no more
+    {
+        return;
+    }
+
+    uint index1 = Triangles[id.x * 3];
+    uint index2 = Triangles[id.x * 3 + 1];
+    uint index3 = Triangles[id.x * 3 + 2];
+
+    float3 vert1 = Vertices[index1];
+    float3 vert2 = Vertices[index2];
+    float3 vert3 = Vertices[index3];
+
+    float3 norm1 = Normals[index1];
+    float3 norm2 = Normals[index2];
+    float3 norm3 = Normals[index3];
+
+    float3 avgNrm = (norm1 + norm2 + norm3) / 3;            //Normal at triangle centre
+
+    for (uint i = 0; i < _PopulationMultiplier; i++)
+    {
+        float r1 = Rand(id.xy + i + _Seed);
+        float r2 = Rand(float2(id.x, r1) + _Seed * 1.23133 + i);
+
+        float3 localPos = TriangleAverage(vert1, vert2, vert3, r1, r2);
+        float3 localNormal = TriangleAverage(norm1, norm2, norm3, r1, r2);
+
+        PositionData output;
+        output.pos = localPos;
+        output.scale = float3(0.1,0.1,0.1);
+        output.rot = 0;
+
+        Positions.Append(output);
+    }
+}
+
+/////////////////////////
+//////INDIRECT ARGS//////
+/////////////////////////
+
+RWStructuredBuffer<uint> DispatchArgs;
+[numthreads(1,1,1)]
+void DetermineCount(uint3 id : SV_DispatchThreadID)
+{
+    DispatchArgs[0] = (uint)ceil((float)(DispatchArgs[0]) / 32.0);
+}
+
+///////////////////////////////
+/////EVALUATE POINTS (LOD)/////
+///////////////////////////////
+
+StructuredBuffer<PositionData> PositionsIn;
+
+AppendStructuredBuffer<TransformData> LOD0;
+AppendStructuredBuffer<TransformData> LOD1;
+AppendStructuredBuffer<TransformData> LOD2;
+
+float4x4 _ObjectToWorld;
+float3 _WorldSpaceCameraPosition;
+float _Lod01Split;
+float _Lod12Split;
+float _MaxRange;
+
+[numthreads(32,1,1)]
+void Evaluate (uint3 id : SV_DispatchThreadID)
+{
+    if (id.x > _MaxCount - 1) { return; }
+
+    PositionData pos = PositionsIn[id.x];
+    float4 localPos = float4(pos.pos, 1);
+    float3 worldPos = mul(_ObjectToWorld, localPos).xyz;
+
+    //Frustum Culling
+	float4 cd0 = CameraDistances0(worldPos);
+    float4 cd1 = CameraDistances1(worldPos);
+		
+    if (!(all(cd0 > 0) && all(cd1 > 0)))
+    {
+        return;
+    }
+
+    float4x4 mat = GetTRSMatrix(pos.pos, float3(0, pos.rot, 0), pos.scale);
+    mat = mul(_ObjectToWorld, mat);
+
+    TransformData object;
+    object.mat = mat;
+
+    float lodDist = distance(_WorldSpaceCameraPosition, worldPos) / _MaxRange;  //Percentage to max range
+    
+    //Sort by LOD then by cascade
+    if (lodDist > 1.0) { return; }
+    if (lodDist > _Lod12Split)  //We are in LOD2
+    {
+        LOD2.Append(object);
+        return;
+    }
+    if (lodDist > _Lod01Split)
+    {
+        LOD1.Append(object);
+        return;
+    }
+    LOD0.Append(object);
+}

@@ -1,0 +1,8 @@
+{
+	"name": "Parallax2",
+	"references": [
+		"UnityEngine.UI",
+		"Unity.TextMeshPro",
+		"Unity.Mathematics"
+	]
+}

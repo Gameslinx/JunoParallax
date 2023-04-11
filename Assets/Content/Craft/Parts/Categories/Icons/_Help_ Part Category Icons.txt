@@ -1,0 +1,1 @@
+Part category icons should be located here. They should be transparent sprites of a 50x50 size.

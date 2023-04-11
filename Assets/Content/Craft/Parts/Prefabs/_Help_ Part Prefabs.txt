@@ -1,0 +1,1 @@
+Use the PartManager to create new part prefabs here. See the PartManager readme file for documentation related to part prefabs.

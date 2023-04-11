@@ -1,0 +1,9 @@
+The game uses and XML-based UI system called XmlLayout (http://www.digital-legacy.co.za/XmlLayout/Documentation).
+
+Assets added to this directory and all subdirectories will be included in the resource database used by UI system (also in this directory). These resources can then be referred to in UI XML by their resource path. The resource path for each resource is generated based on the asset name and parent directories.  Inspect the resource database in this directory to see a list of assets it currently includes as well as each asset's resource path. These assets to not need to be explicitly included in the mod via the mod builder window.
+
+A list of stock resource paths can be found here: 'Assets\ModTools\UI\StockUserInterfaceResourcesManifest.txt'.
+
+The XML used to generate the stock UI's in the game can be found here: 'Assets\ModTools\UI\Xml\'. These should not be modified, they are only for reference.
+
+Several utility methods for instantiating XML based UIs at runtime can be found on 'Game.Instance.UserInterface'.

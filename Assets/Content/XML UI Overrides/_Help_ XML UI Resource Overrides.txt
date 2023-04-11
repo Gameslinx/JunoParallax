@@ -1,0 +1,3 @@
+Read the other UI help file for details on the UI system.
+
+The UI resource database in this directory is used for overriding stock resources in the game. If a resource path exactly matches an existing UI resource path in the stock game, that resource will be replaced by the resource in this mod.

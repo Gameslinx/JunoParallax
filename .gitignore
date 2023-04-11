@@ -1,0 +1,11 @@
+.vs
+Library
+Temp
+obj
+Logs
+ModAssetBundles
+Assets/_ModAssets_/*
+Assets/_ModAssets_.meta
+*.sln
+*.csproj
+Assets/ModTools/*
