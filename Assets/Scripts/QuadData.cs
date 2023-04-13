@@ -25,7 +25,7 @@ public struct TransformData
 
 public class QuadData       //Holds the data for the quad - Verts, normals, triangles. Holds scatter data, too, but quad data is global and used for all scatters
 {
-    private QuadScript quad;
+    public QuadScript quad;
 
     private Vector3[] vertexData;
     private int[] triangleData;
@@ -41,6 +41,7 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
     public ScatterData data;        //Change to array
 
     public Matrix4x4 quadToWorldMatrix;
+    public Vector3 planetNormal;
 
     public QuadData(QuadScript quad)
     {
@@ -56,6 +57,11 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
     public void Initialize()        //Initialize buffers, then scatters
     {
         Debug.Log("[QuadData] Initializing");
+
+        vertexData = quad.RenderingData.TerrainMesh.vertices;
+        triangleData = quad.RenderingData.TerrainMesh.triangles;
+        normalData = quad.RenderingData.TerrainMesh.normals;
+
         vertexCount = vertexData.Length;
         triangleCount = triangleData.Length / 3;
 
@@ -67,6 +73,9 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
         triangles.SetData(triangleData);
         normals.SetData(normalData);
 
+        planetNormal = quad.SphereNormal.ToVector3();
+        GetQuadToWorldMatrix();
+        
         //CHANGE THIS TO ADD SCATTERS PROPERLY
         Scatter scatter = Mod.ParallaxInstance.dummyScatter;
         Debug.Log("[QuadData] Initialized, creating scatter data...");
@@ -79,6 +88,7 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
     }
     private void GetQuadToWorldMatrix()
     {
+        Debug.Log("QTWM");
         Matrix4x4 parentMatrix = Matrix4x4.TRS(quad.QuadSphere.Transform.position, quad.QuadSphere.Transform.rotation, quad.QuadSphere.Transform.localScale);
         Vector3 transformedPosition = parentMatrix.MultiplyPoint(quad.PlanetPosition.ToVector3());
         quadToWorldMatrix = Matrix4x4.TRS(transformedPosition, quad.QuadSphere.Transform.rotation, quad.QuadSphere.Transform.localScale);

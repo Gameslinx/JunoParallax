@@ -19,7 +19,11 @@ MonoBehaviour:
   _loadPriority: 1000
   _name: Parallax2
   _otherAssets:
+  - {fileID: 7200000, guid: 66ead8a6639125d4b84c2c9ef6ba083e, type: 3}
+  - {fileID: 4800000, guid: 608b520d3c9f3d447b11db5a35ecaae5, type: 3}
   - {fileID: 4800000, guid: 0fadfa82a703001409d937184bcc6a2f, type: 3}
+  - {fileID: 2100000, guid: 7a79bac22a0b7094e8a03e1b02e618bb, type: 2}
+  - {fileID: 7200000, guid: aafc744204b41404cbb86d8ca7e58aa5, type: 3}
   _prefabs: []
   _steamDescription: 
   _steamLanguage: English

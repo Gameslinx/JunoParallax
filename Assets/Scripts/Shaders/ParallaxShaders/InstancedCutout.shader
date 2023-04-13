@@ -71,7 +71,6 @@
 
             fixed4 frag(v2f i, float facing : VFACE) : SV_Target
             {
-                //return 1;  
                 if (InterleavedGradientNoise(i.color.a, i.pos.xy + i.pos.z))
 				discard;
 

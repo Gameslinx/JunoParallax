@@ -1,6 +1,8 @@
 using Assets.Scripts;
+using Assets.Scripts.Flight.GameView.Cameras;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.UIElements;
@@ -84,7 +86,7 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
     Material materialLOD0Cascade2;
     Material materialLOD0Cascade3;
     public Material materialLOD0;
-
+    
     Material materialLOD1Cascade0;
     Material materialLOD1Cascade1;
     Material materialLOD1Cascade2;
@@ -106,15 +108,40 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
     CommandBuffer renderer3;
     CommandBuffer renderer4;
 
-    void Start()
+    Camera renderCamera;
+
+    bool ready = false;
+    void OnCameraModeChanged(CameraMode newMode, CameraMode oldMode)
     {
-        Initialize();
+        Debug.Log("Camera Mode Changed from " + oldMode.Name + " to " + newMode.Name);
+        renderCamera = newMode.CameraController.CameraTransform.gameObject.GetComponent<Camera>();
+        if (renderCamera != null)
+        {
+            Debug.Log("Camera: " + renderCamera.name);
+        }
+        RemoveCommandBuffers(oldMode.CameraController.CameraTransform.gameObject.GetComponent<Camera>());
+        AddCommandBuffers(newMode.CameraController.CameraTransform.gameObject.GetComponent<Camera>());
+        ready = true;
+    }
+    void RemoveCommandBuffers(Camera camera)
+    {
+        if (camera != null)
+        {
+            camera.RemoveCommandBuffer(CameraEvent.AfterForwardOpaque, dm);
+        }
+    }
+    void AddCommandBuffers(Camera camera)
+    {
+        camera.AddCommandBuffer(CameraEvent.AfterForwardOpaque, dm);
     }
     void Prerequisites()    //Load mesh, materials...
     {
-        GameObject go = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        GameObject go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        GameObject go2 = GameObject.CreatePrimitive(PrimitiveType.Cube);
         Mesh mesh = Instantiate(go.GetComponent<MeshFilter>().mesh);
+        Mesh mesh2 = Instantiate(go2.GetComponent<MeshFilter>().mesh);
         Destroy(go);
+        Destroy(go2);
 
         Material mat = Mod.Instance.ResourceLoader.LoadAsset<Material>("Assets/Materials/Inst-Ind-Color.mat");
 
@@ -137,11 +164,18 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
         materialLOD2 = Instantiate(mat);
 
         meshLod0 = Instantiate(mesh);
-        meshLod1 = Instantiate(mesh);
-        meshLod2 = Instantiate(mesh);
+        meshLod1 = Instantiate(mesh2);
+        meshLod2 = Instantiate(mesh2);
+
+        FirstTimeArgs();
     }
-    void Initialize()
+    public void Initialize()
     {
+        CameraManagerScript.Instance.CameraModeChanged += OnCameraModeChanged;
+
+        Prerequisites();
+        Debug.Log("[ScatterRenderer] Initializing...");
+
         shader = UnityEngine.Object.Instantiate(Mod.ParallaxInstance.renderShader);
 
         countKernelLOD0 = shader.FindKernel("DetermineCountLOD0");
@@ -155,7 +189,7 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
         _MaxCountPerQuad = 1352 * scatter.distributionData._PopulationMultiplier;   //Triangle count * pop mult
         _MaxCount = _MaxCountPerQuad * 200;                                         //~450 max level quads loaded at once - Configure this
 
-        rendererBounds = new Bounds(Vector3.zero, Vector3.one * 1000000);
+        rendererBounds = new Bounds(Vector3.zero, Vector3.one * 5000);
 
         lod0cascade0 = new ComputeBuffer(_MaxCount, TransformData.Size(), ComputeBufferType.Append);
         lod0cascade1 = new ComputeBuffer(_MaxCount, TransformData.Size(), ComputeBufferType.Append);
@@ -211,6 +245,24 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
         shader.SetBuffer(lod2kernel, "MaxCountLOD2", maxCountLOD2);
         shader.SetBuffer(lod2kernel, "LOD2OUT", lod2out);
 
+        materialLOD0Cascade0.SetBuffer("_Properties", lod0cascade0);
+        materialLOD0Cascade1.SetBuffer("_Properties", lod0cascade1);
+        materialLOD0Cascade2.SetBuffer("_Properties", lod0cascade2);
+        materialLOD0Cascade3.SetBuffer("_Properties", lod0cascade3);
+        materialLOD0.SetBuffer("_Properties", lod0out);
+
+        materialLOD1Cascade0.SetBuffer("_Properties", lod1cascade0);
+        materialLOD1Cascade1.SetBuffer("_Properties", lod1cascade1);
+        materialLOD1Cascade2.SetBuffer("_Properties", lod1cascade2);
+        materialLOD1Cascade3.SetBuffer("_Properties", lod1cascade3);
+        materialLOD1.SetBuffer("_Properties", lod1out);
+        
+        materialLOD2Cascade0.SetBuffer("_Properties", lod2cascade0);
+        materialLOD2Cascade1.SetBuffer("_Properties", lod2cascade1);
+        materialLOD2Cascade2.SetBuffer("_Properties", lod2cascade2);
+        materialLOD2Cascade3.SetBuffer("_Properties", lod2cascade3);
+        materialLOD2.SetBuffer("_Properties", lod2out);
+
         lod0cascade0.SetCounterValue(0);
         lod0cascade1.SetCounterValue(0);
         lod0cascade2.SetCounterValue(0);
@@ -236,22 +288,22 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
         dm.DrawMeshInstancedIndirect(meshLod0, 0, materialLOD0, 0, argslod0);
         dm.DrawMeshInstancedIndirect(meshLod1, 0, materialLOD1, 0, argslod1);
         dm.DrawMeshInstancedIndirect(meshLod2, 0, materialLOD2, 0, argslod2);
-
+        
         renderer1 = new CommandBuffer();
         renderer1.DrawMeshInstancedIndirect(meshLod0, 0, materialLOD0Cascade0, 1, argslod0cascade0);
         renderer1.DrawMeshInstancedIndirect(meshLod1, 0, materialLOD1Cascade0, 1, argslod1cascade0);
         renderer1.DrawMeshInstancedIndirect(meshLod2, 0, materialLOD2Cascade0, 1, argslod2cascade0);
-
+        
         renderer2 = new CommandBuffer();
         renderer2.DrawMeshInstancedIndirect(meshLod0, 0, materialLOD0Cascade1, 1, argslod0cascade1);
         renderer2.DrawMeshInstancedIndirect(meshLod1, 0, materialLOD1Cascade1, 1, argslod1cascade1);
         renderer2.DrawMeshInstancedIndirect(meshLod2, 0, materialLOD2Cascade1, 1, argslod2cascade1);
-
+        
         renderer3 = new CommandBuffer();
         renderer3.DrawMeshInstancedIndirect(meshLod0, 0, materialLOD0Cascade2, 1, argslod0cascade2);
         renderer3.DrawMeshInstancedIndirect(meshLod1, 0, materialLOD1Cascade2, 1, argslod1cascade2);
         renderer3.DrawMeshInstancedIndirect(meshLod2, 0, materialLOD2Cascade2, 1, argslod2cascade2);
-
+        
         renderer4 = new CommandBuffer();
         renderer4.DrawMeshInstancedIndirect(meshLod0, 0, materialLOD0Cascade3, 1, argslod0cascade3);
         renderer4.DrawMeshInstancedIndirect(meshLod1, 0, materialLOD1Cascade3, 1, argslod1cascade3);
@@ -263,10 +315,7 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
         light.AddCommandBuffer(LightEvent.BeforeShadowMapPass, renderer3, ShadowMapPass.DirectionalCascade2);
         light.AddCommandBuffer(LightEvent.BeforeShadowMapPass, renderer4, ShadowMapPass.DirectionalCascade3);
 
-        Camera camera = Game.Instance.FlightScene.ViewManager.GameView.GameCamera.NearCamera;
-        camera.AddCommandBuffer(CameraEvent.AfterSkybox, dm);
-
-        FirstTimeArgs();
+        debugBuffer = new ComputeBuffer(1, sizeof(uint), ComputeBufferType.IndirectArguments);
     }
     void FirstTimeArgs()
     {
@@ -321,9 +370,14 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
         argslod2 = new ComputeBuffer(1, argumentsLod2.Length * sizeof(uint), ComputeBufferType.IndirectArguments);
         argslod2.SetData(argumentsLod2);
     }
+    ComputeBuffer debugBuffer;
     void Update()       //Evaluate cascades, render
     {
+        //return;
         //Control evaluate points
+
+        //Debug.Log("[ScatterRenderer] Update");
+
         lod0.SetCounterValue(0);
         lod1.SetCounterValue(0);
         lod2.SetCounterValue(0);
@@ -344,7 +398,7 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
         lod2cascade3.SetCounterValue(0);
 
         EvaluatePoints();
-
+        
         PrepareLOD0();
         PrepareLOD1();
         PrepareLOD2();
@@ -357,6 +411,17 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
         shader.DispatchIndirect(lod1kernel, dispatchArgsLOD1);
         shader.DispatchIndirect(lod2kernel, dispatchArgsLOD2);
 
+        //uint[] c1 = new uint[3];
+        //dispatchArgsLOD0.GetData(c1);
+        //uint[] c2 = new uint[3];
+        //dispatchArgsLOD1.GetData(c2);
+        //uint[] c3 = new uint[3];
+        //dispatchArgsLOD2.GetData(c3);
+
+        //Debug.Log("DispatchArgsLOD0: " + c1[0] + ", " + c1[1] + ", " + c1[2]);
+        //Debug.Log("DispatchArgsLOD1: " + c2[0] + ", " + c2[1] + ", " + c2[2]);
+        //Debug.Log("DispatchArgsLOD2: " + c3[0] + ", " + c3[1] + ", " + c3[2]);
+
         ComputeBuffer.CopyCount(lod0cascade0, argslod0cascade0, 4);
         ComputeBuffer.CopyCount(lod0cascade1, argslod0cascade1, 4);
         ComputeBuffer.CopyCount(lod0cascade2, argslod0cascade2, 4);
@@ -368,12 +433,31 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
         ComputeBuffer.CopyCount(lod1cascade2, argslod1cascade2, 4);
         ComputeBuffer.CopyCount(lod1cascade3, argslod1cascade3, 4);
         ComputeBuffer.CopyCount(lod1out, argslod1, 4);
-
+        
         ComputeBuffer.CopyCount(lod2cascade0, argslod2cascade0, 4);
         ComputeBuffer.CopyCount(lod2cascade1, argslod2cascade1, 4);
         ComputeBuffer.CopyCount(lod2cascade2, argslod2cascade2, 4);
         ComputeBuffer.CopyCount(lod2cascade3, argslod2cascade3, 4);
         ComputeBuffer.CopyCount(lod2out, argslod2, 4);
+
+        //Graphics.DrawMeshInstancedIndirect(meshLod0, 0, materialLOD0, rendererBounds, argslod0, 0, null, ShadowCastingMode.Off, true, 0, Camera.main);
+        //Graphics.DrawMeshInstancedIndirect(meshLod1, 0, materialLOD1, rendererBounds, argslod1, 0, null, ShadowCastingMode.Off, true, 0, Camera.main);
+        //Graphics.DrawMeshInstancedIndirect(meshLod2, 0, materialLOD2, rendererBounds, argslod2, 0, null, ShadowCastingMode.Off, true, 0, Camera.main);
+
+        //Debug.Log("CAMERA NAME:" + Camera.main.name);
+
+        //ComputeBuffer.CopyCount(lod0out, debugBuffer, 0);
+        //uint[] count = new uint[1];
+        //debugBuffer.GetData(count);
+        //Debug.Log("Size of LOD0 buffer: " + count[0]);
+        //
+        //ComputeBuffer.CopyCount(lod1out, debugBuffer, 0);
+        //debugBuffer.GetData(count);
+        //Debug.Log("Size of LOD1 buffer: " + count[0]);
+        //
+        //ComputeBuffer.CopyCount(lod2out, debugBuffer, 0);
+        //debugBuffer.GetData(count);
+        //Debug.Log("Size of LOD2 buffer: " + count[0]);
     }
     private void PrepareLOD0()
     {
@@ -453,6 +537,8 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
         maxCountLOD0?.Release();
         maxCountLOD1?.Release();
         maxCountLOD2?.Release();
+
+        debugBuffer?.Release();
     }
     private void OnDestroy()
     {

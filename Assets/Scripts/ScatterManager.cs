@@ -14,6 +14,7 @@ public class ScatterManager : MonoBehaviour         //Manages scatters on a plan
 
     void Update()
     {
+        Debug.Log("OnQuadUpdate");
         OnQuadUpdate();                             //Distance checks, recalculate matrix, etc
     }
 

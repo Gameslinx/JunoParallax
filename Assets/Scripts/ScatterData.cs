@@ -69,14 +69,16 @@ public class ScatterData
 
         //Initialize Evaluate
 
+        Debug.Log("Initialize Evaluate");
+
         shader.SetBuffer(evaluateKernel, "PositionsIn", positions);
         shader.SetBuffer(evaluateKernel, "LOD0", lod0);
         shader.SetBuffer(evaluateKernel, "LOD1", lod1);
         shader.SetBuffer(evaluateKernel, "LOD2", lod2);
 
-        shader.SetFloat("_Lod01Split", 0.3f);
+        shader.SetFloat("_Lod01Split", 0.15f);
         shader.SetFloat("_Lod12Split", 0.6f);
-        shader.SetFloat("_MaxRange", 100);
+        shader.SetFloat("_MaxRange", 3000);
 
         Debug.Log("[ScatterData] Initialized, generating positions");
 
@@ -88,6 +90,15 @@ public class ScatterData
     {
         Debug.Log("Generating positions...");
         shader.Dispatch(distributeKernel, Mathf.CeilToInt((float)parent.triangleCount / 32f), 1, 1);
+        //PositionData[] data = new PositionData[1352];
+        //positions.GetData(data);
+        //for (int i = 0; i < data.Length; i++)
+        //{
+        //    GameObject go = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        //    go.transform.position = parent.quadToWorldMatrix.MultiplyPoint(data[i].pos);
+        //    go.transform.localScale = Vector3.one * 10f;
+        //    Debug.Log("Pos: " + go.transform.position.ToString("F3"));
+        //}
     }
     private void ComputeDispatchArgs()  //Determine dispatch args and store them on the GPU
     {
@@ -95,15 +106,18 @@ public class ScatterData
         uint[] indirectArgs = { 1, 1, 1 };
         dispatchArgs.SetData(indirectArgs);
         ComputeBuffer.CopyCount(positions, dispatchArgs, 0);
+        dispatchArgs.GetData(indirectArgs);
+        Debug.Log("Finished generating positions, count: " + indirectArgs[0] + ", " + indirectArgs[1] + ", " + indirectArgs[2]);
         shader.SetBuffer(countKernel, "DispatchArgs", dispatchArgs);
         shader.Dispatch(countKernel, 1, 1, 1);
     }
     public void EvaluatePositions()     //Evaluate LODs and frustum cull
     {
         if (!ready) { return; }
-        shader.SetMatrix("_ObjectToWorld", parent.quadToWorldMatrix);
+        shader.SetMatrix("_ObjectToWorldMatrix", parent.quadToWorldMatrix);
         shader.SetFloats("_CameraFrustumPlanes", Utils.planeNormals);
-        shader.SetVector("_WorldSpaceCameraPosition", Camera.main.transform.position);
+        shader.SetVector("_WorldSpaceCameraPosition", Game.Instance.FlightScene.ViewManager.GameView.GameCamera.NearCamera.transform.position);
+        shader.SetVector("_PlanetNormal", parent.planetNormal);
 
         shader.DispatchIndirect(evaluateKernel, dispatchArgs);
     }

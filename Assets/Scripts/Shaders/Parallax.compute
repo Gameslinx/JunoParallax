@@ -49,8 +49,8 @@ void Distribute (uint3 id : SV_DispatchThreadID)
 
         PositionData output;
         output.pos = localPos;
-        output.scale = float3(0.1,0.1,0.1);
-        output.rot = 0;
+        output.scale = float3(5, 5, 5);
+        output.rot = Rand(float2(id.x, r2)) * 180.0;
 
         Positions.Append(output);
     }
@@ -77,7 +77,7 @@ AppendStructuredBuffer<TransformData> LOD0;
 AppendStructuredBuffer<TransformData> LOD1;
 AppendStructuredBuffer<TransformData> LOD2;
 
-float4x4 _ObjectToWorld;
+float4x4 _ObjectToWorldMatrix;
 float3 _WorldSpaceCameraPosition;
 float _Lod01Split;
 float _Lod12Split;
@@ -90,7 +90,7 @@ void Evaluate (uint3 id : SV_DispatchThreadID)
 
     PositionData pos = PositionsIn[id.x];
     float4 localPos = float4(pos.pos, 1);
-    float3 worldPos = mul(_ObjectToWorld, localPos).xyz;
+    float3 worldPos = mul(_ObjectToWorldMatrix, localPos).xyz;
 
     //Frustum Culling
 	float4 cd0 = CameraDistances0(worldPos);
@@ -102,7 +102,7 @@ void Evaluate (uint3 id : SV_DispatchThreadID)
     }
 
     float4x4 mat = GetTRSMatrix(pos.pos, float3(0, pos.rot, 0), pos.scale);
-    mat = mul(_ObjectToWorld, mat);
+    mat = mul(_ObjectToWorldMatrix, mat);
 
     TransformData object;
     object.mat = mat;

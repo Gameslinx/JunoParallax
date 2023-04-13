@@ -1,5 +1,6 @@
 #include "UnityCG.cginc"
 float4 _CameraFrustumPlanes[6];
+float3 _PlanetNormal;
 struct TransformData
 {
     float4x4 mat;
@@ -60,19 +61,59 @@ float4x4 GetScaleMatrix(float3 scale)
             float4(0, 0, scale.z, 0),
             float4(0, 0, 0, 1));
 }
+float4x4 TransformToPlanetNormal(float3 a, float3 b)
+{
+    //if (a == float3(0,0,1))//
+    float3 v = (cross(a, b));
+    float v1 = v.x;
+    float v2 = v.y;
+    float v3 = v.z;
+    
+    float c = dot(a, b);
+    float4x4 V = float4x4(
+        float4(0, -v3, v2, 0),
+        float4(v3, 0, -v1, 0),
+        float4(-v2, v1, 0, 0),
+        float4(0, 0, 0, 1)
+        );
+    V = transpose(V);
+    float4x4 VPlusI = float4x4(
+        float4(1, -v3, v2, 0),
+        float4(v3, 1, -v1, 0),
+        float4(-v2, v1, 1, 0),
+        float4(0, 0, 0, 1)
+        );
+    VPlusI = transpose(VPlusI);
+    float4x4 VSquared = mul(V, V);
+    
+    float lastPart = (1 / (1 + c));
+    
+    float4x4 halfMat = VSquared * lastPart;
+    float4x4 full = transpose(halfMat + VPlusI);
+    full[0].w = 0;
+    full[1].w = 0;
+    full[2].w = 0;
+    
+    full[3].w = 1;
+    
+    full[3].x = 0;
+    full[3].y = 0;
+    full[3].z = 0;
+    return full;
+}
 float4x4 GetTRSMatrix(float3 position, float3 rotationAngles, float3 scale)
 {
     
-    //float3 nrm = normalize(position - _PlanetOrigin);
-    //float3 up = float3(0,1,0);
+    float3 nrm = normalize(_PlanetNormal);
+    float3 up = float3(0,1,0);
     //if (_AlignToNormal == 1)
     //{
     //    nrm = thisNormal;
     //}
-    //float4x4 mat = TransformToPlanetNormal(up, nrm);
+    float4x4 mat = TransformToPlanetNormal(up, nrm);
     //return mul(GetTranslationMatrix(position), mul(mat, GetScaleMatrix(float3(1,1,1))));
     //return GetTranslationMatrix(position);
-    return mul(GetTranslationMatrix(position), mul(GetRotationMatrix(rotationAngles), GetScaleMatrix(scale)));
+    return mul(GetTranslationMatrix(position), mul(mul(mat, GetRotationMatrix(rotationAngles)), GetScaleMatrix(scale)));
 }
 float4 CameraDistances0(float3 worldPos)
 {
