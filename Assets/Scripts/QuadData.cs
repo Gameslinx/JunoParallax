@@ -1,5 +1,6 @@
 using Assets.Scripts;
 using Assets.Scripts.Terrain;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -43,6 +44,8 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
     public Matrix4x4 quadToWorldMatrix;
     public Vector3 planetNormal;
 
+    Guid planetID;
+
     public QuadData(QuadScript quad)
     {
         this.quad = quad;
@@ -57,6 +60,8 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
     public void Initialize()        //Initialize buffers, then scatters
     {
         Debug.Log("[QuadData] Initializing");
+
+        planetID = quad.QuadSphere.PlanetData.Id;
 
         vertexData = quad.RenderingData.TerrainMesh.vertices;
         triangleData = quad.RenderingData.TerrainMesh.triangles;
@@ -74,33 +79,44 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
         normals.SetData(normalData);
 
         planetNormal = quad.SphereNormal.ToVector3();
-        GetQuadToWorldMatrix();
+        //GetQuadToWorldMatrix();
         
         //CHANGE THIS TO ADD SCATTERS PROPERLY
         Scatter scatter = Mod.ParallaxInstance.dummyScatter;
         Debug.Log("[QuadData] Initialized, creating scatter data...");
         data = new ScatterData(this, scatter, Mod.ParallaxInstance.scatterRenderers[scatter]);
         Debug.Log("[QuadData] Scatter data created");
+        GetQuadMemoryUsage();
     }
-    void OnQuadDataUpdate()         //Occurs every time before EvaluatePositions is called on ScatterData
+    void OnQuadDataUpdate(Matrix4x4d m)         //Occurs every time before EvaluatePositions is called on ScatterData
     {
-        GetQuadToWorldMatrix();
+        GetQuadToWorldMatrix(m);
     }
-    private void GetQuadToWorldMatrix()
+    private void GetQuadToWorldMatrix(Matrix4x4d m)
     {
-        Debug.Log("QTWM");
-        Matrix4x4 parentMatrix = Matrix4x4.TRS(quad.QuadSphere.Transform.position, quad.QuadSphere.Transform.rotation, quad.QuadSphere.Transform.localScale);
-        Vector3 transformedPosition = parentMatrix.MultiplyPoint(quad.PlanetPosition.ToVector3());
-        quadToWorldMatrix = Matrix4x4.TRS(transformedPosition, quad.QuadSphere.Transform.rotation, quad.QuadSphere.Transform.localScale);
+        if (quad.RenderingData == null) { return; }
+        //Matrix4x4d drawQuadsMatrix = new Matrix4x4d();
+        //drawQuadsMatrix.SetTRS(quad.QuadSphere.FramePosition, new Quaterniond(quad.QuadSphere.transform.parent.localRotation), Vector3.one);
+        //Matrix4x4d m = drawQuadsMatrix;
+        Matrix4x4 mQuad = m.ToMatrix4x4();
+        var qpos = quad.RenderingData.LocalPosition;
+        mQuad.m03 = (float)((m.m00 * qpos.x) + (m.m01 * qpos.y) + (m.m02 * qpos.z) + m.m03);
+        mQuad.m13 = (float)((m.m10 * qpos.x) + (m.m11 * qpos.y) + (m.m12 * qpos.z) + m.m13);
+        mQuad.m23 = (float)((m.m20 * qpos.x) + (m.m21 * qpos.y) + (m.m22 * qpos.z) + m.m23);
+        quadToWorldMatrix = mQuad;
+    }
+    public void GetQuadMemoryUsage()
+    {
+        int positions = data.positions.count * data.positions.stride;
+        double positionsInMB = positions * (0.000001);
     }
     public void Cleanup()           //Clean up scatter data, then the quad data
     {
         data.Cleanup();
-
         vertices?.Release();
         normals?.Release();
         triangles?.Release();
 
-        Mod.ParallaxInstance.scatterManagers[quad.QuadSphere.PlanetData.Id].OnQuadUpdate -= OnQuadDataUpdate;
+        Mod.ParallaxInstance.scatterManagers[planetID].OnQuadUpdate -= OnQuadDataUpdate;
     }
 }

@@ -316,6 +316,8 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
         light.AddCommandBuffer(LightEvent.BeforeShadowMapPass, renderer4, ShadowMapPass.DirectionalCascade3);
 
         debugBuffer = new ComputeBuffer(1, sizeof(uint), ComputeBufferType.IndirectArguments);
+
+        GetMemoryUsage();
     }
     void FirstTimeArgs()
     {
@@ -377,6 +379,7 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
         //Control evaluate points
 
         //Debug.Log("[ScatterRenderer] Update");
+        rendererBounds.center = Vector3.zero;
 
         lod0.SetCounterValue(0);
         lod1.SetCounterValue(0);
@@ -485,7 +488,16 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
     }
     void EvaluatePoints()
     {
-        OnEvaluatePositions();
+        if (OnEvaluatePositions != null)
+        {
+            OnEvaluatePositions();
+        }
+    }
+    public void GetMemoryUsage()
+    {
+        int usage = lod0cascade0.count * lod0cascade0.stride * 18;
+        double usageInMB = usage * 0.000001f;
+        Debug.Log("Renderer memory usage is " + usageInMB + " MB");
     }
     void Cleanup()
     {

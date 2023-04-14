@@ -107,7 +107,6 @@ public class ScatterData
         dispatchArgs.SetData(indirectArgs);
         ComputeBuffer.CopyCount(positions, dispatchArgs, 0);
         dispatchArgs.GetData(indirectArgs);
-        Debug.Log("Finished generating positions, count: " + indirectArgs[0] + ", " + indirectArgs[1] + ", " + indirectArgs[2]);
         shader.SetBuffer(countKernel, "DispatchArgs", dispatchArgs);
         shader.Dispatch(countKernel, 1, 1, 1);
     }

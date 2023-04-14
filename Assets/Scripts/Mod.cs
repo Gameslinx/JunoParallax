@@ -21,6 +21,7 @@ namespace Assets.Scripts
     using Unity.Mathematics;
     using UnityEditor;
     using UnityEngine;
+    using UnityEngine.Assertions.Must;
     using static Assets.Scripts.Terrain.MeshDataTerrain;
 
     /// <summary>
@@ -78,30 +79,27 @@ namespace Assets.Scripts
         {
             Debug.Log("Sphere loading: " + e.Planet.PlanetNode.Name);
             managerGO = new GameObject();
-            Debug.Log("a");
             
             
 
                                   //Will be disabled whenever parent is disabled
-            Debug.Log("b");
             ScatterManager manager = managerGO.AddComponent<ScatterManager>();          //Once per planet
             ScatterRenderer renderer = managerGO.AddComponent<ScatterRenderer>();       //Ofc, do this for all renderers
             Utils utils = managerGO.AddComponent<Utils>();
-            Debug.Log("c");
             manager.scatterRenderer = renderer;                                         //Ofc, do this for all renderers too
-            Debug.Log("d");
             renderer.scatter = dummyScatter;
-            //renderer.transform.parent = e.QuadSphere.Transform;
-            Debug.Log("e");
             scatterManagers.Add(e.Planet.PlanetData.Id, manager);
             scatterRenderers.Add(dummyScatter, renderer);
 
             renderer.Initialize();
-            Debug.Log("f");
         }
+
         private void OnQuadSphereLoaded(object sender, PlanetQuadSphereEventArgs e)
         {
             managerGO.transform.SetParent(e.QuadSphere.Transform);
+            QuadSphereScript script = e.QuadSphere as QuadSphereScript;
+            managerGO.GetComponent<ScatterManager>().quadSphere = script;
+            Debug.Log("Script loaded, frame position is " + script.FramePosition);
         }
         private void OnFlightInitialized(IFlightScene scene)
         {
@@ -112,6 +110,7 @@ namespace Assets.Scripts
         }
         private void OnFrameStateRecalculated(object sender, QuadSphereFrameStateRecalculatedEventArgs e)
         {
+          
         }
         private void OnCreateQuadCompleted(object sender, CreateQuadScriptEventArgs e) 
         {
@@ -125,7 +124,11 @@ namespace Assets.Scripts
             QuadData qd = new QuadData(e.Quad);
             quadData.Add(e.Quad, qd);
 
-
+            //GameObject go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            //go.transform.SetParent(e.Quad.QuadSphere.transform, false);
+            //go.transform.localPosition = e.Quad.PlanetPosition.ToVector3();
+            //go.transform.localScale = Vector3.one * 50;
+            
             //
             //Vector3[] verts = e.Quad.RenderingData.TerrainMesh.vertices;
             //GameObject[] gameObjects = new GameObject[verts.Length];
