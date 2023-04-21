@@ -28,7 +28,7 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
 {
     public QuadScript quad;
 
-    private Vector3[] vertexData;
+    public Vector3[] vertexData;
     private int[] triangleData;
     private Vector3[] normalData;
 
@@ -43,6 +43,10 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
 
     public Matrix4x4 quadToWorldMatrix;
     public Vector3 planetNormal;
+
+    public ScatterManager manager;
+
+    int colorCount = 0;
 
     Guid planetID;
 
@@ -60,12 +64,20 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
     public void Initialize()        //Initialize buffers, then scatters
     {
         Debug.Log("[QuadData] Initializing");
-
+        
         planetID = quad.QuadSphere.PlanetData.Id;
 
         vertexData = quad.RenderingData.TerrainMesh.vertices;
         triangleData = quad.RenderingData.TerrainMesh.triangles;
         normalData = quad.RenderingData.TerrainMesh.normals;
+
+        TriangleOps.Clear();
+        TriangleOps.CreateTris(triangleData, vertexData, normalData);   //Remove skirts from mesh - We don't want objects generating on these. Also saves on memory and gpu time
+        TriangleOps.RemoveSkirts();
+
+        vertexData = TriangleOps.newVerts.ToArray();
+        triangleData = TriangleOps.newTris.ToArray();   
+        normalData = TriangleOps.newNormals.ToArray();
 
         vertexCount = vertexData.Length;
         triangleCount = triangleData.Length / 3;
@@ -79,7 +91,8 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
         normals.SetData(normalData);
 
         planetNormal = quad.SphereNormal.ToVector3();
-        //GetQuadToWorldMatrix();
+
+        colorCount = quad.RenderingData.TerrainMesh.colors.Length;
         
         //CHANGE THIS TO ADD SCATTERS PROPERLY
         Scatter scatter = Mod.ParallaxInstance.dummyScatter;
@@ -87,6 +100,7 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
         data = new ScatterData(this, scatter, Mod.ParallaxInstance.scatterRenderers[scatter]);
         Debug.Log("[QuadData] Scatter data created");
         GetQuadMemoryUsage();
+        
     }
     void OnQuadDataUpdate(Matrix4x4d m)         //Occurs every time before EvaluatePositions is called on ScatterData
     {

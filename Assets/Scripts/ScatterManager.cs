@@ -9,7 +9,7 @@ public class ScatterManager : MonoBehaviour         //Manages scatters on a plan
     public delegate void QuadUpdate(Matrix4x4d mat);
     public QuadUpdate OnQuadUpdate;
     public QuadSphereScript quadSphere;
-    Matrix4x4d m = new Matrix4x4d();
+    public Matrix4x4d m = new Matrix4x4d();
     void OnEnable()
     {
         Debug.Log("Scatter manager enabled");

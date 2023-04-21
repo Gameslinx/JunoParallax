@@ -12,6 +12,6 @@ public class Scatter
     public Scatter()
     {
         distributionData = new DistributionData();
-        distributionData._PopulationMultiplier = 1;
+        distributionData._PopulationMultiplier = 5;
     }
 }

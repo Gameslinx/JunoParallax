@@ -116,11 +116,17 @@ namespace Assets.Scripts
         {
             Debug.Log("Setting shader on quad");
             
-            //e.Quad.RenderingData.TerrainMaterial = new Material(terrainShader);
+            
             if (e.Quad.RenderingData.TerrainMesh == null || e.Quad.SubdivisionLevel < e.QuadSphere.MaxSubdivisionLevel) 
             {
                 return;
             }
+            Material terrainMaterial = new Material(terrainShader);
+            terrainMaterial.SetColor("_Color", new Color(1, 1, 1, 0.2f));
+            e.Quad.RenderingData.TerrainMaterial = terrainMaterial;
+
+            //AdvancedSubdivision asd = new AdvancedSubdivision(e.Quad);
+
             QuadData qd = new QuadData(e.Quad);
             quadData.Add(e.Quad, qd);
 

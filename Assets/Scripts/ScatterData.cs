@@ -14,6 +14,7 @@ public class ScatterData
 
     ComputeShader shader;
 
+    public ComputeBuffer noise;
     public ComputeBuffer positions;
 
     public ComputeBuffer lod0;      //Reference the renderer buffers
@@ -50,6 +51,7 @@ public class ScatterData
         countKernel = shader.FindKernel("DetermineCount");
         evaluateKernel = shader.FindKernel("Evaluate");
 
+        noise = new ComputeBuffer(parent.vertexCount, sizeof(float), ComputeBufferType.Structured);
         positions = new ComputeBuffer(_MaxCount, PositionData.Size(), ComputeBufferType.Append);
 
         lod0 = renderer.lod0;           //All append to these buffers
@@ -59,6 +61,7 @@ public class ScatterData
         shader.SetBuffer(distributeKernel, "Vertices", parent.vertices);
         shader.SetBuffer(distributeKernel, "Triangles", parent.triangles);
         shader.SetBuffer(distributeKernel, "Normals", parent.normals);
+        //shader.SetBuffer(distributeKernel, "Noise", noise);
         shader.SetBuffer(distributeKernel, "Positions", positions);
 
         shader.SetInt("_MaxCount", _MaxCount);
@@ -79,9 +82,11 @@ public class ScatterData
         shader.SetFloat("_Lod01Split", 0.15f);
         shader.SetFloat("_Lod12Split", 0.6f);
         shader.SetFloat("_MaxRange", 3000);
-
+        shader.SetMatrix("_ObjectToWorldMatrix", parent.quadToWorldMatrix);
+        
         Debug.Log("[ScatterData] Initialized, generating positions");
 
+        //GenerateNoise();
         GeneratePositions();
         ComputeDispatchArgs();
         ready = true;
@@ -89,6 +94,7 @@ public class ScatterData
     private void GeneratePositions()    //Generates positions in local space
     {
         Debug.Log("Generating positions...");
+        
         shader.Dispatch(distributeKernel, Mathf.CeilToInt((float)parent.triangleCount / 32f), 1, 1);
         //PositionData[] data = new PositionData[1352];
         //positions.GetData(data);
@@ -120,10 +126,24 @@ public class ScatterData
 
         shader.DispatchIndirect(evaluateKernel, dispatchArgs);
     }
+    void GenerateNoise()
+    {
+        float[] distributionNoise = new float[parent.vertexCount];
+        Vector3d normal;
+        for (int i = 0; i < parent.vertexCount; i++)
+        {
+            normal = Vector3d.Normalize(parent.vertexData[i] + parent.quad.RenderingData.LocalPosition - parent.quad.QuadSphere.PlanetPosition);
+            normal = normal * parent.quad.QuadSphere.PlanetData.Radius;    //Not actually the normal any more - Instead it's a position at a fixed radius from planet center
+            distributionNoise[i] = OpenSimplex2.Noise3_Fallback(1, normal.x / 400d, normal.y / 400d, normal.z / 400d) * 0.5f + 0.5f;
+        }
+        noise.SetData(distributionNoise);
+        Debug.Log("Noise gen complete");
+    }
     public void Cleanup()
     {
         renderer.OnEvaluatePositions -= EvaluatePositions;
         positions?.Release();
+        noise?.Release();
         dispatchArgs?.Release();
     }
 }

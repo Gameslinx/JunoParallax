@@ -22,6 +22,10 @@ float3 TriangleAverage(float3 p1, float3 p2, float3 p3, float r1, float r2)
 {
     return ((1 - sqrt(r1)) * p1) + ((sqrt(r1) * (1 - r2)) * p2) + ((r2 * sqrt(r1)) * p3);
 }
+float TriangleAverage(float p1, float p2, float p3, float r1, float r2)
+{
+    return ((1 - sqrt(r1)) * p1) + ((sqrt(r1) * (1 - r2)) * p2) + ((r2 * sqrt(r1)) * p3);
+}
 float DegToRad(float deg)
 {
     return (3.14159 / 180.0f) * deg;
