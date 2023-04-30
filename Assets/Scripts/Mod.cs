@@ -9,12 +9,14 @@ namespace Assets.Scripts
     using Assets.Scripts.Flight.GameView.Planet;
     using Assets.Scripts.Flight.GameView.Planet.Events;
     using Assets.Scripts.Terrain;
+    using Assets.Scripts.Terrain.CustomData;
     using Assets.Scripts.Terrain.Events;
     using ModApi;
     using ModApi.Common;
     using ModApi.Flight;
     using ModApi.Mods;
     using ModApi.Planet;
+    using ModApi.Planet.CustomData;
     using ModApi.Planet.Events;
     using ModApi.Scenes;
     using ModApi.Scenes.Events;
@@ -23,6 +25,7 @@ namespace Assets.Scripts
     using UnityEngine;
     using UnityEngine.Assertions.Must;
     using static Assets.Scripts.Terrain.MeshDataTerrain;
+    using static UnityEngine.Mesh;
 
     /// <summary>
     /// A singleton object representing this mod that is instantiated and initialize when the mod is loaded.
@@ -38,14 +41,14 @@ namespace Assets.Scripts
         public ComputeShader renderShader;
 
         public Dictionary<Scatter, ScatterRenderer> scatterRenderers = new Dictionary<Scatter, ScatterRenderer>();
+        public Dictionary<System.Guid, GameObject> scatterObjects = new Dictionary<Guid, GameObject>();                //Holds the manager GOs for each planet
         public Dictionary<System.Guid, ScatterManager> scatterManagers = new Dictionary<Guid, ScatterManager>();
         public Dictionary<QuadScript, QuadData> quadData = new Dictionary<QuadScript, QuadData>();
-        public Scatter dummyScatter;
-        public GameObject managerGO;
         private Mod() : base()
         {
         }
         public static Mod Instance { get; } = GetModInstance<Mod>();
+        public Scatter dummyScatter { get; } = new Scatter("DummyScatter", "Dummy Cube Scatter");
         protected override void OnModInitialized()
         {
             base.OnModInitialized();
@@ -55,7 +58,7 @@ namespace Assets.Scripts
             base.OnModLoaded();
             ParallaxInstance = this;
 
-            dummyScatter = new Scatter();   //Change to loop over scatters and such
+            dummyScatter.Register();
 
             Debug.Log("Mod loaded");
             Terrain.QuadScript.CreateQuadCompleted += OnCreateQuadCompleted;
@@ -67,6 +70,8 @@ namespace Assets.Scripts
 
             quadShader = Instance.ResourceLoader.LoadAsset<ComputeShader>("Assets/Scripts/Shaders/Parallax.compute");
             renderShader = Instance.ResourceLoader.LoadAsset<ComputeShader>("Assets/Scripts/Shaders/Cascades.compute");
+
+            QuadScript.CreateQuadStarted += OnCreateQuadStarted;
         }
         private void OnPlanetInitialized(object sender, EventArgs e)
         {
@@ -74,91 +79,111 @@ namespace Assets.Scripts
             Debug.Log("Planet initialized: " + args.PlanetScript.name);
             args.PlanetScript.QuadSphereLoading += OnQuadSphereLoading;
             args.PlanetScript.QuadSphereLoaded += OnQuadSphereLoaded;
+
+            args.PlanetScript.QuadSphereUnloading += OnQuadSphereUnloading;
         }
         private void OnQuadSphereLoading(object sender, PlanetQuadSphereEventArgs e)
         {
             Debug.Log("Sphere loading: " + e.Planet.PlanetNode.Name);
-            managerGO = new GameObject();
-            
-            
-
-                                  //Will be disabled whenever parent is disabled
+            GameObject managerGO = new GameObject();
+            GameObject.DontDestroyOnLoad(managerGO);
+                                                                                        //Will be disabled whenever parent is disabled
             ScatterManager manager = managerGO.AddComponent<ScatterManager>();          //Once per planet
             ScatterRenderer renderer = managerGO.AddComponent<ScatterRenderer>();       //Ofc, do this for all renderers
             Utils utils = managerGO.AddComponent<Utils>();
             manager.scatterRenderer = renderer;                                         //Ofc, do this for all renderers too
             renderer.scatter = dummyScatter;
+            scatterObjects.Add(e.Planet.PlanetData.Id, managerGO);
             scatterManagers.Add(e.Planet.PlanetData.Id, manager);
             scatterRenderers.Add(dummyScatter, renderer);
 
             renderer.Initialize();
         }
+        private void OnQuadSphereUnloading(object sender, PlanetQuadSphereEventArgs e)
+        {
+            Debug.Log("Sphere unloading: " + e.Planet.PlanetNode.Name);
+            Guid id = e.Planet.PlanetData.Id;
+            if (!scatterObjects.ContainsKey(id))
+            {
+                return;
+            }
+            //The scatter manager and components are automatically destroyed here, but we need to remove it from the dictionary
 
+            scatterObjects.Remove(id);
+            scatterManagers.Remove(id);
+            scatterRenderers.Remove(dummyScatter);
+        }
+        private void OnCreateQuadStarted(object sender, CreateQuadScriptEventArgs e)
+        {
+            //if (e.Quad.SubdivisionLevel < e.QuadSphere.MaxSubdivisionLevel)
+            //{
+            //    return;
+            //}
+            CreateQuadData data = e.CreateQuadData;
+            float[] dummyNoise = dummyScatter.GetNoiseData(data);
+            float[] dummyDistribution = dummyScatter.GetDistributionData(data);
+
+            ScatterNoise sn = new ScatterNoise(dummyDistribution.Clone() as float[], dummyNoise.Clone() as float[]);
+            dummyScatter.noise.Add(e.Quad, sn);
+
+            QuadData qd = new QuadData(e.Quad);                                     //Change this to iterate through scatters
+            
+            quadData.Add(e.Quad, qd);
+            MeshDataTerrain meshData = e.CreateQuadData.TerrainMeshData.Item;
+            if (meshData.VertexType == typeof(MeshDataTerrain.TerrainVertexBasic))
+            {
+                var verts = meshData.VerticesBasic;
+                for (int i = 0; i < verts.Length; ++i)
+                {
+                    half col = (half)dummyNoise[i];
+                    verts[i].Color = new half4(col, col, col, (half)1);
+                }
+            }
+            else
+            {
+                var verts = meshData.Vertices;
+                for (int i = 0; i < verts.Length; ++i)
+                {
+                    half col = (half)dummyNoise[i];
+                    verts[i].Color = new half4(col, col, col, (half)1);
+                }
+            }
+
+        }
         private void OnQuadSphereLoaded(object sender, PlanetQuadSphereEventArgs e)
         {
-            managerGO.transform.SetParent(e.QuadSphere.Transform);
             QuadSphereScript script = e.QuadSphere as QuadSphereScript;
+            GameObject managerGO = scatterObjects[e.Planet.PlanetData.Id];
+
+            if (e.QuadSphere == null) { Debug.Log("Quad sphere is null??"); }
+            if (managerGO == null) { Debug.Log("Manager is null??"); }
+            if (managerGO.GetComponent<ScatterManager>() == null) { Debug.Log("Manager is null"); }
+
             managerGO.GetComponent<ScatterManager>().quadSphere = script;
-            Debug.Log("Script loaded, frame position is " + script.FramePosition);
-        }
-        private void OnFlightInitialized(IFlightScene scene)
-        {
-            //scene.ViewManager.GameView.Planet.QuadSphere.FrameStateRecalculated += OnFrameStateRecalculated;
-            Debug.Log("Flight initialized");
-            
-            Debug.Log("Event added");
-        }
-        private void OnFrameStateRecalculated(object sender, QuadSphereFrameStateRecalculatedEventArgs e)
-        {
-          
+            //if (scatterObjects.ContainsKey(e.Planet.PlanetData.Id))
+            //{
+            //    Debug.Log("Skipping parenting, planet already has a manager");
+            //    return;
+            //}
+            managerGO.transform.SetParent(e.QuadSphere.Transform);
         }
         private void OnCreateQuadCompleted(object sender, CreateQuadScriptEventArgs e) 
         {
-            Debug.Log("Setting shader on quad");
-            
-            
             if (e.Quad.RenderingData.TerrainMesh == null || e.Quad.SubdivisionLevel < e.QuadSphere.MaxSubdivisionLevel) 
             {
                 return;
             }
-            Material terrainMaterial = new Material(terrainShader);
-            terrainMaterial.SetColor("_Color", new Color(1, 1, 1, 0.2f));
-            e.Quad.RenderingData.TerrainMaterial = terrainMaterial;
-
-            //AdvancedSubdivision asd = new AdvancedSubdivision(e.Quad);
-
-            QuadData qd = new QuadData(e.Quad);
-            quadData.Add(e.Quad, qd);
-
-            //GameObject go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            //go.transform.SetParent(e.Quad.QuadSphere.transform, false);
-            //go.transform.localPosition = e.Quad.PlanetPosition.ToVector3();
-            //go.transform.localScale = Vector3.one * 50;
-            
-            //
-            //Vector3[] verts = e.Quad.RenderingData.TerrainMesh.vertices;
-            //GameObject[] gameObjects = new GameObject[verts.Length];
-            //
-            //for (int i = 0; i < verts.Length; i++)
-            //{
-            //    GameObject go = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            //    //go.transform.SetParent(e.Quad.QuadSphere.transform, false);
-            //    go.transform.localScale = Vector3.one * 5f;
-            //    go.transform.position = GetQuadToWorldMatrix(e.Quad).MultiplyPoint(verts[i]);//verts[i] + e.Quad.PlanetPosition.ToVector3();
-            //}
-            //gos.Add(e.Quad.Id, gameObjects);
-
-            return;
-            
-
+            QuadData qd = quadData[e.Quad];
+            qd.RegisterEvents();
+            qd.Initialize();
+            //QuadData qd = new QuadData(e.Quad);
+            //quadData.Add(e.Quad, qd);
         }
         private void OnUnloadQuadCompleted(object sender, UnloadQuadScriptEventArgs e)
         {
-            if (quadData.ContainsKey(e.Quad))
-            {
-                quadData[e.Quad].Cleanup();
-                quadData.Remove(e.Quad);
-            }
+            quadData[e.Quad].Cleanup();
+            quadData.Remove(e.Quad);
+            dummyScatter.noise.Remove(e.Quad);
         }
     }
 }

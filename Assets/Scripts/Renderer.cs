@@ -1,5 +1,9 @@
 using Assets.Scripts;
 using Assets.Scripts.Flight.GameView.Cameras;
+using ModApi.Flight;
+using ModApi.Scenes;
+using ModApi.Scenes.Events;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -109,30 +113,47 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
     CommandBuffer renderer4;
 
     Camera renderCamera;
+    private void OnEnable()
+    {
+        Game.Instance.SceneManager.SceneLoaded += OnSceneLoaded;
+    }
 
-    bool ready = false;
+    private void OnSceneLoaded(object sender, SceneEventArgs e)
+    {
+        Debug.Log("Scatter Renderer - Scene loaded: " + e.Scene);
+        if (e.Scene == SceneNames.Flight)
+        {
+            Debug.Log("Scene is flight");
+            Camera cam = CameraManagerScript.Instance.CurrentCameraController.CameraTransform.gameObject.GetComponent<Camera>();
+        }
+    }
+
     void OnCameraModeChanged(CameraMode newMode, CameraMode oldMode)
     {
-        Debug.Log("Camera Mode Changed from " + oldMode.Name + " to " + newMode.Name);
+        Debug.Log("Camera Mode Changed from " + oldMode + " to " + newMode);
         renderCamera = newMode.CameraController.CameraTransform.gameObject.GetComponent<Camera>();
+        Debug.Log("a");
         if (renderCamera != null)
         {
             Debug.Log("Camera: " + renderCamera.name);
         }
-        RemoveCommandBuffers(oldMode.CameraController.CameraTransform.gameObject.GetComponent<Camera>());
+        if (!(oldMode == null))
+        {
+            RemoveCommandBuffers(oldMode.CameraController.CameraTransform.gameObject.GetComponent<Camera>());
+        }
+        
         AddCommandBuffers(newMode.CameraController.CameraTransform.gameObject.GetComponent<Camera>());
-        ready = true;
     }
     void RemoveCommandBuffers(Camera camera)
     {
         if (camera != null)
         {
-            camera.RemoveCommandBuffer(CameraEvent.AfterForwardOpaque, dm);
+            camera.RemoveCommandBuffer(CameraEvent.BeforeForwardOpaque, dm);
         }
     }
     void AddCommandBuffers(Camera camera)
     {
-        camera.AddCommandBuffer(CameraEvent.AfterForwardOpaque, dm);
+        camera.AddCommandBuffer(CameraEvent.BeforeForwardOpaque, dm);
     }
     void Prerequisites()    //Load mesh, materials...
     {
@@ -169,10 +190,20 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
 
         FirstTimeArgs();
     }
+    public void RegisterEvents()
+    {
+        if (CameraManagerScript.Instance == null) { Debug.Log("Camera manager instance is null, not registering events"); return; }
+        CameraManagerScript.Instance.CameraModeChanged += OnCameraModeChanged;
+    }
+    public void UnregisterEvents()
+    {
+        if (CameraManagerScript.Instance == null) { Debug.Log("Camera manager instance is null, not unregistering events"); return; }
+        CameraManagerScript.Instance.CameraModeChanged -= OnCameraModeChanged;
+    }
+
     public void Initialize()
     {
-        CameraManagerScript.Instance.CameraModeChanged += OnCameraModeChanged;
-
+        RegisterEvents();
         Prerequisites();
         Debug.Log("[ScatterRenderer] Initializing...");
 
@@ -187,7 +218,7 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
         lod2kernel = shader.FindKernel("EvaluateCascadesLOD2");
 
         _MaxCountPerQuad = 1352 * scatter.distributionData._PopulationMultiplier;   //Triangle count * pop mult
-        _MaxCount = _MaxCountPerQuad * 200;                                         //~450 max level quads loaded at once - Configure this
+        _MaxCount = _MaxCountPerQuad * 100;                                         //~450 max level quads loaded at once - Configure this
 
         rendererBounds = new Bounds(Vector3.zero, Vector3.one * 5000);
 
@@ -309,11 +340,14 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
         renderer4.DrawMeshInstancedIndirect(meshLod1, 0, materialLOD1Cascade3, 1, argslod1cascade3);
         renderer4.DrawMeshInstancedIndirect(meshLod2, 0, materialLOD2Cascade3, 1, argslod2cascade3);
 
-        Light light = Game.Instance.FlightScene.ViewManager.GameView.SunLight;
-        light.AddCommandBuffer(LightEvent.BeforeShadowMapPass, renderer1, ShadowMapPass.DirectionalCascade0);
-        light.AddCommandBuffer(LightEvent.BeforeShadowMapPass, renderer2, ShadowMapPass.DirectionalCascade1);
-        light.AddCommandBuffer(LightEvent.BeforeShadowMapPass, renderer3, ShadowMapPass.DirectionalCascade2);
-        light.AddCommandBuffer(LightEvent.BeforeShadowMapPass, renderer4, ShadowMapPass.DirectionalCascade3);
+        if (!Game.InPlanetStudioScene)
+        {
+            Light light = Game.Instance.FlightScene.ViewManager.GameView.SunLight;
+            light.AddCommandBuffer(LightEvent.BeforeShadowMapPass, renderer1, ShadowMapPass.DirectionalCascade0);
+            light.AddCommandBuffer(LightEvent.BeforeShadowMapPass, renderer2, ShadowMapPass.DirectionalCascade1);
+            light.AddCommandBuffer(LightEvent.BeforeShadowMapPass, renderer3, ShadowMapPass.DirectionalCascade2);
+            light.AddCommandBuffer(LightEvent.BeforeShadowMapPass, renderer4, ShadowMapPass.DirectionalCascade3);
+        }
 
         debugBuffer = new ComputeBuffer(1, sizeof(uint), ComputeBufferType.IndirectArguments);
 
@@ -375,10 +409,8 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
     ComputeBuffer debugBuffer;
     void Update()       //Evaluate cascades, render
     {
-        //return;
         //Control evaluate points
-
-        //Debug.Log("[ScatterRenderer] Update");
+        
         rendererBounds.center = Vector3.zero;
 
         lod0.SetCounterValue(0);
@@ -414,17 +446,6 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
         shader.DispatchIndirect(lod1kernel, dispatchArgsLOD1);
         shader.DispatchIndirect(lod2kernel, dispatchArgsLOD2);
 
-        //uint[] c1 = new uint[3];
-        //dispatchArgsLOD0.GetData(c1);
-        //uint[] c2 = new uint[3];
-        //dispatchArgsLOD1.GetData(c2);
-        //uint[] c3 = new uint[3];
-        //dispatchArgsLOD2.GetData(c3);
-
-        //Debug.Log("DispatchArgsLOD0: " + c1[0] + ", " + c1[1] + ", " + c1[2]);
-        //Debug.Log("DispatchArgsLOD1: " + c2[0] + ", " + c2[1] + ", " + c2[2]);
-        //Debug.Log("DispatchArgsLOD2: " + c3[0] + ", " + c3[1] + ", " + c3[2]);
-
         ComputeBuffer.CopyCount(lod0cascade0, argslod0cascade0, 4);
         ComputeBuffer.CopyCount(lod0cascade1, argslod0cascade1, 4);
         ComputeBuffer.CopyCount(lod0cascade2, argslod0cascade2, 4);
@@ -443,24 +464,11 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
         ComputeBuffer.CopyCount(lod2cascade3, argslod2cascade3, 4);
         ComputeBuffer.CopyCount(lod2out, argslod2, 4);
 
+        //For debugging command buffers:
+
         //Graphics.DrawMeshInstancedIndirect(meshLod0, 0, materialLOD0, rendererBounds, argslod0, 0, null, ShadowCastingMode.Off, true, 0, Camera.main);
         //Graphics.DrawMeshInstancedIndirect(meshLod1, 0, materialLOD1, rendererBounds, argslod1, 0, null, ShadowCastingMode.Off, true, 0, Camera.main);
         //Graphics.DrawMeshInstancedIndirect(meshLod2, 0, materialLOD2, rendererBounds, argslod2, 0, null, ShadowCastingMode.Off, true, 0, Camera.main);
-
-        //Debug.Log("CAMERA NAME:" + Camera.main.name);
-
-        //ComputeBuffer.CopyCount(lod0out, debugBuffer, 0);
-        //uint[] count = new uint[1];
-        //debugBuffer.GetData(count);
-        //Debug.Log("Size of LOD0 buffer: " + count[0]);
-        //
-        //ComputeBuffer.CopyCount(lod1out, debugBuffer, 0);
-        //debugBuffer.GetData(count);
-        //Debug.Log("Size of LOD1 buffer: " + count[0]);
-        //
-        //ComputeBuffer.CopyCount(lod2out, debugBuffer, 0);
-        //debugBuffer.GetData(count);
-        //Debug.Log("Size of LOD2 buffer: " + count[0]);
     }
     private void PrepareLOD0()
     {
@@ -499,8 +507,10 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
         double usageInMB = usage * 0.000001f;
         Debug.Log("Renderer memory usage is " + usageInMB + " MB");
     }
-    void Cleanup()
+    public void Cleanup()
     {
+        UnregisterEvents();
+
         lod0cascade0?.Release();
         lod0cascade1?.Release();
         lod0cascade2?.Release();
@@ -551,9 +561,5 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
         maxCountLOD2?.Release();
 
         debugBuffer?.Release();
-    }
-    private void OnDestroy()
-    {
-        Cleanup();
     }
 }

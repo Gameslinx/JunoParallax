@@ -4,6 +4,7 @@
 
 #pragma kernel Distribute
 #pragma kernel Evaluate
+#pragma kernel DEBUGEvaluate
 #pragma kernel DetermineCount
 
 #include "SimplexNoise.cginc"
@@ -13,7 +14,7 @@
 RWStructuredBuffer<uint> Triangles;         //Local space
 RWStructuredBuffer<float3> Vertices;        //Local space
 RWStructuredBuffer<float3> Normals;         //Local space
-//RWStructuredBuffer<float> Noise;
+RWStructuredBuffer<float> Noise;
 AppendStructuredBuffer<PositionData> Positions;
 
 uint _PopulationMultiplier;
@@ -33,7 +34,7 @@ void Distribute (uint3 id : SV_DispatchThreadID)
     uint index2 = Triangles[id.x * 3 + 1];
     uint index3 = Triangles[id.x * 3 + 2];
 
-    //if (id.x <= 52 || id.x % 52 == 0 || id.x % 52 == 1 || id.x % 52 == 51 || id.x % 52 == 50) {return;}
+    if (id.x <= 52 || id.x % 52 == 0 || id.x % 52 == 1 || id.x % 52 == 51 || id.x % 52 == 50) {return;}
 
     float3 vert1 = Vertices[index1];
     float3 vert2 = Vertices[index2];
@@ -43,31 +44,39 @@ void Distribute (uint3 id : SV_DispatchThreadID)
     float3 norm2 = Normals[index2];
     float3 norm3 = Normals[index3];
 
-    //float noise1 = Noise[index1];
-    //float noise2 = Noise[index2];
-    //float noise3 = Noise[index3];
+    float noise1 = Noise[index1];
+    float noise2 = Noise[index2];
+    float noise3 = Noise[index3];
 
     float3 avgNrm = (norm1 + norm2 + norm3) / 3;            //Normal at triangle centre
 
     for (uint i = 0; i < _PopulationMultiplier; i++)
     {
+        bool processed = false;
+
         float r1 = Rand(id.xy + i + _Seed);
         float r2 = Rand(float2(id.x, r1) + _Seed * 1.23133 + i);
 
         float3 localPos = TriangleAverage(vert1, vert2, vert3, r1, r2);
         float3 localNormal = TriangleAverage(norm1, norm2, norm3, r1, r2);
-        //float noise = TriangleAverage(noise1, noise2, noise3, r1, r2);
+        float noise = ((1 - sqrt(r1)) * noise1) + ((sqrt(r1) * (1 - r2)) * noise2) + ((r2 * sqrt(r1)) * noise3);
 
-        float3 worldPos = mul(_ObjectToWorldMatrix, localPos);  //Mayhaps change to subtract planet position who knows smile
+        float3 worldPos = mul(_ObjectToWorldMatrix, localPos);
 
         PositionData output;
         output.pos = localPos;
         output.scale = float3(5, 5, 5);
         output.rot = Rand(float2(id.x, r2)) * 180.0;
-        //if (noise < 0.5)
+
+        //if (r1 < 0.2)
         //{
-            Positions.Append(output);
+        //    Positions.Append(output);
         //}
+        if (noise > 0.0)
+        {
+            Positions.Append(output);
+        }
+        
     }
 }
 
@@ -87,6 +96,7 @@ void DetermineCount(uint3 id : SV_DispatchThreadID)
 ///////////////////////////////
 
 StructuredBuffer<PositionData> PositionsIn;
+StructuredBuffer<uint> ObjectLimits;
 
 AppendStructuredBuffer<TransformData> LOD0;
 AppendStructuredBuffer<TransformData> LOD1;
@@ -96,11 +106,12 @@ float3 _WorldSpaceCameraPosition;
 float _Lod01Split;
 float _Lod12Split;
 float _MaxRange;
+float _MaxEvaluateCount;
 
 [numthreads(32,1,1)]
 void Evaluate (uint3 id : SV_DispatchThreadID)
 {
-    if (id.x > _MaxCount - 1) { return; }
+    if (id.x > ObjectLimits[0] - 1) { return; }
 
     PositionData pos = PositionsIn[id.x];
     float4 localPos = float4(pos.pos, 1);
@@ -135,5 +146,47 @@ void Evaluate (uint3 id : SV_DispatchThreadID)
         LOD1.Append(object);
         return;
     }
+    LOD0.Append(object);
+}
+
+
+[numthreads(32,1,1)]
+void DEBUGEvaluate (uint3 id : SV_DispatchThreadID)
+{
+    if (id.x > _MaxCount - 1) { return; }
+
+    PositionData pos = PositionsIn[id.x];
+    float4 localPos = float4(pos.pos, 1);
+    float3 worldPos = mul(_ObjectToWorldMatrix, localPos).xyz;
+
+    //Frustum Culling
+	//float4 cd0 = CameraDistances0(worldPos);
+    //float4 cd1 = CameraDistances1(worldPos);
+	//	
+    //if (!(all(cd0 > 0) && all(cd1 > 0)))
+    //{
+    //    return;
+    //}
+
+    float4x4 mat = GetTRSMatrix(pos.pos, float3(0, pos.rot, 0), pos.scale);
+    mat = mul(_ObjectToWorldMatrix, mat);
+
+    TransformData object;
+    object.mat = mat;
+
+    //float lodDist = distance(_WorldSpaceCameraPosition, worldPos) / _MaxRange;  //Percentage to max range
+    //
+    ////Sort by LOD then by cascade
+    //if (lodDist > 1.0) { return; }
+    //if (lodDist > _Lod12Split)  //We are in LOD2
+    //{
+    //    LOD2.Append(object);
+    //    return;
+    //}
+    //if (lodDist > _Lod01Split)
+    //{
+    //    LOD1.Append(object);
+    //    return;
+    //}
     LOD0.Append(object);
 }

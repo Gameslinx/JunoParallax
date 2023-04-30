@@ -23,7 +23,6 @@ public struct TransformData
         return sizeof(float) * 16;
     }
 };
-
 public class QuadData       //Holds the data for the quad - Verts, normals, triangles. Holds scatter data, too, but quad data is global and used for all scatters
 {
     public QuadScript quad;
@@ -40,6 +39,7 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
     public int triangleCount;       //This is actually tricount / 3
 
     public ScatterData data;        //Change to array
+    public Dictionary<Scatter, ScatterNoise> scatterNoises = new Dictionary<Scatter, ScatterNoise>();
 
     public Matrix4x4 quadToWorldMatrix;
     public Vector3 planetNormal;
@@ -49,35 +49,27 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
     int colorCount = 0;
 
     Guid planetID;
+    bool eventsRegistered = false;
 
     public QuadData(QuadScript quad)
     {
         this.quad = quad;
 
-        RegisterEvents();
-        Initialize();
+        //RegisterEvents();
+        //Initialize();
     }
     public void RegisterEvents()
     {
         Mod.ParallaxInstance.scatterManagers[quad.QuadSphere.PlanetData.Id].OnQuadUpdate += OnQuadDataUpdate;
+        eventsRegistered = true;
     }
     public void Initialize()        //Initialize buffers, then scatters
     {
-        Debug.Log("[QuadData] Initializing");
-        
         planetID = quad.QuadSphere.PlanetData.Id;
 
         vertexData = quad.RenderingData.TerrainMesh.vertices;
         triangleData = quad.RenderingData.TerrainMesh.triangles;
         normalData = quad.RenderingData.TerrainMesh.normals;
-
-        TriangleOps.Clear();
-        TriangleOps.CreateTris(triangleData, vertexData, normalData);   //Remove skirts from mesh - We don't want objects generating on these. Also saves on memory and gpu time
-        TriangleOps.RemoveSkirts();
-
-        vertexData = TriangleOps.newVerts.ToArray();
-        triangleData = TriangleOps.newTris.ToArray();   
-        normalData = TriangleOps.newNormals.ToArray();
 
         vertexCount = vertexData.Length;
         triangleCount = triangleData.Length / 3;
@@ -96,9 +88,7 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
         
         //CHANGE THIS TO ADD SCATTERS PROPERLY
         Scatter scatter = Mod.ParallaxInstance.dummyScatter;
-        Debug.Log("[QuadData] Initialized, creating scatter data...");
         data = new ScatterData(this, scatter, Mod.ParallaxInstance.scatterRenderers[scatter]);
-        Debug.Log("[QuadData] Scatter data created");
         GetQuadMemoryUsage();
         
     }
@@ -126,11 +116,15 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
     }
     public void Cleanup()           //Clean up scatter data, then the quad data
     {
-        data.Cleanup();
+        data?.Cleanup();
         vertices?.Release();
         normals?.Release();
         triangles?.Release();
 
-        Mod.ParallaxInstance.scatterManagers[planetID].OnQuadUpdate -= OnQuadDataUpdate;
+        if (eventsRegistered)
+        {
+            Mod.ParallaxInstance.scatterManagers[planetID].OnQuadUpdate -= OnQuadDataUpdate;
+            eventsRegistered = false;
+        }
     }
 }

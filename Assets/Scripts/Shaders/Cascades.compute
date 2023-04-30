@@ -47,7 +47,7 @@ void EvaluateCascadesLOD0 (uint3 id : SV_DispatchThreadID)
     //TransformData object;
     //object.mat = mat;
 
-    float4 cascades = GetCascades(worldPos, 10);
+    float4 cascades = GetCascades(worldPos, 50);
     if (cascades.x > 0)
     {
         Lod0Cascade0.Append(pos);
@@ -154,7 +154,7 @@ void EvaluateCascadesLOD2 (uint3 id : SV_DispatchThreadID)
     TransformData pos = Lod2[id.x];
     float3 worldPos = float3(pos.mat[0].w, pos.mat[1].w, pos.mat[2].w);
 
-    float4 cascades = GetCascades(worldPos, 10);
+    float4 cascades = GetCascades(worldPos, 50);
     if (cascades.x > 0)
     {
         Lod2Cascade0.Append(pos);

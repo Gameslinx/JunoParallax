@@ -10,9 +10,11 @@ public class ScatterManager : MonoBehaviour         //Manages scatters on a plan
     public QuadUpdate OnQuadUpdate;
     public QuadSphereScript quadSphere;
     public Matrix4x4d m = new Matrix4x4d();
+
     void OnEnable()
     {
         Debug.Log("Scatter manager enabled");
+        scatterRenderer?.Initialize();          //OnEnable can be called before the renderer is assigned, in which case the renderer is manually initialized
     }
 
     void Update()
@@ -27,5 +29,10 @@ public class ScatterManager : MonoBehaviour         //Manages scatters on a plan
     void OnDisable()
     {
         Debug.Log("Scatter manager disabled");
+        scatterRenderer.Cleanup();
+    }
+    private void OnDestroy()
+    {
+        Debug.Log("Scatter manager destroyed - Unregistering");
     }
 }
