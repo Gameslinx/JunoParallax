@@ -38,7 +38,7 @@ public class ScatterData
         this.parent = parent;
         this.scatter = scatter;
         this.renderer = renderer;
-        _MaxCount = parent.triangleCount * scatter.distributionData._PopulationMultiplier;
+        _MaxCount = parent.triangleCount * scatter.distribution._PopulationMultiplier;
         Initialize();
     }
     public void Initialize()
@@ -68,7 +68,7 @@ public class ScatterData
 
         shader.SetInt("_MaxCount", _MaxCount);
         shader.SetFloat("_Seed", 1);
-        shader.SetInt("_PopulationMultiplier", scatter.distributionData._PopulationMultiplier);
+        shader.SetInt("_PopulationMultiplier", scatter.distribution._PopulationMultiplier);
 
         positions.SetCounterValue(0);
 

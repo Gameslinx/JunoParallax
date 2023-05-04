@@ -148,12 +148,12 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
     {
         if (camera != null)
         {
-            camera.RemoveCommandBuffer(CameraEvent.BeforeForwardOpaque, dm);
+            camera.RemoveCommandBuffer(CameraEvent.AfterEverything, dm);
         }
     }
     void AddCommandBuffers(Camera camera)
     {
-        camera.AddCommandBuffer(CameraEvent.BeforeForwardOpaque, dm);
+        camera.AddCommandBuffer(CameraEvent.AfterEverything, dm);
     }
     void Prerequisites()    //Load mesh, materials...
     {
@@ -217,7 +217,7 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
         lod1kernel = shader.FindKernel("EvaluateCascadesLOD1");
         lod2kernel = shader.FindKernel("EvaluateCascadesLOD2");
 
-        _MaxCountPerQuad = 1352 * scatter.distributionData._PopulationMultiplier;   //Triangle count * pop mult
+        _MaxCountPerQuad = 1352 * scatter.distribution._PopulationMultiplier;   //Triangle count * pop mult
         _MaxCount = _MaxCountPerQuad * 100;                                         //~450 max level quads loaded at once - Configure this
 
         rendererBounds = new Bounds(Vector3.zero, Vector3.one * 5000);

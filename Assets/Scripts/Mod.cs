@@ -2,9 +2,11 @@ namespace Assets.Scripts
 {
     using System;
     using System.Collections.Generic;
+    using System.IO;
     using System.Linq;
     using System.Text;
     using System.Threading;
+    using System.Xml;
     using Assets.Scripts.Flight;
     using Assets.Scripts.Flight.GameView.Planet;
     using Assets.Scripts.Flight.GameView.Planet.Events;
@@ -48,7 +50,8 @@ namespace Assets.Scripts
         {
         }
         public static Mod Instance { get; } = GetModInstance<Mod>();
-        public Scatter dummyScatter { get; } = new Scatter("DummyScatter", "Dummy Cube Scatter");
+        public Scatter dummyScatter = new Scatter("Droo_Cubes", "Dummy Cube Scatter");
+        public static string modDataPath = "";
         protected override void OnModInitialized()
         {
             base.OnModInitialized();
@@ -56,13 +59,19 @@ namespace Assets.Scripts
         public override void OnModLoaded()
         {
             base.OnModLoaded();
+            modDataPath = Path.Combine(Application.persistentDataPath, "Mods", "ParallaxData").Replace("\\", "/");
+            string configsPath = modDataPath + "/Configs";
+            ConfigLoader.LoadConfigs(configsPath);
+
             ParallaxInstance = this;
 
+            dummyScatter = ConfigLoader.bodies["Droo"].scatters["Cubes"];
             dummyScatter.Register();
 
             Debug.Log("Mod loaded");
             Terrain.QuadScript.CreateQuadCompleted += OnCreateQuadCompleted;
             Terrain.QuadScript.UnloadQuadCompleted += OnUnloadQuadCompleted;
+            ModApi.Planet.PlanetTerrainDataScript.TerrainDataInitializing += dummyScatter.OnTerrainDataInitializing;    //Do this for every scatter, though :)
             Debug.Log("Trying to add event");
             Assets.Scripts.Flight.GameView.Planet.PlanetScript.Initialized += OnPlanetInitialized;
             Debug.Log("Events added");

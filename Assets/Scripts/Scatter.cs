@@ -4,10 +4,30 @@ using ModApi.Planet.CustomData;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using ModApi.Planet;
+using ModApi.Planet.Events;
+using System.Xml.Linq;
+using System.Linq;
 
 public struct DistributionData
 {
     public int _PopulationMultiplier;
+    public float _SpawnChance;
+    public LOD lod0;
+    public LOD lod1;
+}
+public struct LOD
+{
+    public float distance;
+    public ScatterMaterial material;
+}
+
+public struct ScatterMaterial
+{
+    public string _Shader;
+    public string _Mesh;
+    public string _MainTex;
+    public string _Normal;
 }
 public class ScatterNoise
 {
@@ -19,24 +39,42 @@ public class ScatterNoise
         this.noise = noise;
     }
 }
+// Holds the scatters for each planet
+public class ScatterBody
+{
+    public string bodyName;                                                             //Name of the CelestialBody
+    public Dictionary<string, Scatter> scatters = new Dictionary<string, Scatter>();    //String corresponds to the Scatter name
+    public ScatterBody(string bodyName)
+    {
+        this.bodyName = bodyName;
+    }
+}
 public class Scatter
 {
-    public DistributionData distributionData;
+    public string planetName = "Droo";
+    public string mesh;
+
+    public DistributionData distribution;
+    public ScatterMaterial material;
+
     public string Id { get; }
     public string DisplayName { get; }
     public string DistributionQuadId { get; }
     public int DistributionQuadIndex { get; private set; }
     public string DistributionVertexId { get; }
     public int DistributionVertexIndex { get; private set; }
+    public int DistributionSubBiomeIndex { get; private set; }
     public string NoiseQuadId { get; }
     public int NoiseQuadIndex { get; private set; }
     public string NoiseVertexId { get; }
     public int NoiseVertexIndex { get; private set; }
     public Dictionary<QuadScript, ScatterNoise> noise = new Dictionary<QuadScript, ScatterNoise>();
+    
+    public const string keyword = "Parallax Support Scatter (V1)";
     public Scatter(string id, string displayName)
     {
-        distributionData = new DistributionData();
-        distributionData._PopulationMultiplier = 1;
+        distribution = new DistributionData();
+        distribution._PopulationMultiplier = 1;
 
         this.Id = id;
         this.DisplayName = displayName;
@@ -54,8 +92,9 @@ public class Scatter
         this.NoiseQuadIndex = CustomCreateQuadData.Register<CustomCreateQuadDataFloat>(this.NoiseQuadId, () => new CustomCreateQuadDataFloat(this.NoiseVertexId));
 
         // Register custom sub-biome data to adjust the distribution values per sub-biome
-        this.DistributionVertexIndex = CustomSubBiomeTerrainData.Register<CustomSubBiomeTerrainDataFloatInput, CustomPlanetVertexDataFloat>(
-            DistributionVertexId, () => new CustomSubBiomeTerrainDataFloatSliderInput(this.DisplayName, "Adjusts the distribution value for this object", 0, 2));
+        this.DistributionSubBiomeIndex = CustomSubBiomeTerrainData.Register<CustomSubBiomeTerrainDataFloatInput, CustomPlanetVertexDataFloat>(
+            this.DistributionVertexId, () => new CustomSubBiomeTerrainDataFloatSliderInput(this.DisplayName, "Adjusts the distribution value for this object", 0, 2));
+        this.DistributionVertexIndex = CustomPlanetVertexData.GetIndex(this.DistributionVertexId);
 
         // Register per-quad data to store the sub-biome distribution results
         this.DistributionQuadIndex = CustomCreateQuadData.Register<CustomCreateQuadDataFloat>(
@@ -71,4 +110,45 @@ public class Scatter
     {
         return ((CustomCreateQuadDataFloat)quadData.CustomData[this.DistributionQuadIndex]).Values;
     }
+
+    public void SetSubBiomeTerrainData(SubBiomeTerrainData subBiomeTerrainData, float value)
+    {
+        ((CustomSubBiomeTerrainDataFloatSliderInput)subBiomeTerrainData.CustomData[this.DistributionSubBiomeIndex]).Value = value;
+    }
+
+    public void OnTerrainDataInitializing(object sender, PlanetTerrainDataEventArgs e)
+    {
+        var terrainData = e.TerrainData;
+        var planetData = terrainData.PlanetData;
+        Debug.Log("Planet data name: " + planetData.Name);
+        //if (planetData.Author == "Jundroo" || planetData.Author == "NathanMikeska")
+        if (planetData.Name == planetName)
+        {
+            if (!planetData.ModKeywords.Contains(keyword))
+            {
+                planetData.ModKeywords.Add(keyword);
+
+                // Add some noise modifiers (and some modifiers to store the noise in custom vertex data)
+                var scatterNoiseXml = XElement.Parse(ScatterNoiseXml).Elements("Modifier").ToList();
+                terrainData.AddModifiersFromXml(scatterNoiseXml, 0);
+
+                // Loop through all sub biomes and set their custom data (random junk data for testing)
+                foreach (var biome in terrainData.Biomes)
+                {
+                    var subBiomes = biome.GetSubBiomes();
+                    foreach (var subBiome in subBiomes)
+                    {
+                        Debug.Log("Setting sub biome data");
+                        this.SetSubBiomeTerrainData(subBiome.PrimaryData, 1f);
+                        this.SetSubBiomeTerrainData(subBiome.SlopeData, 1f);
+                    }
+                }
+            }
+        }
+    }
+    public string ScatterNoiseXml = "";
+//@"<Modifiers>
+//    <Modifier type=""VertexData.VertexDataNoise"" enabled=""true"" name=""Noise"" container=""Scatter Noise"" basicView=""true"" pass=""Height"" noiseType=""Perlin"" maskDataIndex=""-1"" seed=""0"" lockSeed=""false"" frequency=""10500"" strength=""1"" interpolation=""Quintic"" dataIndex=""7"" />
+//    <Modifier type=""VertexData.CustomData.UpdateCustomDataFloat"" enabled=""true"" name=""Update Custom Data (Float)"" container=""Scatter Noise"" pass=""Height"" customDataId=""Droo_Cubes_Noise_Vertex"" dataIndex=""7"" />
+//</Modifiers>";
 }
