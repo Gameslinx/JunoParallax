@@ -113,20 +113,6 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
     CommandBuffer renderer4;
 
     Camera renderCamera;
-    private void OnEnable()
-    {
-        Game.Instance.SceneManager.SceneLoaded += OnSceneLoaded;
-    }
-
-    private void OnSceneLoaded(object sender, SceneEventArgs e)
-    {
-        Debug.Log("Scatter Renderer - Scene loaded: " + e.Scene);
-        if (e.Scene == SceneNames.Flight)
-        {
-            Debug.Log("Scene is flight");
-            Camera cam = CameraManagerScript.Instance.CurrentCameraController.CameraTransform.gameObject.GetComponent<Camera>();
-        }
-    }
 
     void OnCameraModeChanged(CameraMode newMode, CameraMode oldMode)
     {
@@ -165,6 +151,7 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
         Destroy(go2);
 
         Material mat = Mod.Instance.ResourceLoader.LoadAsset<Material>("Assets/Materials/Inst-Ind-Color.mat");
+        mat.SetColor("_Color", scatter.material._Color);
 
         materialLOD0Cascade0 = Instantiate(mat);
         materialLOD0Cascade1 = Instantiate(mat);
@@ -475,6 +462,7 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
         uint[] indirectArgsLOD0 = { 1, 1, 1 };
         dispatchArgsLOD0.SetData(indirectArgsLOD0);
         ComputeBuffer.CopyCount(lod0, dispatchArgsLOD0, 0);
+        ComputeBuffer.CopyCount(lod0, maxCountLOD0, 0);
         shader.SetBuffer(countKernelLOD0, "DispatchArgsLOD0", dispatchArgsLOD0);
         shader.Dispatch(countKernelLOD0, 1, 1, 1);
     }
@@ -483,6 +471,7 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
         uint[] indirectArgsLOD1 = { 1, 1, 1 };
         dispatchArgsLOD1.SetData(indirectArgsLOD1);
         ComputeBuffer.CopyCount(lod1, dispatchArgsLOD1, 0);
+        ComputeBuffer.CopyCount(lod1, maxCountLOD1, 0);
         shader.SetBuffer(countKernelLOD1, "DispatchArgsLOD1", dispatchArgsLOD1);
         shader.Dispatch(countKernelLOD1, 1, 1, 1);
     }
@@ -491,6 +480,7 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
         uint[] indirectArgsLOD2 = { 1, 1, 1 };
         dispatchArgsLOD2.SetData(indirectArgsLOD2);
         ComputeBuffer.CopyCount(lod2, dispatchArgsLOD2, 0);
+        ComputeBuffer.CopyCount(lod2, maxCountLOD2, 0);
         shader.SetBuffer(countKernelLOD2, "DispatchArgsLOD2", dispatchArgsLOD2);
         shader.Dispatch(countKernelLOD2, 1, 1, 1);
     }

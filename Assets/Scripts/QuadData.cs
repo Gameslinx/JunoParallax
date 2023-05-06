@@ -38,7 +38,7 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
     public int vertexCount;
     public int triangleCount;       //This is actually tricount / 3
 
-    public ScatterData data;        //Change to array
+    public List<ScatterData> data = new List<ScatterData>();        //Change to array
     public Dictionary<Scatter, ScatterNoise> scatterNoises = new Dictionary<Scatter, ScatterNoise>();
 
     public Matrix4x4 quadToWorldMatrix;
@@ -87,8 +87,14 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
         colorCount = quad.RenderingData.TerrainMesh.colors.Length;
         
         //CHANGE THIS TO ADD SCATTERS PROPERLY
-        Scatter scatter = Mod.ParallaxInstance.dummyScatter;
-        data = new ScatterData(this, scatter, Mod.ParallaxInstance.scatterRenderers[scatter]);
+
+        for (int i = 0; i < Mod.Instance.activeScatters.Length; i++)
+        {
+            Scatter scatter = Mod.Instance.activeScatters[i];
+            data.Add(new ScatterData(this, scatter, Mod.ParallaxInstance.scatterRenderers[scatter]));
+        }
+
+        
         GetQuadMemoryUsage();
         
     }
@@ -111,12 +117,15 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
     }
     public void GetQuadMemoryUsage()
     {
-        int positions = data.positions.count * data.positions.stride;
-        double positionsInMB = positions * (0.000001);
+        //int positions = data.positions.count * data.positions.stride;
+        //double positionsInMB = positions * (0.000001);
     }
     public void Cleanup()           //Clean up scatter data, then the quad data
     {
-        data?.Cleanup();
+        foreach (ScatterData scatterData in data)
+        {
+            scatterData.Cleanup();
+        }
         vertices?.Release();
         normals?.Release();
         triangles?.Release();

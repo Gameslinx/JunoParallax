@@ -7,9 +7,11 @@ namespace Assets.Scripts
     using System.Text;
     using System.Threading;
     using System.Xml;
+    using System.Xml.Linq;
     using Assets.Scripts.Flight;
     using Assets.Scripts.Flight.GameView.Planet;
     using Assets.Scripts.Flight.GameView.Planet.Events;
+    using Assets.Scripts.Flight.Sim;
     using Assets.Scripts.Terrain;
     using Assets.Scripts.Terrain.CustomData;
     using Assets.Scripts.Terrain.Events;
@@ -46,11 +48,11 @@ namespace Assets.Scripts
         public Dictionary<System.Guid, GameObject> scatterObjects = new Dictionary<Guid, GameObject>();                //Holds the manager GOs for each planet
         public Dictionary<System.Guid, ScatterManager> scatterManagers = new Dictionary<Guid, ScatterManager>();
         public Dictionary<QuadScript, QuadData> quadData = new Dictionary<QuadScript, QuadData>();
+
         private Mod() : base()
         {
         }
         public static Mod Instance { get; } = GetModInstance<Mod>();
-        public Scatter dummyScatter = new Scatter("Droo_Cubes", "Dummy Cube Scatter");
         public static string modDataPath = "";
         protected override void OnModInitialized()
         {
@@ -65,13 +67,12 @@ namespace Assets.Scripts
 
             ParallaxInstance = this;
 
-            dummyScatter = ConfigLoader.bodies["Droo"].scatters["Cubes"];
-            dummyScatter.Register();
+            PlanetTerrainDataScript.TerrainDataInitializing += OnTerrainDataInitializing;
 
             Debug.Log("Mod loaded");
             Terrain.QuadScript.CreateQuadCompleted += OnCreateQuadCompleted;
             Terrain.QuadScript.UnloadQuadCompleted += OnUnloadQuadCompleted;
-            ModApi.Planet.PlanetTerrainDataScript.TerrainDataInitializing += dummyScatter.OnTerrainDataInitializing;    //Do this for every scatter, though :)
+                //Do this for every scatter, though :)
             Debug.Log("Trying to add event");
             Assets.Scripts.Flight.GameView.Planet.PlanetScript.Initialized += OnPlanetInitialized;
             Debug.Log("Events added");
@@ -81,6 +82,44 @@ namespace Assets.Scripts
             renderShader = Instance.ResourceLoader.LoadAsset<ComputeShader>("Assets/Scripts/Shaders/Cascades.compute");
 
             QuadScript.CreateQuadStarted += OnCreateQuadStarted;
+        }
+        public const string keyword = "Parallax Support Scatter (V1)";
+        private void OnTerrainDataInitializing(object sender, PlanetTerrainDataEventArgs e)
+        {
+            if (e.TerrainData.PlanetData.ModKeywords.Contains(keyword))
+            {
+                return;
+            }
+            e.TerrainData.PlanetData.ModKeywords.Add(keyword);
+            foreach (ScatterBody body in ConfigLoader.bodies.Values)
+            {
+                foreach (Scatter scatter in body.scatters.Values)
+                {
+                    var terrainData = e.TerrainData;
+                    var planetData = terrainData.PlanetData;
+                    Debug.Log("Planet data name: " + planetData.Name);
+                    //if (planetData.Author == "Jundroo" || planetData.Author == "NathanMikeska")
+                    if (planetData.Name == scatter.planetName)
+                    {
+
+                            // Add some noise modifiers (and some modifiers to store the noise in custom vertex data)
+                            var scatterNoiseXml = XElement.Parse(scatter.ScatterNoiseXml).Elements("Modifier").ToList();
+                            terrainData.AddModifiersFromXml(scatterNoiseXml, 0);
+
+                            // Loop through all sub biomes and set their custom data (random junk data for testing)
+                            foreach (var biome in terrainData.Biomes)
+                            {
+                                var subBiomes = biome.GetSubBiomes();
+                                foreach (var subBiome in subBiomes)
+                                {
+                                    Debug.Log("Setting sub biome data");
+                                    scatter.SetSubBiomeTerrainData(subBiome.PrimaryData, 1f);
+                                    scatter.SetSubBiomeTerrainData(subBiome.SlopeData, 1f);
+                                }
+                            }
+                    }
+                }
+            }
         }
         private void OnPlanetInitialized(object sender, EventArgs e)
         {
@@ -96,17 +135,26 @@ namespace Assets.Scripts
             Debug.Log("Sphere loading: " + e.Planet.PlanetNode.Name);
             GameObject managerGO = new GameObject();
             GameObject.DontDestroyOnLoad(managerGO);
-                                                                                        //Will be disabled whenever parent is disabled
-            ScatterManager manager = managerGO.AddComponent<ScatterManager>();          //Once per planet
-            ScatterRenderer renderer = managerGO.AddComponent<ScatterRenderer>();       //Ofc, do this for all renderers
+
+            ScatterManager manager = managerGO.AddComponent<ScatterManager>();
+            Debug.Log("Planet name: " + e.Planet.PlanetNode.Name);
+            ScatterBody body = ConfigLoader.bodies[e.Planet.PlanetNode.Name];
+            Scatter[] scatters = body.scatters.Values.ToArray();
+            activeScatters = scatters;
+            Debug.Log("Active scatter count: " + activeScatters.Length);
+            foreach (Scatter scatter in scatters)
+            {
+                //scatter.Register();
+                ScatterRenderer renderer = managerGO.AddComponent<ScatterRenderer>();
+                manager.scatterRenderers.Add(renderer);
+                renderer.scatter = scatter;
+                renderer.Initialize();
+                scatterRenderers.Add(scatter, renderer);
+            }
             Utils utils = managerGO.AddComponent<Utils>();
-            manager.scatterRenderer = renderer;                                         //Ofc, do this for all renderers too
-            renderer.scatter = dummyScatter;
+           
             scatterObjects.Add(e.Planet.PlanetData.Id, managerGO);
             scatterManagers.Add(e.Planet.PlanetData.Id, manager);
-            scatterRenderers.Add(dummyScatter, renderer);
-
-            renderer.Initialize();
         }
         private void OnQuadSphereUnloading(object sender, PlanetQuadSphereEventArgs e)
         {
@@ -117,11 +165,21 @@ namespace Assets.Scripts
                 return;
             }
             //The scatter manager and components are automatically destroyed here, but we need to remove it from the dictionary
+            ScatterBody body = ConfigLoader.bodies[e.Planet.PlanetNode.Name];
+            Scatter[] scatters = body.scatters.Values.ToArray();
+            foreach (Scatter scatter in scatters)
+            {
+                scatterRenderers.Remove(scatter);
+            }
+            GameObject managerGO = scatterObjects[id];
 
             scatterObjects.Remove(id);
             scatterManagers.Remove(id);
-            scatterRenderers.Remove(dummyScatter);
+            
+            UnityEngine.Object.Destroy(managerGO);
+            
         }
+        public Scatter[] activeScatters;   //Scatters that are currently active right now - This holds every scatter on the current planet
         private void OnCreateQuadStarted(object sender, CreateQuadScriptEventArgs e)
         {
             //if (e.Quad.SubdivisionLevel < e.QuadSphere.MaxSubdivisionLevel)
@@ -129,35 +187,19 @@ namespace Assets.Scripts
             //    return;
             //}
             CreateQuadData data = e.CreateQuadData;
-            float[] dummyNoise = dummyScatter.GetNoiseData(data);
-            float[] dummyDistribution = dummyScatter.GetDistributionData(data);
 
-            ScatterNoise sn = new ScatterNoise(dummyDistribution.Clone() as float[], dummyNoise.Clone() as float[]);
-            dummyScatter.noise.Add(e.Quad, sn);
+            for (int i = 0; i < activeScatters.Length; i++)
+            {
+                float[] dummyNoise = activeScatters[i].GetNoiseData(data);
+                float[] dummyDistribution = activeScatters[i].GetDistributionData(data);
+
+                ScatterNoise sn = new ScatterNoise(dummyDistribution, dummyNoise);
+                activeScatters[i].noise.Add(e.Quad, sn);
+            }
 
             QuadData qd = new QuadData(e.Quad);                                     //Change this to iterate through scatters
             
             quadData.Add(e.Quad, qd);
-            MeshDataTerrain meshData = e.CreateQuadData.TerrainMeshData.Item;
-            if (meshData.VertexType == typeof(MeshDataTerrain.TerrainVertexBasic))
-            {
-                var verts = meshData.VerticesBasic;
-                for (int i = 0; i < verts.Length; ++i)
-                {
-                    half col = (half)dummyNoise[i];
-                    verts[i].Color = new half4(col, col, col, (half)1);
-                }
-            }
-            else
-            {
-                var verts = meshData.Vertices;
-                for (int i = 0; i < verts.Length; ++i)
-                {
-                    half col = (half)dummyNoise[i];
-                    verts[i].Color = new half4(col, col, col, (half)1);
-                }
-            }
-
         }
         private void OnQuadSphereLoaded(object sender, PlanetQuadSphereEventArgs e)
         {
@@ -192,7 +234,11 @@ namespace Assets.Scripts
         {
             quadData[e.Quad].Cleanup();
             quadData.Remove(e.Quad);
-            dummyScatter.noise.Remove(e.Quad);
+
+            for (int i = 0; i < activeScatters.Length; i++)
+            {
+                activeScatters[i].noise.Remove(e.Quad);
+            }
         }
     }
 }

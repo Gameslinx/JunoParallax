@@ -1,3 +1,4 @@
+using Assets.Scripts;
 using Assets.Scripts.Terrain;
 using System.Collections;
 using System.Collections.Generic;
@@ -5,7 +6,7 @@ using UnityEngine;
 
 public class ScatterManager : MonoBehaviour         //Manages scatters on a planet
 {
-    public ScatterRenderer scatterRenderer;
+    public List<ScatterRenderer> scatterRenderers = new List<ScatterRenderer>();
     public delegate void QuadUpdate(Matrix4x4d mat);
     public QuadUpdate OnQuadUpdate;
     public QuadSphereScript quadSphere;
@@ -14,7 +15,11 @@ public class ScatterManager : MonoBehaviour         //Manages scatters on a plan
     void OnEnable()
     {
         Debug.Log("Scatter manager enabled");
-        scatterRenderer?.Initialize();          //OnEnable can be called before the renderer is assigned, in which case the renderer is manually initialized
+        foreach (ScatterRenderer renderer in scatterRenderers)
+        {
+            renderer.Initialize();
+        }
+        //scatterRenderer?.Initialize();             //OnEnable can be called before the renderer is assigned, in which case the renderer is manually initialized
     }
 
     void Update()
@@ -29,10 +34,17 @@ public class ScatterManager : MonoBehaviour         //Manages scatters on a plan
     void OnDisable()
     {
         Debug.Log("Scatter manager disabled");
-        scatterRenderer.Cleanup();
+        foreach (ScatterRenderer renderer in scatterRenderers)
+        {
+            renderer.Cleanup();
+        }
     }
     private void OnDestroy()
     {
         Debug.Log("Scatter manager destroyed - Unregistering");
+        foreach (QuadData quad in Mod.Instance.quadData.Values)     //I kinda wanna change this, it's a bit hacky
+        {
+            quad.Cleanup();
+        }
     }
 }

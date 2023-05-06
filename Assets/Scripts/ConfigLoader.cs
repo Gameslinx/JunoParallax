@@ -74,6 +74,8 @@ public class ConfigLoader : MonoBehaviour
 
                     Debug.Log("Parsed Material");
 
+                    thisScatter.Register();
+
                     body.scatters.Add(scatterName, thisScatter);
                 }
 
@@ -89,10 +91,17 @@ public class ConfigLoader : MonoBehaviour
         material._Mesh = materialNode.GetStringAttribute("mesh", "Assets/_Common/Sphere.obj");
         material._MainTex = materialNode.Element("mainTex").Value;
         material._Normal = materialNode.Element("normal").Value;
+        material._Color = ParseColor(materialNode.Element("color").Value);
 
         return material;
 
         // Add methods for parsing material based on shader
+    }
+    public static Color ParseColor(string color)
+    {
+        // Color format must be RGB or RGBA
+        string[] components = color.Replace(" ", string.Empty).Trim().Split(',');
+        return new Color(components[0].ToFloat(), components[1].ToFloat(), components[2].ToFloat());
     }
     public static string GetNoiseProperties(XElement noiseNode, Scatter scatter)    //This looks really hacky and I promise it is but it works :D
     {

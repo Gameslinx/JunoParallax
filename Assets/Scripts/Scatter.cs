@@ -28,6 +28,7 @@ public struct ScatterMaterial
     public string _Mesh;
     public string _MainTex;
     public string _Normal;
+    public Color _Color;
 }
 public class ScatterNoise
 {
@@ -70,7 +71,6 @@ public class Scatter
     public int NoiseVertexIndex { get; private set; }
     public Dictionary<QuadScript, ScatterNoise> noise = new Dictionary<QuadScript, ScatterNoise>();
     
-    public const string keyword = "Parallax Support Scatter (V1)";
     public Scatter(string id, string displayName)
     {
         distribution = new DistributionData();
@@ -100,7 +100,10 @@ public class Scatter
         this.DistributionQuadIndex = CustomCreateQuadData.Register<CustomCreateQuadDataFloat>(
             this.DistributionQuadId, () => new CustomCreateQuadDataFloat(this.DistributionVertexId));
     }
-
+    public void Unregister()
+    {
+        // Not implemented yet
+    }
     public float[] GetNoiseData(CreateQuadData quadData)
     {
         return ((CustomCreateQuadDataFloat)quadData.CustomData[this.NoiseQuadIndex]).Values;
@@ -114,37 +117,6 @@ public class Scatter
     public void SetSubBiomeTerrainData(SubBiomeTerrainData subBiomeTerrainData, float value)
     {
         ((CustomSubBiomeTerrainDataFloatSliderInput)subBiomeTerrainData.CustomData[this.DistributionSubBiomeIndex]).Value = value;
-    }
-
-    public void OnTerrainDataInitializing(object sender, PlanetTerrainDataEventArgs e)
-    {
-        var terrainData = e.TerrainData;
-        var planetData = terrainData.PlanetData;
-        Debug.Log("Planet data name: " + planetData.Name);
-        //if (planetData.Author == "Jundroo" || planetData.Author == "NathanMikeska")
-        if (planetData.Name == planetName)
-        {
-            if (!planetData.ModKeywords.Contains(keyword))
-            {
-                planetData.ModKeywords.Add(keyword);
-
-                // Add some noise modifiers (and some modifiers to store the noise in custom vertex data)
-                var scatterNoiseXml = XElement.Parse(ScatterNoiseXml).Elements("Modifier").ToList();
-                terrainData.AddModifiersFromXml(scatterNoiseXml, 0);
-
-                // Loop through all sub biomes and set their custom data (random junk data for testing)
-                foreach (var biome in terrainData.Biomes)
-                {
-                    var subBiomes = biome.GetSubBiomes();
-                    foreach (var subBiome in subBiomes)
-                    {
-                        Debug.Log("Setting sub biome data");
-                        this.SetSubBiomeTerrainData(subBiome.PrimaryData, 1f);
-                        this.SetSubBiomeTerrainData(subBiome.SlopeData, 1f);
-                    }
-                }
-            }
-        }
     }
     public string ScatterNoiseXml = "";
 //@"<Modifiers>
