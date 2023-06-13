@@ -83,7 +83,7 @@ float4 BlinnPhong(float3 normal, float3 basicNormal, float4 diffuseCol, float3 l
     half NdotL = max(0, dot(normal, lightDir));
     NdotL = pow(NdotL, _Hapke);
 
-    half NdotH = max(0, dot(normal, halfDir));
+    half NdotH = max(0, dot(normal, halfDir)); //
     // Color
     fixed3 ambient = UNITY_LIGHTMODEL_AMBIENT.rgb * diffuseCol.rgb;
     fixed3 diffuse =  attenCol * diffuseCol.rgb * NdotL;

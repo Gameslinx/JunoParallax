@@ -23,10 +23,16 @@ MonoBehaviour:
   - {fileID: 4800000, guid: 608b520d3c9f3d447b11db5a35ecaae5, type: 3}
   - {fileID: 4800000, guid: 0b4210146db4e8945a347947f3741ffb, type: 3}
   - {fileID: 4800000, guid: 0fadfa82a703001409d937184bcc6a2f, type: 3}
+  - {fileID: 2100000, guid: f789fe978694b2b44b0b44672ed77d07, type: 2}
   - {fileID: 2100000, guid: 7a79bac22a0b7094e8a03e1b02e618bb, type: 2}
   - {fileID: 7200000, guid: aafc744204b41404cbb86d8ca7e58aa5, type: 3}
   - {fileID: 2100000, guid: 1587305eb7686b6478a031da4c4e5a7d, type: 2}
-  _prefabs: []
+  _prefabs:
+  - {fileID: 919132149155446097, guid: f34ea7233c7ddba46969afd5a4e8d590, type: 3}
+  - {fileID: 919132149155446097, guid: 3d2946818c73bd447829cbb877fa8f7a, type: 3}
+  - {fileID: 919132149155446097, guid: 9df1e6758bd82f44baeca54329002339, type: 3}
+  - {fileID: 919132149155446097, guid: 0cf310474f80afe4ca1b97b742253f84, type: 3}
+  - {fileID: 919132149155446097, guid: 703e08bafdc3c154a9f1e1f4626fa208, type: 3}
   _steamDescription: 
   _steamLanguage: English
   _steamPreviewPath: 

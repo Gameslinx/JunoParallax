@@ -69,6 +69,8 @@ public class ScatterData
         shader.SetInt("_MaxCount", _MaxCount);
         shader.SetFloat("_Seed", 1);
         shader.SetInt("_PopulationMultiplier", scatter.distribution._PopulationMultiplier);
+        shader.SetVector("_MinScale", scatter.distribution._MinScale);
+        shader.SetVector("_MaxScale", scatter.distribution._MaxScale);
 
         positions.SetCounterValue(0);
 
@@ -79,9 +81,9 @@ public class ScatterData
         shader.SetBuffer(evaluateKernel, "LOD1", lod1);
         shader.SetBuffer(evaluateKernel, "LOD2", lod2);
 
-        shader.SetFloat("_Lod01Split", 0.15f);
-        shader.SetFloat("_Lod12Split", 0.6f);
-        shader.SetFloat("_MaxRange", 3000);
+        shader.SetFloat("_Lod01Split", scatter.distribution.lod0.distance / scatter.distribution._Range);
+        shader.SetFloat("_Lod12Split", scatter.distribution.lod1.distance / scatter.distribution._Range);
+        shader.SetFloat("_MaxRange", scatter.distribution._Range);
         shader.SetMatrix("_ObjectToWorldMatrix", parent.quadToWorldMatrix);
 
         GeneratePositions();

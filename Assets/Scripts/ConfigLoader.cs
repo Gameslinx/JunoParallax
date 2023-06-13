@@ -6,11 +6,159 @@ using System.Xml.Linq;
 using System.IO;
 using ModApi.Common.Extensions;
 using UI.Xml;
+using System;
+using System.Text.RegularExpressions;
 
+// Need a method of storing names and values of each parameter for the shader defined in the shader bank
+public class ScatterShader : ICloneable
+{
+    public string name;
+    public string resourceName;
+    public Dictionary<string, string> textures = new Dictionary<string, string>();
+    public Dictionary<string, float> floats = new Dictionary<string, float>();
+    public Dictionary<string, Vector3> vectors = new Dictionary<string, Vector3>();
+    public Dictionary<string, Vector2> scales = new Dictionary<string, Vector2>();
+    public Dictionary<string, Color> colors = new Dictionary<string, Color>();
+
+    public List<Texture2D> loadedTextures = new List<Texture2D>();
+    // We want to be able to clone the template and assign its values on a scatter
+    public object Clone()
+    {
+        if (loadedTextures.Count != 0)
+        {
+            Debug.Log("[Exception] WARNING - Creating a deep clone of a ScatterShader with textures loaded! NOT recommended");
+        }
+        var clone = new ScatterShader();
+        clone.name = name;
+        clone.resourceName = resourceName;
+        foreach (var texture in textures )
+        {
+            clone.textures.Add(texture.Key, texture.Value);
+        }
+        foreach (var floatValue in floats)
+        {
+            clone.floats.Add(floatValue.Key, floatValue.Value);
+        }
+        foreach (var vector in vectors)
+        {
+            clone.vectors.Add(vector.Key, vector.Value);
+        }
+        foreach (var scale in scales)
+        {
+            clone.scales.Add(scale.Key, scale.Value);
+        }
+        foreach (var color in colors)
+        {
+            clone.colors.Add(color.Key, color.Value);
+        }
+        return clone;
+    }
+    public Material AssignMaterialVariables(Material material)
+    {
+        foreach (KeyValuePair<string, string> texture in textures)
+        {
+            Texture2D tex = TextureLoader.LoadTexture(texture.Value);
+            loadedTextures.Add(tex);
+
+            Debug.Log("Setting material property: " + texture.Key + " = " + texture.Value);
+            material.SetTexture(texture.Key, tex);
+        }
+        foreach (KeyValuePair<string, float> floatValue in floats)
+        {
+            Debug.Log("Setting material property: " + floatValue.Key + " = " + floatValue.Value);
+            material.SetFloat(floatValue.Key, floatValue.Value);
+        }
+        foreach (KeyValuePair<string, Vector3> vector in vectors)
+        {
+            Debug.Log("Setting material property: " + vector.Key + " = " + vector.Value);
+            material.SetVector(vector.Key, vector.Value);
+        }
+        foreach (KeyValuePair<string, Vector2> scale in scales)
+        {
+            Debug.Log("Setting material property: " + scale.Key + " = " + scale.Value);
+            material.SetTextureScale(scale.Key, scale.Value);   // Key must be the name of the texture
+        }
+        foreach (KeyValuePair<string, Color> color in colors)
+        {
+            Debug.Log("Setting material property: " + color.Key + " = " + color.Value);
+            material.SetColor(color.Key, color.Value);
+        }
+        return material;
+    }
+    public void UnloadTextures()
+    {
+        Debug.Log("Unloading textures");
+        foreach (Texture2D texture in loadedTextures)
+        {
+            UnityEngine.Object.Destroy(texture);
+        }
+        loadedTextures.Clear();
+        Debug.Log("Textures unloaded");
+    }
+}
 public class ConfigLoader : MonoBehaviour
 {
+    public static XElement shaderBank;
     public static XElement[] configs;
     public static Dictionary<string, ScatterBody> bodies = new Dictionary<string, ScatterBody>();
+    public static Dictionary<string, ScatterShader> shaderTemplates = new Dictionary<string, ScatterShader>();
+
+    // Load the shader definitions
+    public static void LoadShaderBank(string directoryPath)
+    {
+        shaderBank = Directory.GetFiles(directoryPath, "ShaderBank.xml").Select(filePath => XElement.Load(filePath)).First();
+        Debug.Log("Attempting to load ShaderBank config");
+        //XElement bankNode = shaderBank.Element("ParallaxShaderBank");
+        List<XElement> shaderNodes = shaderBank.Elements("Shader").ToList();
+        // For every shader defined in the shader bank node
+        foreach (XElement shader in shaderNodes )
+        {
+            string name = shader.GetStringAttribute("name");
+            Debug.Log("Shader: " + name);
+            XElement propertiesNode = shader.Element("Properties");
+
+            // Defined as such in the config so that when using reflection to assign the values to the shader instance, the correct types are used
+            // Means expanding or modifying the shader bank is easy
+            // So, parse each parameter and set their default values
+
+            XElement texturesNode = propertiesNode.Element("Textures");
+            XElement floatsNode = propertiesNode.Element("Floats");
+            XElement vectorsNode = propertiesNode.Element("Vectors");
+            XElement scalesNode = propertiesNode.Element("Scales");
+            XElement colorsNode = propertiesNode.Element("Colors");
+
+            ScatterShader scatterShader = new ScatterShader();
+            scatterShader.name = name;
+            scatterShader.resourceName = name.Replace("Custom/", string.Empty);
+            // Parse textures
+            foreach (XElement element in texturesNode.Elements())
+            {
+                scatterShader.textures.Add(element.Attribute("name").Value.ToString(), "");
+            }
+            // Parse floats
+            foreach (XElement element in floatsNode.Elements())
+            {
+                scatterShader.floats.Add(element.Attribute("name").Value.ToString(), 0);
+            }
+            // Parse vectors
+            foreach (XElement element in vectorsNode.Elements())
+            {
+                scatterShader.vectors.Add(element.Attribute("name").Value.ToString(), Vector3.one);
+            }
+            // Parse scales
+            foreach (XElement element in scalesNode.Elements())
+            {
+                scatterShader.scales.Add(element.Attribute("name").Value.ToString(), Vector2.one);
+            }
+            // Parse colors
+            foreach (XElement element in colorsNode.Elements())
+            {
+                scatterShader.colors.Add(element.Attribute("name").Value.ToString(), Color.white);
+            }
+            shaderTemplates.Add(name, scatterShader);
+            Debug.Log(" - Parsed " + shader.Name);
+        }
+    }
     public static void LoadConfigs(string directoryPath)
     {
         // Load all configs
@@ -45,6 +193,9 @@ public class ConfigLoader : MonoBehaviour
                     XElement distributionNode = scatter.Element("Distribution");
                     distribution._PopulationMultiplier = distributionNode.Element("populationMultiplier").Value.ToInt();
                     distribution._SpawnChance = distributionNode.Element("spawnChance").Value.ToFloat();
+                    distribution._Range = distributionNode.Element("range").Value.ToFloat();
+                    distribution._MinScale = distributionNode.Element("minScale").Value.ToVector3();
+                    distribution._MaxScale = distributionNode.Element("maxScale").Value.ToVector3();
                     thisScatter.distribution = distribution;
                     Debug.Log("Parsed distribution");
 
@@ -87,11 +238,70 @@ public class ConfigLoader : MonoBehaviour
     public static ScatterMaterial ParseScatterMaterial(XElement materialNode)
     {
         ScatterMaterial material = new ScatterMaterial();
-        material._Shader = materialNode.GetStringAttribute("shader", "InstancedCutout");
-        material._Mesh = materialNode.GetStringAttribute("mesh", "Assets/_Common/Sphere.obj");
-        material._MainTex = materialNode.Element("mainTex").Value;
-        material._Normal = materialNode.Element("normal").Value;
-        material._Color = ParseColor(materialNode.Element("color").Value);
+        material._Mesh = materialNode.GetStringAttribute("mesh", "Assets/Models/Droo/Sphere.fbx");
+
+        string shaderName = materialNode.GetStringAttribute("shader", "Custom/InstancedCutout");
+        ScatterShader shader = shaderTemplates[shaderName].Clone() as ScatterShader;
+
+        // Consult the shader bank and search for the config value corresponding to that property
+        // All properties MUST be defined in the scatter material node
+        // Parse texture paths
+
+        Debug.Log("Loading properties");
+
+        string[] textureProperties = shader.textures.Keys.ToArray();
+        foreach (string textureProperty in textureProperties)
+        {
+            Debug.Log("Loading texture property: " + textureProperty);
+            Debug.Log("This node name: " + materialNode.Name);
+            XElement el = materialNode.Element(textureProperty);
+            if (el == null)
+            {
+                Debug.Log("Element is null?");
+            }
+            Debug.Log("Value: " + el.Value);
+            shader.textures[textureProperty] = materialNode.Element(textureProperty).Value;
+        }
+        // Parse float values
+        string[] floatProperties = shader.floats.Keys.ToArray();
+        foreach (string floatProperty in floatProperties)
+        {
+            Debug.Log("Loading float property: " + floatProperty);
+            shader.floats[floatProperty] = materialNode.Element(floatProperty).Value.ToFloat();
+        }
+        // Parse vector values
+        string[] vectorProperties = shader.vectors.Keys.ToArray();
+        foreach (string vectorProperty in vectorProperties)
+        {
+            Debug.Log("Loading vector property: " + vectorProperty);
+            shader.vectors[vectorProperty] = materialNode.Element(vectorProperty).Value.ToVector3();
+        }
+        // Parse texture scales
+        string[] scaleProperties = shader.scales.Keys.ToArray();
+        foreach (string scaleProperty in scaleProperties)
+        {
+            Debug.Log("Loading scale property: " + scaleProperty);
+            shader.scales[scaleProperty] = materialNode.Element(scaleProperty).Value.ToVector2();
+        }
+        // Parse color values
+        string[] colorProperties = shader.colors.Keys.ToArray();
+        foreach (string colorProperty in colorProperties)
+        {
+            // XML "ToColor" does not support 0-1 colour ranges, sadly
+            Debug.Log("Loading color property: " + colorProperty);
+            // Get colour string as definite "1,1,1,1" or "1,1,1"
+            string rgbaColours = Regex.Replace(materialNode.Element(colorProperty).Value, @"s", "");
+            List<string> colors = rgbaColours.Split(',').ToList();
+            // Add the 4th colour component if there are only 3 for consistency
+            if (colors.Count == 3)
+            {
+                colors.Add("1");
+            }
+            Color color = new Color(colors[0].ToFloat(), colors[1].ToFloat(), colors[2].ToFloat(), colors[3].ToFloat());
+            shader.colors[colorProperty] = color;
+        }
+
+        material._Shader = shader;
 
         return material;
 
@@ -118,8 +328,5 @@ public class ConfigLoader : MonoBehaviour
         return modifier;
     }
     // Get names of planets in each config
-    public static void ListConfigs()
-    {
-        
-    }
+
 }

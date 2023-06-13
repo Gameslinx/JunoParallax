@@ -21,6 +21,9 @@ uint _MaxCount;
 float _Seed;
 float4x4 _ObjectToWorldMatrix;
 
+float3 _MinScale;
+float3 _MaxScale;
+
 [numthreads(32,1,1)]
 void Distribute (uint3 id : SV_DispatchThreadID)
 {
@@ -64,7 +67,7 @@ void Distribute (uint3 id : SV_DispatchThreadID)
 
         PositionData output;
         output.pos = localPos;
-        output.scale = float3(5, 5, 5);
+        output.scale = lerp(_MinScale, _MaxScale, noise); //Scale depends on noise value
         output.rot = Rand(float2(id.x, r2)) * 180.0;
 
         //if (r1 < 0.2)

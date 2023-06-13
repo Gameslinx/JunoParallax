@@ -63,6 +63,10 @@ namespace Assets.Scripts
             base.OnModLoaded();
             modDataPath = Path.Combine(Application.persistentDataPath, "Mods", "ParallaxData").Replace("\\", "/");
             string configsPath = modDataPath + "/Configs";
+            string shaderBankPath = modDataPath + "/Assets/_Common";
+            TextureLoader.Initialize(modDataPath);
+
+            ConfigLoader.LoadShaderBank(shaderBankPath);
             ConfigLoader.LoadConfigs(configsPath);
 
             ParallaxInstance = this;

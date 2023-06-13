@@ -13,6 +13,9 @@ public struct DistributionData
 {
     public int _PopulationMultiplier;
     public float _SpawnChance;
+    public float _Range;
+    public Vector3 _MinScale;
+    public Vector3 _MaxScale;
     public LOD lod0;
     public LOD lod1;
 }
@@ -24,11 +27,8 @@ public struct LOD
 
 public struct ScatterMaterial
 {
-    public string _Shader;
+    public ScatterShader _Shader;
     public string _Mesh;
-    public string _MainTex;
-    public string _Normal;
-    public Color _Color;
 }
 public class ScatterNoise
 {
