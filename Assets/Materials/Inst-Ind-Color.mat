@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Inst-Ind-Color
-  m_Shader: {fileID: 4800000, guid: 608b520d3c9f3d447b11db5a35ecaae5, type: 3}
+  m_Shader: {fileID: 4800000, guid: 6ecb039510b63ff42986debb07ea38b2, type: 3}
   m_ValidKeywords: []
   m_InvalidKeywords: []
   m_LightmapFlags: 4
@@ -21,7 +21,7 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _BumpMap:
-        m_Texture: {fileID: 2800000, guid: b78dbebbc26dbd549b8734d6f17d74f7, type: 3}
+        m_Texture: {fileID: 2800000, guid: 97bdd4a824375644ab6ee2e84ec0c2bb, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _DetailAlbedoMap:
@@ -41,7 +41,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: bfe87621b89aaad4fa4a5f55eda213f4, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetallicGlossMap:
@@ -64,12 +64,12 @@ Material:
     m_Floats:
     - _BumpScale: 1
     - _CurrentTime: 0
-    - _Cutoff: 0
+    - _Cutoff: 0.26
     - _DetailNormalMapScale: 1
     - _DitherFactor: 1
     - _DstBlend: 0
     - _FresnelPower: 8.6
-    - _Gloss: 131
+    - _Gloss: 140
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1
@@ -78,7 +78,7 @@ Material:
     - _HeightFactor: 1.76
     - _InitialTime: 0
     - _MaxBrightness: 1
-    - _Metallic: 1
+    - _Metallic: 0.2
     - _Mode: 0
     - _OcclusionStrength: 1
     - _Parallax: 0.02
@@ -94,7 +94,7 @@ Material:
     - _Color: {r: 0.7203018, g: 0.8490566, b: 0.5719117, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _FresnelColor: {r: 0, g: 0, b: 0, a: 1}
-    - _MetallicTint: {r: 0, g: 0, b: 0, a: 1}
+    - _MetallicTint: {r: 1, g: 1, b: 1, a: 1}
     - _PlanetOrigin: {r: 0, g: 0, b: 0, a: 1}
     - _ShaderOffset: {r: 0, g: 0, b: 0, a: 1}
     - _WindSpeed: {r: 50, g: 0.37, b: 0, a: 1}

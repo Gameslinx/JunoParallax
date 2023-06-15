@@ -161,17 +161,21 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
         materialLOD0Cascade3 = Instantiate(mat);
         materialLOD0 = Instantiate(mat);
 
-        materialLOD1Cascade0 = Instantiate(mat);
-        materialLOD1Cascade1 = Instantiate(mat);
-        materialLOD1Cascade2 = Instantiate(mat);
-        materialLOD1Cascade3 = Instantiate(mat);
-        materialLOD1 = Instantiate(mat);
+        Material matlod1 = SetupMaterial(scatter.distribution.lod0.material._Shader);
 
-        materialLOD2Cascade0 = Instantiate(mat);
-        materialLOD2Cascade1 = Instantiate(mat);
-        materialLOD2Cascade2 = Instantiate(mat);
-        materialLOD2Cascade3 = Instantiate(mat);
-        materialLOD2 = Instantiate(mat);
+        materialLOD1Cascade0 = Instantiate(matlod1);
+        materialLOD1Cascade1 = Instantiate(matlod1);
+        materialLOD1Cascade2 = Instantiate(matlod1);
+        materialLOD1Cascade3 = Instantiate(matlod1);
+        materialLOD1 = Instantiate(matlod1);
+
+        Material matlod2 = SetupMaterial(scatter.distribution.lod1.material._Shader);
+
+        materialLOD2Cascade0 = Instantiate(matlod2);
+        materialLOD2Cascade1 = Instantiate(matlod2);
+        materialLOD2Cascade2 = Instantiate(matlod2);
+        materialLOD2Cascade3 = Instantiate(matlod2);
+        materialLOD2 = Instantiate(matlod2);
 
         meshLod0 = Instantiate(mesh);
         meshLod1 = Instantiate(mesh2);

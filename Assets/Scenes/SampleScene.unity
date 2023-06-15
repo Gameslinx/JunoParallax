@@ -234,7 +234,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3c6ea0aac7ff41c4d938d87c6560f770, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mesh: {fileID: 9148106930174485795, guid: f34ea7233c7ddba46969afd5a4e8d590, type: 3}
+  mesh: {fileID: 3324933167109718416, guid: 60fef65ecfc40fc48bb137ac1d2dad64, type: 3}
   material: {fileID: 2100000, guid: 7a79bac22a0b7094e8a03e1b02e618bb, type: 2}
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
@@ -410,8 +410,8 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 963194225}
-  m_LocalRotation: {x: 0.15867503, y: 0, z: 0, w: 0.98733085}
-  m_LocalPosition: {x: 0, y: 5.6, z: -10}
+  m_LocalRotation: {x: 0.11019129, y: -0.69642156, z: 0.10953197, w: 0.7006124}
+  m_LocalPosition: {x: 8.403952, y: 2.7106118, z: -0.050422445}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

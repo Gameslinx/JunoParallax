@@ -1,11 +1,5 @@
 using Assets.Scripts;
-using Assets.Scripts.Terrain;
-using ModApi.Flight.Sim;
-using System.Collections;
-using System.Collections.Generic;
-using Unity.Mathematics;
 using UnityEngine;
-using static Rewired.ComponentControls.Effects.RotateAroundAxis;
 
 public class ScatterData
 {
@@ -39,26 +33,39 @@ public class ScatterData
         this.scatter = scatter;
         this.renderer = renderer;
         _MaxCount = parent.triangleCount * scatter.distribution._PopulationMultiplier;
-        Initialize();
+        InitializeShader();
+        if (!scatter.inherits)
+        {
+            InitializeDistribute();
+        }
+        else
+        {
+            InitializeInheritance();
+        }
+        InitializeEvaluate();
+        if (!scatter.inherits)
+        {
+            GeneratePositions();
+        }
+        ComputeDispatchArgs();
+        ready = true;
     }
-    public void Initialize()
+    public void InitializeShader()
     {
-        //The renderer must be initialized before this
-        //Initialize Generate
         renderer.OnEvaluatePositions += EvaluatePositions;
         shader = UnityEngine.Object.Instantiate(Mod.ParallaxInstance.quadShader);       //Load the shader for this quad
-
         distributeKernel = shader.FindKernel("Distribute");
         countKernel = shader.FindKernel("DetermineCount");
         evaluateKernel = shader.FindKernel("Evaluate");
+    }
+    public void InitializeDistribute()
+    {
+        //Initialize Generation - Skipped if this scatter inherits from another
 
         noise = new ComputeBuffer(parent.vertexCount, sizeof(float), ComputeBufferType.Structured);
         positions = new ComputeBuffer(_MaxCount, PositionData.Size(), ComputeBufferType.Append);
 
-        lod0 = renderer.lod0;           //All append to these buffers
-        lod1 = renderer.lod1;
-        lod2 = renderer.lod2;
-        noise.SetData(scatter.noise[parent.quad].noise);
+        noise.SetData(scatter.noise[parent.quad].noise);    //If the scatter inherits noise from another scatter, this is the parent scatter noise and not noise generated for this scatter
 
         shader.SetBuffer(distributeKernel, "Vertices", parent.vertices);
         shader.SetBuffer(distributeKernel, "Triangles", parent.triangles);
@@ -69,12 +76,23 @@ public class ScatterData
         shader.SetInt("_MaxCount", _MaxCount);
         shader.SetFloat("_Seed", 1);
         shader.SetInt("_PopulationMultiplier", scatter.distribution._PopulationMultiplier);
+        shader.SetFloat("_SpawnChance", scatter.distribution._SpawnChance);
         shader.SetVector("_MinScale", scatter.distribution._MinScale);
         shader.SetVector("_MaxScale", scatter.distribution._MaxScale);
 
         positions.SetCounterValue(0);
-
+    }
+    public void InitializeInheritance()
+    {
+        positions = parent.data.Find(x => x.scatter.DisplayName == scatter.inheritsFrom).positions;
+    }
+    public void InitializeEvaluate()
+    {
         //Initialize Evaluate
+
+        lod0 = renderer.lod0;           //All append to these buffers
+        lod1 = renderer.lod1;
+        lod2 = renderer.lod2;
 
         shader.SetBuffer(evaluateKernel, "PositionsIn", positions);
         shader.SetBuffer(evaluateKernel, "LOD0", lod0);
@@ -85,10 +103,6 @@ public class ScatterData
         shader.SetFloat("_Lod12Split", scatter.distribution.lod1.distance / scatter.distribution._Range);
         shader.SetFloat("_MaxRange", scatter.distribution._Range);
         shader.SetMatrix("_ObjectToWorldMatrix", parent.quadToWorldMatrix);
-
-        GeneratePositions();
-        ComputeDispatchArgs();
-        ready = true;
     }
     private void GeneratePositions()    //Generates positions in local space
     {
@@ -97,6 +111,7 @@ public class ScatterData
     }
     private void ComputeDispatchArgs()  //Determine dispatch args and store them on the GPU
     {
+        Debug.Log("Computing dispatch args for: " + scatter.DisplayName);
         dispatchArgs = new ComputeBuffer(1, sizeof(uint) * 3, ComputeBufferType.IndirectArguments);
         objectLimits = new ComputeBuffer(1, sizeof(uint) * 3, ComputeBufferType.IndirectArguments);     //IndirectArgs must be size 3 at least
         uint[] indirectArgs = { 1, 1, 1 };
@@ -104,6 +119,11 @@ public class ScatterData
         objectLimits.SetData(indirectArgs);
         ComputeBuffer.CopyCount(positions, dispatchArgs, 0);    //This count is used for dispatchIndirect
         ComputeBuffer.CopyCount(positions, objectLimits, 0);    //This count is unmodified and used in EvaluatePositions to early return
+
+        uint[] count = new uint[3];
+        objectLimits.GetData(count);
+        Debug.Log("Count of " + scatter.DisplayName + " = " + count[0]);
+
         shader.SetBuffer(countKernel, "DispatchArgs", dispatchArgs);
         shader.SetBuffer(evaluateKernel, "ObjectLimits", objectLimits);     //We need to early return out from evaluation if the thread exceeds the number of objects - prevents funny floaters
         shader.Dispatch(countKernel, 1, 1, 1);

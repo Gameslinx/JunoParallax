@@ -187,6 +187,10 @@ public class ConfigLoader : MonoBehaviour
                     Scatter thisScatter = new Scatter(planetName + "_" + scatterName, scatterName);
                     Debug.Log("Parsing scatter: " + scatterName);
 
+                    XElement inheritsFrom = scatter.Element("inheritsFrom");
+                    thisScatter.inherits = inheritsFrom == null ? false : true;
+                    thisScatter.inheritsFrom = inheritsFrom == null ? "" : inheritsFrom.Value;
+
                     DistributionData distribution = new DistributionData();
 
                     // Parse distribution node
@@ -241,6 +245,7 @@ public class ConfigLoader : MonoBehaviour
         material._Mesh = materialNode.GetStringAttribute("mesh", "Assets/Models/Droo/Sphere.fbx");
 
         string shaderName = materialNode.GetStringAttribute("shader", "Custom/InstancedCutout");
+        Debug.Log("Using shader: " + shaderName);
         ScatterShader shader = shaderTemplates[shaderName].Clone() as ScatterShader;
 
         // Consult the shader bank and search for the config value corresponding to that property

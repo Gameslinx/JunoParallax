@@ -80,7 +80,7 @@
                 float4 col = tex2D(_MainTex, i.uv * _MainTex_ST) * float4(i.color.rgb, 1) * _Color;
                 clip(col.a - _Cutoff);
 
-                float3 normalMap = UnpackNormal(tex2D(_BumpMap, i.uv));
+                float3 normalMap = UnpackNormal(tex2D(_BumpMap, i.uv * _MainTex_ST));
                 float3x3 TBN = float3x3(normalize(i.tangentWorld), normalize(i.binormalWorld), i.worldNormal);
                 TBN = transpose(TBN);
                 float3 worldNormal = mul(TBN, normalMap);

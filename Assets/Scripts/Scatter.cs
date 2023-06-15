@@ -58,6 +58,9 @@ public class Scatter
     public DistributionData distribution;
     public ScatterMaterial material;
 
+    public bool inherits = false;
+    public string inheritsFrom = "";
+
     public string Id { get; }
     public string DisplayName { get; }
     public string DistributionQuadId { get; }

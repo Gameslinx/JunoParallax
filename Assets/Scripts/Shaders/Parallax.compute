@@ -23,6 +23,7 @@ float4x4 _ObjectToWorldMatrix;
 
 float3 _MinScale;
 float3 _MaxScale;
+float _SpawnChance;
 
 [numthreads(32,1,1)]
 void Distribute (uint3 id : SV_DispatchThreadID)
@@ -70,11 +71,9 @@ void Distribute (uint3 id : SV_DispatchThreadID)
         output.scale = lerp(_MinScale, _MaxScale, noise); //Scale depends on noise value
         output.rot = Rand(float2(id.x, r2)) * 180.0;
 
-        //if (r1 < 0.2)
-        //{
-        //    Positions.Append(output);
-        //}
-        if (noise > 0.0)
+        float r3 = Rand(float2(r1, r2) + _Seed * 1.23133 + i);
+
+        if (noise > 0.0 && r3 < _SpawnChance)
         {
             Positions.Append(output);
         }

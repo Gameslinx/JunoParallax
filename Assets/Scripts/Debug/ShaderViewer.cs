@@ -22,6 +22,8 @@ public class ShaderViewer : MonoBehaviour
             mat[i] = Matrix4x4.TRS(pos, Quaternion.identity, Vector3.one);
         }
 
+        mat = new Matrix4x4[] { Matrix4x4.TRS(Vector3.zero, Quaternion.identity, Vector3.one)};
+
         uint[] args = new uint[5] { 0, 0, 0, 0, 0 };
         args[0] = (uint)mesh.GetIndexCount(0);
         args[1] = (uint)mat.Length;
