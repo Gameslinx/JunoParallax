@@ -200,10 +200,36 @@ namespace Assets.Scripts
                 ScatterNoise sn = new ScatterNoise(dummyDistribution, dummyNoise);
                 activeScatters[i].noise.Add(e.Quad, sn);
             }
-
+            
             QuadData qd = new QuadData(e.Quad);                                     //Change this to iterate through scatters
             
             quadData.Add(e.Quad, qd);
+
+
+            //if (activeScatters.Length > 0)
+            //{
+            //    float[] dummyNoise = activeScatters[0].GetNoiseData(data);
+            //    float[] dummyDistribution = activeScatters[0].GetDistributionData(data);
+            //    Material mat = new Material(ParallaxInstance.ResourceLoader.LoadAsset<Shader>("Assets/Scripts/Shaders/ShowColor.shader"));
+            //    e.Quad.RenderingData.TerrainMaterial = mat;
+            //    if (data.TerrainMeshData.Item.VertexType == typeof(MeshDataTerrain.TerrainVertex))
+            //    {
+            //        var verts = data.TerrainMeshData.Item.Vertices;
+            //        for (int i = 0; i < verts.Length; i++)
+            //        {
+            //            verts[i].Color = new half4((half)dummyNoise[i], (half)dummyNoise[i], (half)dummyDistribution[i], (half)1);
+            //        }
+            //    }
+            //    else
+            //    {
+            //        var verts = data.TerrainMeshData.Item.VerticesBasic;
+            //        for (int i = 0; i < verts.Length; i++)
+            //        {
+            //            verts[i].Color = new half4((half)dummyNoise[i], (half)dummyNoise[i], (half)dummyDistribution[i], (half)1);
+            //        }
+            //    }
+            //}
+
         }
         private void OnQuadSphereLoaded(object sender, PlanetQuadSphereEventArgs e)
         {

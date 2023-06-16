@@ -96,9 +96,9 @@ public class Scatter
 
         // Register custom sub-biome data to adjust the distribution values per sub-biome
         this.DistributionSubBiomeIndex = CustomSubBiomeTerrainData.Register<CustomSubBiomeTerrainDataFloatInput, CustomPlanetVertexDataFloat>(
-            this.DistributionVertexId, () => new CustomSubBiomeTerrainDataFloatSliderInput(this.DisplayName, "Adjusts the distribution value for this object", 0, 2));
+            this.DistributionVertexId, () => new CustomSubBiomeTerrainDataFloatSliderInput(this.DisplayName, "Adjusts the distribution value for this object", 0, 2), true);
         this.DistributionVertexIndex = CustomPlanetVertexData.GetIndex(this.DistributionVertexId);
-
+        //
         // Register per-quad data to store the sub-biome distribution results
         this.DistributionQuadIndex = CustomCreateQuadData.Register<CustomCreateQuadDataFloat>(
             this.DistributionQuadId, () => new CustomCreateQuadDataFloat(this.DistributionVertexId));
