@@ -10,6 +10,7 @@ struct PositionData
     float3 pos;
     float3 scale;
     float rot;
+    // Add an integer here to indicate which triangle this object came from
 };
 
 float Rand(float2 p)

@@ -10,6 +10,7 @@ public class ScatterData
     ComputeShader shader;
 
     public ComputeBuffer noise;
+    public ComputeBuffer distribution;
     public ComputeBuffer positions;
 
     public ComputeBuffer lod0;      //Reference the renderer buffers
@@ -62,14 +63,17 @@ public class ScatterData
     {
         //Initialize Generation - Skipped if this scatter inherits from another
 
+        distribution = new ComputeBuffer(parent.vertexCount, sizeof(float), ComputeBufferType.Structured);
         noise = new ComputeBuffer(parent.vertexCount, sizeof(float), ComputeBufferType.Structured);
         positions = new ComputeBuffer(_MaxCount, PositionData.Size(), ComputeBufferType.Append);
 
+        distribution.SetData(scatter.noise[parent.quad].distribution);
         noise.SetData(scatter.noise[parent.quad].noise);    //If the scatter inherits noise from another scatter, this is the parent scatter noise and not noise generated for this scatter
 
         shader.SetBuffer(distributeKernel, "Vertices", parent.vertices);
         shader.SetBuffer(distributeKernel, "Triangles", parent.triangles);
         shader.SetBuffer(distributeKernel, "Normals", parent.normals);
+        shader.SetBuffer(distributeKernel, "Distribution", distribution);
         shader.SetBuffer(distributeKernel, "Noise", noise);
         shader.SetBuffer(distributeKernel, "Positions", positions);
 
@@ -79,6 +83,8 @@ public class ScatterData
         shader.SetFloat("_SpawnChance", scatter.distribution._SpawnChance);
         shader.SetVector("_MinScale", scatter.distribution._MinScale);
         shader.SetVector("_MaxScale", scatter.distribution._MaxScale);
+        shader.SetFloat("_SizeJitterAmount", scatter.distribution._SizeJitterAmount);
+        shader.SetFloat("_Coverage", scatter.distribution._Coverage);
 
         positions.SetCounterValue(0);
     }
@@ -111,7 +117,6 @@ public class ScatterData
     }
     private void ComputeDispatchArgs()  //Determine dispatch args and store them on the GPU
     {
-        Debug.Log("Computing dispatch args for: " + scatter.DisplayName);
         dispatchArgs = new ComputeBuffer(1, sizeof(uint) * 3, ComputeBufferType.IndirectArguments);
         objectLimits = new ComputeBuffer(1, sizeof(uint) * 3, ComputeBufferType.IndirectArguments);     //IndirectArgs must be size 3 at least
         uint[] indirectArgs = { 1, 1, 1 };
@@ -122,7 +127,6 @@ public class ScatterData
 
         uint[] count = new uint[3];
         objectLimits.GetData(count);
-        Debug.Log("Count of " + scatter.DisplayName + " = " + count[0]);
 
         shader.SetBuffer(countKernel, "DispatchArgs", dispatchArgs);
         shader.SetBuffer(evaluateKernel, "ObjectLimits", objectLimits);     //We need to early return out from evaluation if the thread exceeds the number of objects - prevents funny floaters
@@ -141,6 +145,7 @@ public class ScatterData
     {
         renderer.OnEvaluatePositions -= EvaluatePositions;
         positions?.Release();
+        distribution?.Release();
         noise?.Release();
         dispatchArgs?.Release();
         objectLimits?.Release();

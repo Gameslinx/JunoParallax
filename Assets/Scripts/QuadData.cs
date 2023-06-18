@@ -39,7 +39,6 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
     public int triangleCount;       //This is actually tricount / 3
 
     public List<ScatterData> data = new List<ScatterData>();        //Change to array
-    public Dictionary<Scatter, ScatterNoise> scatterNoises = new Dictionary<Scatter, ScatterNoise>();
 
     public Matrix4x4 quadToWorldMatrix;
     public Vector3 planetNormal;
@@ -85,8 +84,6 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
         planetNormal = quad.SphereNormal.ToVector3();
 
         colorCount = quad.RenderingData.TerrainMesh.colors.Length;
-        
-        //CHANGE THIS TO ADD SCATTERS PROPERLY
 
         for (int i = 0; i < Mod.Instance.activeScatters.Length; i++)
         {

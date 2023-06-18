@@ -14,6 +14,7 @@ RWStructuredBuffer<uint> Triangles;         //Local space
 RWStructuredBuffer<float3> Vertices;        //Local space
 RWStructuredBuffer<float3> Normals;         //Local space
 RWStructuredBuffer<float> Noise;
+RWStructuredBuffer<float> Distribution;
 AppendStructuredBuffer<PositionData> Positions;
 
 uint _PopulationMultiplier;
@@ -23,7 +24,9 @@ float4x4 _ObjectToWorldMatrix;
 
 float3 _MinScale;
 float3 _MaxScale;
+float _SizeJitterAmount;
 float _SpawnChance;
+float _Coverage;
 
 [numthreads(32,1,1)]
 void Distribute (uint3 id : SV_DispatchThreadID)
@@ -33,11 +36,11 @@ void Distribute (uint3 id : SV_DispatchThreadID)
         return;
     }
 
-    uint index1 = Triangles[id.x * 3];
+    uint index1 = Triangles[id.x * 3];      // Pass this to Evaluate for normal retrieval
     uint index2 = Triangles[id.x * 3 + 1];
     uint index3 = Triangles[id.x * 3 + 2];
 
-    if (id.x <= 52 || id.x % 52 == 0 || id.x % 52 == 1 || id.x % 52 == 51 || id.x % 52 == 50) {return;}
+    if (id.x <= 52 || id.x % 52 == 0 || id.x % 52 == 1 || id.x % 52 == 51 || id.x % 52 == 50) {return;} // Ignore skirts in the terrain quads
 
     float3 vert1 = Vertices[index1];
     float3 vert2 = Vertices[index2];
@@ -47,9 +50,9 @@ void Distribute (uint3 id : SV_DispatchThreadID)
     float3 norm2 = Normals[index2];
     float3 norm3 = Normals[index3];
 
-    float noise1 = Noise[index1];
-    float noise2 = Noise[index2];
-    float noise3 = Noise[index3];
+    float noise1 = Noise[index1] * Distribution[index1];
+    float noise2 = Noise[index2] * Distribution[index2];
+    float noise3 = Noise[index3] * Distribution[index3];
 
     float3 avgNrm = (norm1 + norm2 + norm3) / 3;            //Normal at triangle centre
 
@@ -62,18 +65,27 @@ void Distribute (uint3 id : SV_DispatchThreadID)
 
         float3 localPos = TriangleAverage(vert1, vert2, vert3, r1, r2);
         float3 localNormal = TriangleAverage(norm1, norm2, norm3, r1, r2);
-        float noise = ((1 - sqrt(r1)) * noise1) + ((sqrt(r1) * (1 - r2)) * noise2) + ((r2 * sqrt(r1)) * noise3);
+        float noise = (((1 - sqrt(r1)) * noise1) + ((sqrt(r1) * (1 - r2)) * noise2) + ((r2 * sqrt(r1)) * noise3)) * 0.5 + 0.5;  //Get between 0 and 1
 
+        // World position is used for context based parameters such as min/max altitude constraints
         float3 worldPos = mul(_ObjectToWorldMatrix, localPos);
+
+        // Scale can depend entirely on the noise, a mixture of noise and random jitter, or entirely random independent of the distribution noise
+        float r3 = Rand(float2(r2, r1) + _Seed);
+        float scalePercentage = lerp(noise, r3, _SizeJitterAmount);
+        float3 scale = lerp(_MinScale, _MaxScale, scalePercentage);
+
+        // Rot is a rotation around the up vector by a random amount
+        float rot = Rand(float2(id.x, r2)) * 180.0;
 
         PositionData output;
         output.pos = localPos;
-        output.scale = lerp(_MinScale, _MaxScale, noise); //Scale depends on noise value
-        output.rot = Rand(float2(id.x, r2)) * 180.0;
+        output.scale = scale;
+        output.rot = rot;
 
-        float r3 = Rand(float2(r1, r2) + _Seed * 1.23133 + i);
+        float r4 = Rand(float2(r1, r2) + _Seed * 1.23133 + i);
 
-        if (noise > 0.0 && r3 < _SpawnChance)
+        if (noise > 1 - _Coverage && r4 < _SpawnChance)
         {
             Positions.Append(output);
         }
@@ -108,6 +120,10 @@ float _Lod01Split;
 float _Lod12Split;
 float _MaxRange;
 float _MaxEvaluateCount;
+uint _AlignToTerrainNormal;
+
+// For retrieving the terrain normal, first pass an integer from Distribute which indicates which triangle this object came from (add 0, 1, 2 to get the indices)
+// Then average the normals on that triangle to get the face normal and then transform the object accordingly
 
 [numthreads(32,1,1)]
 void Evaluate (uint3 id : SV_DispatchThreadID)
@@ -118,7 +134,7 @@ void Evaluate (uint3 id : SV_DispatchThreadID)
     float4 localPos = float4(pos.pos, 1);
     float3 worldPos = mul(_ObjectToWorldMatrix, localPos).xyz;
 
-    //Frustum Culling
+    // Frustum Culling
 	float4 cd0 = CameraDistances0(worldPos);
     float4 cd1 = CameraDistances1(worldPos);
 		
@@ -135,7 +151,7 @@ void Evaluate (uint3 id : SV_DispatchThreadID)
 
     float lodDist = distance(_WorldSpaceCameraPosition, worldPos) / _MaxRange;  //Percentage to max range
     
-    //Sort by LOD then by cascade
+    // Sort by LOD then by cascade
     if (lodDist > 1.0) { return; }
     if (lodDist > _Lod12Split)  //We are in LOD2
     {

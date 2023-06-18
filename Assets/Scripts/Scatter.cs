@@ -14,17 +14,28 @@ public struct DistributionData
     public int _PopulationMultiplier;
     public float _SpawnChance;
     public float _Range;
+    public float _SizeJitterAmount;
+    public float _Coverage;
     public Vector3 _MinScale;
     public Vector3 _MaxScale;
     public LOD lod0;
     public LOD lod1;
+    public Dictionary<string, Biome> biomes;    //Biome name, noise intensities
 }
 public struct LOD
 {
     public float distance;
     public ScatterMaterial material;
 }
-
+public struct Biome
+{
+    public Dictionary<string, SubBiome> subBiomes;
+}
+public struct SubBiome
+{
+    public float flatNoiseIntensity;
+    public float slopeNoiseIntensity;
+}
 public struct ScatterMaterial
 {
     public ScatterShader _Shader;

@@ -200,6 +200,8 @@ public class ConfigLoader : MonoBehaviour
                     distribution._Range = distributionNode.Element("range").Value.ToFloat();
                     distribution._MinScale = distributionNode.Element("minScale").Value.ToVector3();
                     distribution._MaxScale = distributionNode.Element("maxScale").Value.ToVector3();
+                    distribution._SizeJitterAmount = distributionNode.Element("sizeJitterAmount").Value.ToFloat();
+                    distribution._Coverage = distributionNode.Element("coverage").Value.ToFloat();
                     thisScatter.distribution = distribution;
                     Debug.Log("Parsed distribution");
 
@@ -222,6 +224,29 @@ public class ConfigLoader : MonoBehaviour
 
                     Debug.Log("Parsed LODs");
 
+                    // Parse biomes
+                    XElement[] biomeNodes = distributionNode.Element("Biomes").Elements().ToArray();
+                    Debug.Log("Length of biome nodes: " + biomeNodes.Length);
+                    thisScatter.distribution.biomes = new Dictionary<string, Biome>();
+                    foreach (XElement biomeNode in biomeNodes)
+                    {
+                        Biome biome = new Biome();
+                        biome.subBiomes = new Dictionary<string, SubBiome>();
+                        string biomeName = biomeNode.Attribute("name").Value;
+                        Debug.Log("Biome name: " + biomeName); 
+                        foreach (XElement subBiomeNode in biomeNode.Elements())
+                        {
+                            string name = subBiomeNode.GetStringAttribute("name");
+                            string value = subBiomeNode.GetStringAttribute("value");
+                            string slope = subBiomeNode.GetStringAttribute("slope");
+                            Debug.Log("Sub Biome name: " + name);
+                            SubBiome subBiome = new SubBiome();
+                            subBiome.flatNoiseIntensity = value.ToFloat();
+                            subBiome.slopeNoiseIntensity = slope.ToFloat();
+                            biome.subBiomes.Add(name, subBiome);
+                        }
+                        thisScatter.distribution.biomes.Add(biomeName, biome);
+                    }
                     // Parse material node
                     XElement materialNode = scatter.Element("Material");
                     ScatterMaterial material = ParseScatterMaterial(materialNode);

@@ -90,6 +90,16 @@ namespace Assets.Scripts
         public const string keyword = "Parallax Support Scatter (V1)";
         private void OnTerrainDataInitializing(object sender, PlanetTerrainDataEventArgs e)
         {
+            Debug.Log("Logging all biomes and subbiomes for planet: " + e.TerrainData.PlanetData.Name);
+            foreach (var biome in e.TerrainData.Biomes)
+            {
+                Debug.Log("Biome: " + biome.name);
+                var subBiomes = biome.GetSubBiomes();
+                foreach (var subBiome in subBiomes)
+                {
+                    Debug.Log(" - SubBiome: " + subBiome.Name);
+                }
+            }
             if (e.TerrainData.PlanetData.ModKeywords.Contains(keyword))
             {
                 return;
@@ -101,26 +111,30 @@ namespace Assets.Scripts
                 {
                     var terrainData = e.TerrainData;
                     var planetData = terrainData.PlanetData;
-                    Debug.Log("Planet data name: " + planetData.Name);
-                    //if (planetData.Author == "Jundroo" || planetData.Author == "NathanMikeska")
                     if (planetData.Name == scatter.planetName)
                     {
-
-                            // Add some noise modifiers (and some modifiers to store the noise in custom vertex data)
-                            var scatterNoiseXml = XElement.Parse(scatter.ScatterNoiseXml).Elements("Modifier").ToList();
-                            terrainData.AddModifiersFromXml(scatterNoiseXml, 0);
-
-                            // Loop through all sub biomes and set their custom data (random junk data for testing)
-                            foreach (var biome in terrainData.Biomes)
+                        // Add some noise modifiers (and some modifiers to store the noise in custom vertex data)
+                        var scatterNoiseXml = XElement.Parse(scatter.ScatterNoiseXml).Elements("Modifier").ToList();
+                        terrainData.AddModifiersFromXml(scatterNoiseXml, 0);
+                        Dictionary<string, Biome> scatterBiomes = scatter.distribution.biomes;
+                        // Loop through all sub biomes and set their custom data (random junk data for testing)
+                        foreach (var biome in terrainData.Biomes)
+                        {
+                            if (scatterBiomes.ContainsKey(biome.name))
                             {
+                                Dictionary<string, SubBiome> scatterSubBiomes = scatterBiomes[biome.name].subBiomes;
                                 var subBiomes = biome.GetSubBiomes();
                                 foreach (var subBiome in subBiomes)
                                 {
-                                    Debug.Log("Setting sub biome data");
-                                    scatter.SetSubBiomeTerrainData(subBiome.PrimaryData, 1f);
-                                    scatter.SetSubBiomeTerrainData(subBiome.SlopeData, 1f);
+                                    if (scatterSubBiomes.ContainsKey(subBiome.Name))
+                                    {
+                                        SubBiome scatterSubBiome = scatterSubBiomes[subBiome.Name];
+                                        scatter.SetSubBiomeTerrainData(subBiome.PrimaryData, scatterSubBiome.flatNoiseIntensity);
+                                        scatter.SetSubBiomeTerrainData(subBiome.SlopeData, scatterSubBiome.slopeNoiseIntensity);
+                                    }
                                 }
                             }
+                        }
                     }
                 }
             }
