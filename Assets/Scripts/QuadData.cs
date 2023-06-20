@@ -4,6 +4,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Profiling;
 
 public struct PositionData
 {
@@ -64,6 +65,7 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
     }
     public void Initialize()        //Initialize buffers, then scatters
     {
+        Profiler.BeginSample("Initialize QuadData");
         planetID = quad.QuadSphere.PlanetData.Id;
 
         vertexData = quad.RenderingData.TerrainMesh.vertices;
@@ -91,9 +93,7 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
             data.Add(new ScatterData(this, scatter, Mod.ParallaxInstance.scatterRenderers[scatter]));
         }
 
-        
-        GetQuadMemoryUsage();
-        
+        Profiler.EndSample();
     }
     void OnQuadDataUpdate(Matrix4x4d m)         //Occurs every time before EvaluatePositions is called on ScatterData
     {
@@ -108,11 +108,6 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
         mQuad.m13 = (float)((m.m10 * qpos.x) + (m.m11 * qpos.y) + (m.m12 * qpos.z) + m.m13);
         mQuad.m23 = (float)((m.m20 * qpos.x) + (m.m21 * qpos.y) + (m.m22 * qpos.z) + m.m23);
         quadToWorldMatrix = mQuad;
-    }
-    public void GetQuadMemoryUsage()
-    {
-        //int positions = data.positions.count * data.positions.stride;
-        //double positionsInMB = positions * (0.000001);
     }
     public void Cleanup()           //Clean up scatter data, then the quad data
     {

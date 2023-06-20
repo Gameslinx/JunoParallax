@@ -28,6 +28,7 @@ namespace Assets.Scripts
     using UnityEditor;
     using UnityEngine;
     using UnityEngine.Assertions.Must;
+    using UnityEngine.Profiling;
     using static Assets.Scripts.Terrain.MeshDataTerrain;
     using static UnityEngine.Mesh;
 
@@ -66,8 +67,10 @@ namespace Assets.Scripts
             string shaderBankPath = modDataPath + "/Assets/_Common";
             TextureLoader.Initialize(modDataPath);
 
+            Profiler.BeginSample("Load Parallax Configs");
             ConfigLoader.LoadShaderBank(shaderBankPath);
             ConfigLoader.LoadConfigs(configsPath);
+            Profiler.EndSample();
 
             ParallaxInstance = this;
 
