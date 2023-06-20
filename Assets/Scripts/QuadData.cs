@@ -102,9 +102,6 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
     private void GetQuadToWorldMatrix(Matrix4x4d m)
     {
         if (quad.RenderingData == null) { return; }
-        //Matrix4x4d drawQuadsMatrix = new Matrix4x4d();
-        //drawQuadsMatrix.SetTRS(quad.QuadSphere.FramePosition, new Quaterniond(quad.QuadSphere.transform.parent.localRotation), Vector3.one);
-        //Matrix4x4d m = drawQuadsMatrix;
         Matrix4x4 mQuad = m.ToMatrix4x4();
         var qpos = quad.RenderingData.LocalPosition;
         mQuad.m03 = (float)((m.m00 * qpos.x) + (m.m01 * qpos.y) + (m.m02 * qpos.z) + m.m03);

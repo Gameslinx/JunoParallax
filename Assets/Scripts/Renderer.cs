@@ -451,22 +451,22 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
         shader.DispatchIndirect(lod1kernel, dispatchArgsLOD1);
         shader.DispatchIndirect(lod2kernel, dispatchArgsLOD2);
 
-        ComputeBuffer.CopyCount(lod0cascade0, argslod0cascade0, 4);
-        ComputeBuffer.CopyCount(lod0cascade1, argslod0cascade1, 4);
-        ComputeBuffer.CopyCount(lod0cascade2, argslod0cascade2, 4);
-        ComputeBuffer.CopyCount(lod0cascade3, argslod0cascade3, 4);
+        //ComputeBuffer.CopyCount(lod0cascade0, argslod0cascade0, 4);
+        //ComputeBuffer.CopyCount(lod0cascade1, argslod0cascade1, 4);
+        //ComputeBuffer.CopyCount(lod0cascade2, argslod0cascade2, 4);
+        //ComputeBuffer.CopyCount(lod0cascade3, argslod0cascade3, 4);
         ComputeBuffer.CopyCount(lod0out, argslod0, 4);
 
-        ComputeBuffer.CopyCount(lod1cascade0, argslod1cascade0, 4);
-        ComputeBuffer.CopyCount(lod1cascade1, argslod1cascade1, 4);
-        ComputeBuffer.CopyCount(lod1cascade2, argslod1cascade2, 4);
-        ComputeBuffer.CopyCount(lod1cascade3, argslod1cascade3, 4);
+        //ComputeBuffer.CopyCount(lod1cascade0, argslod1cascade0, 4);
+        //ComputeBuffer.CopyCount(lod1cascade1, argslod1cascade1, 4);
+        //ComputeBuffer.CopyCount(lod1cascade2, argslod1cascade2, 4);
+        //ComputeBuffer.CopyCount(lod1cascade3, argslod1cascade3, 4);
         ComputeBuffer.CopyCount(lod1out, argslod1, 4);
         
-        ComputeBuffer.CopyCount(lod2cascade0, argslod2cascade0, 4);
-        ComputeBuffer.CopyCount(lod2cascade1, argslod2cascade1, 4);
-        ComputeBuffer.CopyCount(lod2cascade2, argslod2cascade2, 4);
-        ComputeBuffer.CopyCount(lod2cascade3, argslod2cascade3, 4);
+        //ComputeBuffer.CopyCount(lod2cascade0, argslod2cascade0, 4);
+        //ComputeBuffer.CopyCount(lod2cascade1, argslod2cascade1, 4);
+        //ComputeBuffer.CopyCount(lod2cascade2, argslod2cascade2, 4);
+        //ComputeBuffer.CopyCount(lod2cascade3, argslod2cascade3, 4);
         ComputeBuffer.CopyCount(lod2out, argslod2, 4);
 
         //For debugging command buffers:

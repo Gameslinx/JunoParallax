@@ -40,7 +40,7 @@ void Distribute (uint3 id : SV_DispatchThreadID)
     uint index2 = Triangles[id.x * 3 + 1];
     uint index3 = Triangles[id.x * 3 + 2];
 
-    if (id.x <= 52 || id.x % 52 == 0 || id.x % 52 == 1 || id.x % 52 == 51 || id.x % 52 == 50) {return;} // Ignore skirts in the terrain quads
+    if (id.x <= 52 || id.x % 52 == 0 || id.x % 52 == 1 || id.x % 52 == 51 || id.x % 52 == 50) { return; } // Ignore skirts in the terrain quads
 
     float3 vert1 = Vertices[index1];
     float3 vert2 = Vertices[index2];

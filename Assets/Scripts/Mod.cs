@@ -100,10 +100,6 @@ namespace Assets.Scripts
                     Debug.Log(" - SubBiome: " + subBiome.Name);
                 }
             }
-            if (e.TerrainData.PlanetData.ModKeywords.Contains(keyword))
-            {
-                return;
-            }
             e.TerrainData.PlanetData.ModKeywords.Add(keyword);
             foreach (ScatterBody body in ConfigLoader.bodies.Values)
             {

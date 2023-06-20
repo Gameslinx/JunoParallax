@@ -125,9 +125,6 @@ public class ScatterData
         ComputeBuffer.CopyCount(positions, dispatchArgs, 0);    //This count is used for dispatchIndirect
         ComputeBuffer.CopyCount(positions, objectLimits, 0);    //This count is unmodified and used in EvaluatePositions to early return
 
-        uint[] count = new uint[3];
-        objectLimits.GetData(count);
-
         shader.SetBuffer(countKernel, "DispatchArgs", dispatchArgs);
         shader.SetBuffer(evaluateKernel, "ObjectLimits", objectLimits);     //We need to early return out from evaluation if the thread exceeds the number of objects - prevents funny floaters
         shader.Dispatch(countKernel, 1, 1, 1);
@@ -135,6 +132,8 @@ public class ScatterData
     public void EvaluatePositions()     //Evaluate LODs and frustum cull
     {
         if (!ready) { return; }
+        // Check if quad is visible
+        // Check if quad is in range
         shader.SetMatrix("_ObjectToWorldMatrix", parent.quadToWorldMatrix);
         shader.SetFloats("_CameraFrustumPlanes", Utils.planeNormals);
         shader.SetVector("_WorldSpaceCameraPosition", Camera.main.transform.position);
