@@ -54,7 +54,8 @@ public class ScatterData
     public void InitializeShader()
     {
         renderer.OnEvaluatePositions += EvaluatePositions;
-        shader = UnityEngine.Object.Instantiate(Mod.ParallaxInstance.quadShader);       //Load the shader for this quad
+        //shader = UnityEngine.Object.Instantiate(Mod.ParallaxInstance.quadShader);       //Load the shader for this quad
+        shader = ShaderPool.Retrieve();
         distributeKernel = shader.FindKernel("Distribute");
         countKernel = shader.FindKernel("DetermineCount");
         evaluateKernel = shader.FindKernel("Evaluate");
@@ -109,6 +110,9 @@ public class ScatterData
         shader.SetFloat("_Lod12Split", scatter.distribution.lod1.distance / scatter.distribution._Range);
         shader.SetFloat("_MaxRange", scatter.distribution._Range);
         shader.SetMatrix("_ObjectToWorldMatrix", parent.quadToWorldMatrix);
+
+        shader.SetFloat("_CullRadius", scatter.cullRadius);
+        shader.SetFloat("_CullLimit", scatter.cullLimit);
     }
     private void GeneratePositions()    //Generates positions in local space
     {
@@ -131,9 +135,10 @@ public class ScatterData
     }
     public void EvaluatePositions()     //Evaluate LODs and frustum cull
     {
+        // Don't evaluate quads uninitialized, invisible or out of range
         if (!ready) { return; }
-        // Check if quad is visible
-        // Check if quad is in range
+        if (!parent.isVisible) { return; }
+        if (parent.sqrQuadCameraDistance > scatter.sqrRange + (parent.quadDiagLength * parent.quadDiagLength)) { return; }  //There's a chance this is wrong :)
         shader.SetMatrix("_ObjectToWorldMatrix", parent.quadToWorldMatrix);
         shader.SetFloats("_CameraFrustumPlanes", Utils.planeNormals);
         shader.SetVector("_WorldSpaceCameraPosition", Camera.main.transform.position);
@@ -148,5 +153,7 @@ public class ScatterData
         noise?.Release();
         dispatchArgs?.Release();
         objectLimits?.Release();
+
+        ShaderPool.Return(shader);
     }
 }

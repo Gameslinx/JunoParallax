@@ -3,6 +3,7 @@ using Assets.Scripts.Terrain;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Profiling;
 
@@ -27,6 +28,10 @@ public struct TransformData
 public class QuadData       //Holds the data for the quad - Verts, normals, triangles. Holds scatter data, too, but quad data is global and used for all scatters
 {
     public QuadScript quad;
+    public bool isVisible = false;
+    public float quadDiagLength = 0;
+    public float sqrHalfQuadDiagLength = 0;
+    public float sqrQuadCameraDistance = 0;
 
     public Vector3[] vertexData;
     private int[] triangleData;
@@ -45,8 +50,6 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
     public Vector3 planetNormal;
 
     public ScatterManager manager;
-
-    int colorCount = 0;
 
     Guid planetID;
     bool eventsRegistered = false;
@@ -67,6 +70,9 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
     {
         Profiler.BeginSample("Initialize QuadData");
         planetID = quad.QuadSphere.PlanetData.Id;
+        quadDiagLength = GetQuadDiagLength();
+        sqrHalfQuadDiagLength = (quadDiagLength / 2.0f) * (quadDiagLength / 2.0f);
+        bounds.size = Vector3.one * quadDiagLength;
 
         vertexData = quad.RenderingData.TerrainMesh.vertices;
         triangleData = quad.RenderingData.TerrainMesh.triangles;
@@ -85,8 +91,6 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
 
         planetNormal = quad.SphereNormal.ToVector3();
 
-        colorCount = quad.RenderingData.TerrainMesh.colors.Length;
-
         for (int i = 0; i < Mod.Instance.activeScatters.Length; i++)
         {
             Scatter scatter = Mod.Instance.activeScatters[i];
@@ -95,9 +99,22 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
 
         Profiler.EndSample();
     }
+    public float GetQuadDiagLength()
+    {
+        // Planet starts out as a cube sphere, radius r, where the circumference is divided up into 4 (4 sides of cube ignoring top and bottom)
+        // So quad horizontal width is a function of maxLevel and planet radius
+        float circumference = Mathf.PI * (float)quad.QuadSphere.PlanetData.Radius * 2.0f;
+        float initialQuadWidth = circumference / 4.0f;
+        float finalQuadWidth = initialQuadWidth / Mathf.Pow(2.0f, (float)quad.QuadSphere.MaxSubdivisionLevel);
+        // Cheeky pythagoras
+        finalQuadWidth = Mathf.Sqrt(finalQuadWidth * finalQuadWidth + finalQuadWidth * finalQuadWidth);
+        return finalQuadWidth;
+    }
     void OnQuadDataUpdate(Matrix4x4d m)         //Occurs every time before EvaluatePositions is called on ScatterData
     {
         GetQuadToWorldMatrix(m);
+        UpdateVisibility();
+        GetCameraDistance();
     }
     private void GetQuadToWorldMatrix(Matrix4x4d m)
     {
@@ -108,6 +125,20 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
         mQuad.m13 = (float)((m.m10 * qpos.x) + (m.m11 * qpos.y) + (m.m12 * qpos.z) + m.m13);
         mQuad.m23 = (float)((m.m20 * qpos.x) + (m.m21 * qpos.y) + (m.m22 * qpos.z) + m.m23);
         quadToWorldMatrix = mQuad;
+    }
+    Vector3 worldSpacePosition = Vector3.zero;
+    Bounds bounds = new Bounds(Vector3.zero, Vector3.zero);     //The bound extents need to be the size of the quad
+    private void UpdateVisibility()
+    {
+        worldSpacePosition.x = quadToWorldMatrix.m03;
+        worldSpacePosition.y = quadToWorldMatrix.m13;
+        worldSpacePosition.z = quadToWorldMatrix.m23;
+        bounds.center = worldSpacePosition;
+        isVisible = GeometryUtility.TestPlanesAABB(Utils.planes, bounds);
+    }
+    private void GetCameraDistance()
+    {
+        sqrQuadCameraDistance = (worldSpacePosition - Camera.main.transform.position).sqrMagnitude;
     }
     public void Cleanup()           //Clean up scatter data, then the quad data
     {

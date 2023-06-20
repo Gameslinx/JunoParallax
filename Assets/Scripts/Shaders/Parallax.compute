@@ -122,6 +122,11 @@ float _MaxRange;
 float _MaxEvaluateCount;
 uint _AlignToTerrainNormal;
 
+// Define cull radius as the radius before frustum culling can begin
+// Define cull limit as the extents to the camera frustum before culling can begin (trees, for example, are tall. We want to be able to see any part of the tree without it disappearing)
+float _CullRadius;
+float _CullLimit;
+
 // For retrieving the terrain normal, first pass an integer from Distribute which indicates which triangle this object came from (add 0, 1, 2 to get the indices)
 // Then average the normals on that triangle to get the face normal and then transform the object accordingly
 
@@ -138,7 +143,9 @@ void Evaluate (uint3 id : SV_DispatchThreadID)
 	float4 cd0 = CameraDistances0(worldPos);
     float4 cd1 = CameraDistances1(worldPos);
 		
-    if (!(all(cd0 > 0) && all(cd1 > 0)))
+    float lodDist = distance(_WorldSpaceCameraPosition, worldPos) / _MaxRange;  //Percentage to max range
+
+    if (!(all(cd0 >= _CullLimit) && all(cd1 >= _CullLimit)) && lodDist > _CullRadius)
     {
         return;
     }
@@ -149,8 +156,6 @@ void Evaluate (uint3 id : SV_DispatchThreadID)
     TransformData object;
     object.mat = mat;
 
-    float lodDist = distance(_WorldSpaceCameraPosition, worldPos) / _MaxRange;  //Percentage to max range
-    
     // Sort by LOD then by cascade
     if (lodDist > 1.0) { return; }
     if (lodDist > _Lod12Split)  //We are in LOD2

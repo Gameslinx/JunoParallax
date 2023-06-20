@@ -7,6 +7,7 @@ using UnityEngine;
 public class Utils : MonoBehaviour
 {
     public static float[] planeNormals;
+    public static Plane[] planes = new Plane[6];
     private void Update()
     {
         ConstructFrustumPlanes(Camera.main, out planeNormals);  //Compute frustum planes for frustum culling
@@ -17,7 +18,7 @@ public class Utils : MonoBehaviour
 
         // https://docs.unity3d.com/ScriptReference/GeometryUtility.CalculateFrustumPlanes.html
         // Ordering: [0] = Left, [1] = Right, [2] = Down, [3] = Up, [4] = Near, [5] = Far
-        Plane[] planes = GeometryUtility.CalculateFrustumPlanes(camera);
+        planes = GeometryUtility.CalculateFrustumPlanes(camera);
 
         if (SystemInfo.graphicsDeviceType != UnityEngine.Rendering.GraphicsDeviceType.Direct3D11)
         {

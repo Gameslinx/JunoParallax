@@ -72,6 +72,11 @@ public class Scatter
     public bool inherits = false;
     public string inheritsFrom = "";
 
+    public float cullRadius = 0;
+    public float cullLimit = 0;
+
+    public float sqrRange = 0;
+
     public string Id { get; }
     public string DisplayName { get; }
     public string DistributionQuadId { get; }

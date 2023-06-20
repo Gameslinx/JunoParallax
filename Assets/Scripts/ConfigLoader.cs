@@ -205,6 +205,15 @@ public class ConfigLoader : MonoBehaviour
                     thisScatter.distribution = distribution;
                     Debug.Log("Parsed distribution");
 
+                    // Compute sqr range for optimizing number of shader dispatches in EvaluatePositions()
+                    thisScatter.sqrRange = distribution._Range * distribution._Range;
+
+                    // Parse frustum culling
+                    XElement cullRange = scatter.Element("cullImmuneRadius");
+                    XElement cullLimit = scatter.Element("cullLimit");
+                    thisScatter.cullRadius = (cullRange.Value.ToFloat() / distribution._Range);
+                    thisScatter.cullLimit = cullLimit.Value.ToFloat();
+
                     // Parse noise
                     XElement noiseNode = distributionNode.Element("PersistentNoise");
                     string modifier = GetNoiseProperties(noiseNode, thisScatter);

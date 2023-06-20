@@ -88,6 +88,10 @@ namespace Assets.Scripts
             quadShader = Instance.ResourceLoader.LoadAsset<ComputeShader>("Assets/Scripts/Shaders/Parallax.compute");
             renderShader = Instance.ResourceLoader.LoadAsset<ComputeShader>("Assets/Scripts/Shaders/Cascades.compute");
 
+            Profiler.BeginSample("Initialize shader pool");
+            ShaderPool.Initialize(2000);
+            Profiler.EndSample();
+
             QuadScript.CreateQuadStarted += OnCreateQuadStarted;
         }
         public const string keyword = "Parallax Support Scatter (V1)";
