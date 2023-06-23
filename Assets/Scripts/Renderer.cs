@@ -14,6 +14,7 @@ using UnityEngine.UIElements;
 
 public class ScatterRenderer : MonoBehaviour                   //There is an instance of this PER SCATTER, on each quad sphere
 {
+    public ScatterManager manager;
     public Scatter scatter;
 
     public ComputeShader shader;                               //Shader containing functions to sort objects by their shadow cascades to prevent rendering them in all four cascades
@@ -114,6 +115,10 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
     CommandBuffer renderer4;
 
     Camera renderCamera;
+
+    public ShadowCastingMode shadowsLOD0;
+    public ShadowCastingMode shadowsLOD1;
+    public ShadowCastingMode shadowsLOD2;
     void OnCameraModeChanged(CameraMode newMode, CameraMode oldMode)
     {
         Debug.Log("Camera Mode Changed from " + oldMode + " to " + newMode);
@@ -143,15 +148,17 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
     }
     void Prerequisites()    //Load mesh, materials...
     {
-        GameObject go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        GameObject go2 = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        Debug.Log("Prereqs: " + scatter.DisplayName);
 
         Mesh mesh = Mod.Instance.ResourceLoader.LoadAsset<Mesh>(scatter.material._Mesh);
         Mesh mesh2 = Mod.Instance.ResourceLoader.LoadAsset<Mesh>(scatter.distribution.lod0.material._Mesh);
         Mesh mesh3 = Mod.Instance.ResourceLoader.LoadAsset<Mesh>(scatter.distribution.lod1.material._Mesh);
 
-        Destroy(go);
-        Destroy(go2);
+        shadowsLOD0 = scatter.material.castShadows ? ShadowCastingMode.On : ShadowCastingMode.Off;
+        shadowsLOD1 = scatter.distribution.lod0.material.castShadows ? ShadowCastingMode.On : ShadowCastingMode.Off;
+        shadowsLOD2 = scatter.distribution.lod1.material.castShadows ? ShadowCastingMode.On : ShadowCastingMode.Off;
+
+        Debug.Log("Material 1");
 
         Material mat = SetupMaterial(scatter.material._Shader);
 
@@ -161,6 +168,8 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
         materialLOD0Cascade3 = Instantiate(mat);
         materialLOD0 = Instantiate(mat);
 
+        Debug.Log("Material 2");
+
         Material matlod1 = SetupMaterial(scatter.distribution.lod0.material._Shader);
 
         materialLOD1Cascade0 = Instantiate(matlod1);
@@ -169,6 +178,8 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
         materialLOD1Cascade3 = Instantiate(matlod1);
         materialLOD1 = Instantiate(matlod1);
 
+        Debug.Log("Material 3");
+
         Material matlod2 = SetupMaterial(scatter.distribution.lod1.material._Shader);
 
         materialLOD2Cascade0 = Instantiate(matlod2);
@@ -176,6 +187,8 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
         materialLOD2Cascade2 = Instantiate(matlod2);
         materialLOD2Cascade3 = Instantiate(matlod2);
         materialLOD2 = Instantiate(matlod2);
+
+        Debug.Log("Meshes");
 
         meshLod0 = Instantiate(mesh);
         meshLod1 = Instantiate(mesh2);
@@ -227,22 +240,22 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
 
         rendererBounds = new Bounds(Vector3.zero, Vector3.one * 5000);
 
-        lod0cascade0 = new ComputeBuffer(_MaxCount, TransformData.Size(), ComputeBufferType.Append);
-        lod0cascade1 = new ComputeBuffer(_MaxCount, TransformData.Size(), ComputeBufferType.Append);
-        lod0cascade2 = new ComputeBuffer(_MaxCount, TransformData.Size(), ComputeBufferType.Append);
-        lod0cascade3 = new ComputeBuffer(_MaxCount, TransformData.Size(), ComputeBufferType.Append);
+        lod0cascade0 = new ComputeBuffer(1, TransformData.Size(), ComputeBufferType.Append);
+        lod0cascade1 = new ComputeBuffer(1, TransformData.Size(), ComputeBufferType.Append);
+        lod0cascade2 = new ComputeBuffer(1, TransformData.Size(), ComputeBufferType.Append);
+        lod0cascade3 = new ComputeBuffer(1, TransformData.Size(), ComputeBufferType.Append);
         lod0 = new ComputeBuffer(_MaxCount, TransformData.Size(), ComputeBufferType.Append);
 
-        lod1cascade0 = new ComputeBuffer(_MaxCount, TransformData.Size(), ComputeBufferType.Append);
-        lod1cascade1 = new ComputeBuffer(_MaxCount, TransformData.Size(), ComputeBufferType.Append);
-        lod1cascade2 = new ComputeBuffer(_MaxCount, TransformData.Size(), ComputeBufferType.Append);
-        lod1cascade3 = new ComputeBuffer(_MaxCount, TransformData.Size(), ComputeBufferType.Append);
+        lod1cascade0 = new ComputeBuffer(1, TransformData.Size(), ComputeBufferType.Append);
+        lod1cascade1 = new ComputeBuffer(1, TransformData.Size(), ComputeBufferType.Append);
+        lod1cascade2 = new ComputeBuffer(1, TransformData.Size(), ComputeBufferType.Append);
+        lod1cascade3 = new ComputeBuffer(1, TransformData.Size(), ComputeBufferType.Append);
         lod1 = new ComputeBuffer(_MaxCount, TransformData.Size(), ComputeBufferType.Append);
 
-        lod2cascade0 = new ComputeBuffer(_MaxCount, TransformData.Size(), ComputeBufferType.Append);
-        lod2cascade1 = new ComputeBuffer(_MaxCount, TransformData.Size(), ComputeBufferType.Append);
-        lod2cascade2 = new ComputeBuffer(_MaxCount, TransformData.Size(), ComputeBufferType.Append);
-        lod2cascade3 = new ComputeBuffer(_MaxCount, TransformData.Size(), ComputeBufferType.Append);
+        lod2cascade0 = new ComputeBuffer(1, TransformData.Size(), ComputeBufferType.Append);
+        lod2cascade1 = new ComputeBuffer(1, TransformData.Size(), ComputeBufferType.Append);
+        lod2cascade2 = new ComputeBuffer(1, TransformData.Size(), ComputeBufferType.Append);
+        lod2cascade3 = new ComputeBuffer(1, TransformData.Size(), ComputeBufferType.Append);
         lod2 = new ComputeBuffer(_MaxCount, TransformData.Size(), ComputeBufferType.Append);
 
         lod0out = new ComputeBuffer(_MaxCount, TransformData.Size(), ComputeBufferType.Append);
@@ -469,11 +482,15 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
         //ComputeBuffer.CopyCount(lod2cascade3, argslod2cascade3, 4);
         ComputeBuffer.CopyCount(lod2out, argslod2, 4);
 
+        materialLOD0.SetVector("_PlanetOrigin", (Vector3)manager.quadSphere.FramePosition);
+        materialLOD1.SetVector("_PlanetOrigin", (Vector3)manager.quadSphere.FramePosition);
+        materialLOD2.SetVector("_PlanetOrigin", (Vector3)manager.quadSphere.FramePosition);
+
         //For debugging command buffers:
 
-        Graphics.DrawMeshInstancedIndirect(meshLod0, 0, materialLOD0, rendererBounds, argslod0, 0, null, ShadowCastingMode.On, true, 0, Camera.main);
-        Graphics.DrawMeshInstancedIndirect(meshLod1, 0, materialLOD1, rendererBounds, argslod1, 0, null, ShadowCastingMode.On, true, 0, Camera.main);
-        Graphics.DrawMeshInstancedIndirect(meshLod2, 0, materialLOD2, rendererBounds, argslod2, 0, null, ShadowCastingMode.Off, true, 0, Camera.main);
+        Graphics.DrawMeshInstancedIndirect(meshLod0, 0, materialLOD0, rendererBounds, argslod0, 0, null, shadowsLOD0, true, 0, Camera.main);
+        Graphics.DrawMeshInstancedIndirect(meshLod1, 0, materialLOD1, rendererBounds, argslod1, 0, null, shadowsLOD1, true, 0, Camera.main);
+        Graphics.DrawMeshInstancedIndirect(meshLod2, 0, materialLOD2, rendererBounds, argslod2, 0, null, shadowsLOD2, true, 0, Camera.main);
     }
     private void PrepareLOD0()
     {

@@ -21,6 +21,8 @@ public class ScatterShader : ICloneable
     public Dictionary<string, Color> colors = new Dictionary<string, Color>();
 
     public List<Texture2D> loadedTextures = new List<Texture2D>();
+
+    public Material material;   //This is used in the GUI for setting variables on the material, it just points to a reference of the material in Renderer
     // We want to be able to clone the template and assign its values on a scatter
     public object Clone()
     {
@@ -83,6 +85,7 @@ public class ScatterShader : ICloneable
             Debug.Log("Setting material property: " + color.Key + " = " + color.Value);
             material.SetColor(color.Key, color.Value);
         }
+        this.material = material;
         return material;
     }
     public void UnloadTextures()
@@ -202,6 +205,8 @@ public class ConfigLoader : MonoBehaviour
                     distribution._MaxScale = distributionNode.Element("maxScale").Value.ToVector3();
                     distribution._SizeJitterAmount = distributionNode.Element("sizeJitterAmount").Value.ToFloat();
                     distribution._Coverage = distributionNode.Element("coverage").Value.ToFloat();
+                    distribution._MinAltitude = distributionNode.Element("minAltitude").Value.ToFloat();
+                    distribution._MaxAltitude = distributionNode.Element("maxAltitude").Value.ToFloat();
                     thisScatter.distribution = distribution;
                     Debug.Log("Parsed distribution");
 
@@ -279,6 +284,9 @@ public class ConfigLoader : MonoBehaviour
         material._Mesh = materialNode.GetStringAttribute("mesh", "Assets/Models/Droo/Sphere.fbx");
 
         string shaderName = materialNode.GetStringAttribute("shader", "Custom/InstancedCutout");
+        string castShadows = materialNode.GetStringAttribute("castShadows", "True");
+        material.castShadows = castShadows.ToBoolean();
+
         Debug.Log("Using shader: " + shaderName);
         ScatterShader shader = shaderTemplates[shaderName].Clone() as ScatterShader;
 

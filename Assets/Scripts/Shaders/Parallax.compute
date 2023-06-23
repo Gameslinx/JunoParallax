@@ -27,6 +27,13 @@ float3 _MaxScale;
 float _SizeJitterAmount;
 float _SpawnChance;
 float _Coverage;
+float _MinAltitude;
+float _MaxAltitude;
+
+float3 _PlanetOrigin;
+float _PlanetRadius;
+
+uint _NumTris;
 
 [numthreads(32,1,1)]
 void Distribute (uint3 id : SV_DispatchThreadID)
@@ -40,7 +47,7 @@ void Distribute (uint3 id : SV_DispatchThreadID)
     uint index2 = Triangles[id.x * 3 + 1];
     uint index3 = Triangles[id.x * 3 + 2];
 
-    if (id.x <= 52 || id.x % 52 == 0 || id.x % 52 == 1 || id.x % 52 == 51 || id.x % 52 == 50) { return; } // Ignore skirts in the terrain quads
+    if (id.x <= 52 || id.x % 52 == 0 || id.x % 52 == 1 || id.x % 52 == 51 || id.x % 52 == 50 || id.x > _NumTris - 53) { return; } // Ignore skirts in the terrain quads
 
     float3 vert1 = Vertices[index1];
     float3 vert2 = Vertices[index2];
@@ -68,7 +75,10 @@ void Distribute (uint3 id : SV_DispatchThreadID)
         float noise = (((1 - sqrt(r1)) * noise1) + ((sqrt(r1) * (1 - r2)) * noise2) + ((r2 * sqrt(r1)) * noise3)) * 0.5 + 0.5;  //Get between 0 and 1
 
         // World position is used for context based parameters such as min/max altitude constraints
-        float3 worldPos = mul(_ObjectToWorldMatrix, localPos);
+        float3 worldPos = mul(_ObjectToWorldMatrix, float4(localPos, 1)).xyz;
+
+        // Get altitude above terrain
+        float altitudeASL = distance(_PlanetOrigin, worldPos) - _PlanetRadius;
 
         // Scale can depend entirely on the noise, a mixture of noise and random jitter, or entirely random independent of the distribution noise
         float r3 = Rand(float2(r2, r1) + _Seed);
@@ -85,7 +95,7 @@ void Distribute (uint3 id : SV_DispatchThreadID)
 
         float r4 = Rand(float2(r1, r2) + _Seed * 1.23133 + i);
 
-        if (noise > 1 - _Coverage && r4 < _SpawnChance)
+        if (noise > 1 - _Coverage && r4 < _SpawnChance && altitudeASL > _MinAltitude && altitudeASL < _MaxAltitude)
         {
             Positions.Append(output);
         }

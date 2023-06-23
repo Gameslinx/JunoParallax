@@ -17,12 +17,14 @@ public class ShaderViewer : MonoBehaviour
         Random.InitState(0);
         for (int i = 0; i < 100; i++)
         {
-            Vector3 pos = new Vector3(Random.value, Random.value, Random.value) - Vector3.one * 0.5f;
+            Vector3 pos = new Vector3(Random.value, 0, Random.value);
+            pos.x -= 0.5f;
+            pos.z -= 0.5f;
             pos *= 10;
             mat[i] = Matrix4x4.TRS(pos, Quaternion.identity, Vector3.one);
         }
 
-        mat = new Matrix4x4[] { Matrix4x4.TRS(Vector3.zero, Quaternion.identity, Vector3.one)};
+        //mat = new Matrix4x4[] { Matrix4x4.TRS(Vector3.zero, Quaternion.identity, Vector3.one)};
 
         uint[] args = new uint[5] { 0, 0, 0, 0, 0 };
         args[0] = (uint)mesh.GetIndexCount(0);
@@ -40,7 +42,7 @@ public class ShaderViewer : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        Graphics.DrawMeshInstancedIndirect(mesh, 0, material, bounds, argsBuffer, 0, null, UnityEngine.Rendering.ShadowCastingMode.Off, false);
+        Graphics.DrawMeshInstancedIndirect(mesh, 0, material, bounds, argsBuffer, 0, null, UnityEngine.Rendering.ShadowCastingMode.On, true);
     }
     private void OnDisable()
     {

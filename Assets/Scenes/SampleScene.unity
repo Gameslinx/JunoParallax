@@ -136,6 +136,7 @@ GameObject:
   - component: {fileID: 598224623}
   - component: {fileID: 598224622}
   - component: {fileID: 598224626}
+  - component: {fileID: 598224627}
   m_Layer: 0
   m_Name: Plane
   m_TagString: Untagged
@@ -234,11 +235,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3c6ea0aac7ff41c4d938d87c6560f770, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mesh: {fileID: 3324933167109718416, guid: 60fef65ecfc40fc48bb137ac1d2dad64, type: 3}
+  mesh: {fileID: -4669657605859110733, guid: b6a500cf72a9ded49bd2ea2d4d5e8724, type: 3}
   material: {fileID: 2100000, guid: 7a79bac22a0b7094e8a03e1b02e618bb, type: 2}
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 1000, y: 1000, z: 1000}
+--- !u!114 &598224627
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 598224621}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0dc151f35c2271648a87d6cd36f96e6d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &705507993
 GameObject:
   m_ObjectHideFlags: 0
@@ -410,8 +423,8 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 963194225}
-  m_LocalRotation: {x: 0.11019129, y: -0.69642156, z: 0.10953197, w: 0.7006124}
-  m_LocalPosition: {x: 8.403952, y: 2.7106118, z: -0.050422445}
+  m_LocalRotation: {x: 0.35199186, y: 0.0014098883, z: -0.0005601123, w: 0.9360019}
+  m_LocalPosition: {x: -0.2019488, y: 11.195883, z: -11.219681}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

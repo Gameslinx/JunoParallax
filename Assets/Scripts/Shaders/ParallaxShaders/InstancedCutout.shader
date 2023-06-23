@@ -55,6 +55,7 @@
 
                 o.pos = UnityObjectToClipPos(pos);
                 o.color = 1;//_Properties[instanceID].color;
+
                 o.uv = i.uv;
                 o.normal = i.normal;
                 o.worldNormal = normalize(mul(mat, i.normal));

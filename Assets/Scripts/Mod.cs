@@ -158,6 +158,9 @@ namespace Assets.Scripts
             GameObject.DontDestroyOnLoad(managerGO);
 
             ScatterManager manager = managerGO.AddComponent<ScatterManager>();
+            ParallaxGUI gui = manager.gameObject.AddComponent<ParallaxGUI>();
+            ParallaxGUI.manager = manager;
+
             Debug.Log("Planet name: " + e.Planet.PlanetNode.Name);
             ScatterBody body = ConfigLoader.bodies[e.Planet.PlanetNode.Name];
             Scatter[] scatters = body.scatters.Values.ToArray();
@@ -169,6 +172,7 @@ namespace Assets.Scripts
                 ScatterRenderer renderer = managerGO.AddComponent<ScatterRenderer>();
                 manager.scatterRenderers.Add(renderer);
                 renderer.scatter = scatter;
+                renderer.manager = manager;
                 renderer.Initialize();
                 scatterRenderers.Add(scatter, renderer);
             }

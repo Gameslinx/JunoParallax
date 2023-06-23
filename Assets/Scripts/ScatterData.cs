@@ -34,6 +34,10 @@ public class ScatterData
         this.scatter = scatter;
         this.renderer = renderer;
         _MaxCount = parent.triangleCount * scatter.distribution._PopulationMultiplier;
+        Start();
+    }
+    public void Start()
+    {
         InitializeShader();
         if (!scatter.inherits)
         {
@@ -86,6 +90,13 @@ public class ScatterData
         shader.SetVector("_MaxScale", scatter.distribution._MaxScale);
         shader.SetFloat("_SizeJitterAmount", scatter.distribution._SizeJitterAmount);
         shader.SetFloat("_Coverage", scatter.distribution._Coverage);
+        shader.SetFloat("_MinAltitude", scatter.distribution._MinAltitude);
+        shader.SetFloat("_MaxAltitude", scatter.distribution._MaxAltitude);
+        shader.SetMatrix("_ObjectToWorldMatrix", parent.quadToWorldMatrix);
+        shader.SetFloat("_PlanetRadius", (float)parent.quad.QuadSphere.PlanetData.Radius);
+        shader.SetVector("_PlanetOrigin", (Vector3)parent.quad.QuadSphere.FramePosition);
+
+        shader.SetInt("_NumTris", parent.triangleCount);
 
         positions.SetCounterValue(0);
     }

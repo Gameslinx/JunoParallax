@@ -30,7 +30,11 @@ public class ScatterManager : MonoBehaviour         //Manages scatters on a plan
             OnQuadUpdate(m);                         //Distance checks, recalculate matrix, etc
         }
     }
-
+    public Matrix4x4d RequestPlanetMatrixNow()
+    {
+        m.SetTRS(quadSphere.FramePosition, new Quaterniond(quadSphere.transform.parent.localRotation), Vector3.one);
+        return m;
+    }
     void OnDisable()
     {
         Debug.Log("Scatter manager disabled");

@@ -63,8 +63,8 @@ float3 Wind(float4x4 mat, float3 world_vertex, float localVertexHeight)
     }
                 
     float2 windSample = -tex2Dlod(_WindMap, float4(wind, 0, 0));
-
-    float3 positionOffset = mul(unity_ObjectToWorld, float3(windSample.x, 0, windSample.y));
+    
+    float3 positionOffset = mul(mat, float3(windSample.x, 0, windSample.y));
                 
     return sin(_WaveSpeed * positionOffset) * heightFactor;
 }

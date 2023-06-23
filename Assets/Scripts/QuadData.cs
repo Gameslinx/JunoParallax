@@ -49,8 +49,6 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
     public Matrix4x4 quadToWorldMatrix;
     public Vector3 planetNormal;
 
-    public ScatterManager manager;
-
     Guid planetID;
     bool eventsRegistered = false;
 
@@ -91,6 +89,9 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
 
         planetNormal = quad.SphereNormal.ToVector3();
 
+        // Request a planet matrix to construct quad to world matrix for determining world space positions in distribution shader (for min/max altitude constraints)
+        OnQuadDataUpdate(Mod.ParallaxInstance.scatterManagers[quad.QuadSphere.PlanetData.Id].RequestPlanetMatrixNow());
+
         for (int i = 0; i < Mod.Instance.activeScatters.Length; i++)
         {
             Scatter scatter = Mod.Instance.activeScatters[i];
@@ -118,7 +119,7 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
     }
     private void GetQuadToWorldMatrix(Matrix4x4d m)
     {
-        if (quad.RenderingData == null) { return; }
+        if (quad.RenderingData == null) { Debug.Log("Quad rendering data was null"); return; }
         Matrix4x4 mQuad = m.ToMatrix4x4();
         var qpos = quad.RenderingData.LocalPosition;
         mQuad.m03 = (float)((m.m00 * qpos.x) + (m.m01 * qpos.y) + (m.m02 * qpos.z) + m.m03);

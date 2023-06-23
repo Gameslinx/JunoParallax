@@ -16,6 +16,8 @@ public struct DistributionData
     public float _Range;
     public float _SizeJitterAmount;
     public float _Coverage;
+    public float _MinAltitude;
+    public float _MaxAltitude;
     public Vector3 _MinScale;
     public Vector3 _MaxScale;
     public LOD lod0;
@@ -39,6 +41,7 @@ public struct SubBiome
 public struct ScatterMaterial
 {
     public ScatterShader _Shader;
+    public bool castShadows;
     public string _Mesh;
 }
 public class ScatterNoise
