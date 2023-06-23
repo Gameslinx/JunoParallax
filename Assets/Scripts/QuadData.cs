@@ -3,9 +3,11 @@ using Assets.Scripts.Terrain;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Profiling;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
 
 public struct PositionData
 {
@@ -48,6 +50,9 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
 
     public Matrix4x4 quadToWorldMatrix;
     public Vector3 planetNormal;
+
+    public float quadHighestPoint = -1000000;
+    public float quadLowestPoint = 1000000;
 
     Guid planetID;
     bool eventsRegistered = false;
@@ -92,10 +97,18 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
         // Request a planet matrix to construct quad to world matrix for determining world space positions in distribution shader (for min/max altitude constraints)
         OnQuadDataUpdate(Mod.ParallaxInstance.scatterManagers[quad.QuadSphere.PlanetData.Id].RequestPlanetMatrixNow());
 
+        Profiler.BeginSample("Quad Altitude Range");
+        GetQuadAltitudeRange(vertexData);
+        Profiler.EndSample();
+
         for (int i = 0; i < Mod.Instance.activeScatters.Length; i++)
         {
             Scatter scatter = Mod.Instance.activeScatters[i];
-            data.Add(new ScatterData(this, scatter, Mod.ParallaxInstance.scatterRenderers[scatter]));
+            // Does the scatter lie in the given altitude range?
+            if (ScatterEligible(scatter))
+            {
+                data.Add(new ScatterData(this, scatter, Mod.ParallaxInstance.scatterRenderers[scatter]));
+            }
         }
 
         Profiler.EndSample();
@@ -140,6 +153,34 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
     private void GetCameraDistance()
     {
         sqrQuadCameraDistance = (worldSpacePosition - Camera.main.transform.position).sqrMagnitude;
+    }
+    private void GetQuadAltitudeRange(Vector3[] verts)
+    {
+        Vector3 worldSpaceVertex = Vector3.zero;
+        float altitude = 0;
+        Vector3 worldSpacePlanetPos = (Vector3)quad.QuadSphere.FramePosition;
+        float planetRadius = (float)quad.QuadSphere.PlanetData.Radius;
+        for (int i = 0; i < verts.Length; i++)
+        {
+            worldSpaceVertex = quadToWorldMatrix.MultiplyPoint(verts[i]);
+            altitude = Vector3.Distance(worldSpaceVertex, worldSpacePlanetPos) - planetRadius;
+            if (altitude > quadHighestPoint) { quadHighestPoint = altitude; }
+            if (altitude < quadLowestPoint) {  quadLowestPoint = altitude; }
+        }
+    }
+    // Min altitude or max altitude must be between quad min/max altitude, otherwise don't bother generating anything (quad is outside of scatter altitude bounds)
+    private bool ScatterEligible(Scatter scatter)
+    {
+        if (scatter.distribution._MaxAltitude < quadLowestPoint || scatter.distribution._MinAltitude > quadHighestPoint)
+        {
+            return false;
+        }
+        float maxNoise = scatter.noise[quad].noise.Max();
+        if (maxNoise == 0)
+        {
+            return false;
+        }
+        return true;
     }
     public void Cleanup()           //Clean up scatter data, then the quad data
     {

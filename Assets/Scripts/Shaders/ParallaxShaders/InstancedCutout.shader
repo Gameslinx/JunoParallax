@@ -119,7 +119,7 @@
                 pos.xyz += Wind(mat, world_vertex, v.vertex.y);
                 
                 o.pos = UnityObjectToClipPos(pos);
-                float clamped = min(o.pos.z, o.pos.w*UNITY_NEAR_CLIP_VALUE);
+                float clamped = min(o.pos.z, o.pos.w * UNITY_NEAR_CLIP_VALUE);
                 o.pos.z = lerp(o.pos.z, clamped, unity_LightShadowBias.y);
                 o.uv = v.uv;
                 o.color = 1;//_Properties[instanceID].color;
