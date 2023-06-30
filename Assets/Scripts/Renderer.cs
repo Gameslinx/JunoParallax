@@ -1,5 +1,6 @@
 using Assets.Scripts;
 using Assets.Scripts.Flight.GameView.Cameras;
+using Assets.Scripts.PlanetStudio.Flyouts.CelestialBodyProperties;
 using ModApi.Flight;
 using ModApi.Scenes;
 using ModApi.Scenes.Events;
@@ -56,9 +57,9 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
     ComputeBuffer argslod2cascade3;
     ComputeBuffer argslod2;
 
-    ComputeBuffer lod0out;
-    ComputeBuffer lod1out;
-    ComputeBuffer lod2out;
+    public ComputeBuffer lod0out;
+    public ComputeBuffer lod1out;
+    public ComputeBuffer lod2out;
 
     ComputeBuffer dispatchArgsLOD0;
     ComputeBuffer dispatchArgsLOD1;
@@ -69,15 +70,14 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
     ComputeBuffer maxCountLOD2;
 
     int countKernelLOD0;
-    int lod0kernel;
+    public int lod0kernel;
 
     int countKernelLOD1;
-    int lod1kernel;
+    public int lod1kernel;
 
     int countKernelLOD2;
-    int lod2kernel;
+    public int lod2kernel;
 
-    int _MaxCountPerQuad;
     int _MaxCount;
 
     public delegate void EvaluatePositions();
@@ -235,10 +235,9 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
         lod1kernel = shader.FindKernel("EvaluateCascadesLOD1");
         lod2kernel = shader.FindKernel("EvaluateCascadesLOD2");
 
-        _MaxCountPerQuad = 1352 * scatter.distribution._PopulationMultiplier;   //Triangle count * pop mult
-        _MaxCount = _MaxCountPerQuad * 100;                                         //~450 max level quads loaded at once - Configure this
+        _MaxCount = scatter.maxObjectsToRender;     //Triangle count * pop mult
 
-        rendererBounds = new Bounds(Vector3.zero, Vector3.one * 5000);
+        rendererBounds = new Bounds(Vector3.zero, Vector3.one * 100000);
 
         lod0cascade0 = new ComputeBuffer(1, TransformData.Size(), ComputeBufferType.Append);
         lod0cascade1 = new ComputeBuffer(1, TransformData.Size(), ComputeBufferType.Append);

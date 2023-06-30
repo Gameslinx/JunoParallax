@@ -19,9 +19,6 @@ public class InputFields
     private static float activeSliderFieldLastValue = 0;
     private static string activeSliderFieldString = "";
 
-    private static string activeVectorXString = "";
-    private static string activeVectorYString = "";
-    private static string activeVectorZString = "";
     private static float activeVectorXStringLV = 0;
     private static float activeVectorYStringLV = 0;
     private static float activeVectorZStringLV = 0;

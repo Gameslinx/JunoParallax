@@ -54,6 +54,8 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
     public float quadHighestPoint = -1000000;
     public float quadLowestPoint = 1000000;
 
+    public bool cleaned = true;
+
     Guid planetID;
     bool eventsRegistered = false;
 
@@ -111,6 +113,8 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
             }
         }
 
+        cleaned = false;
+
         Profiler.EndSample();
     }
     public float GetQuadDiagLength()
@@ -160,7 +164,8 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
         float altitude = 0;
         Vector3 worldSpacePlanetPos = (Vector3)quad.QuadSphere.FramePosition;
         float planetRadius = (float)quad.QuadSphere.PlanetData.Radius;
-        for (int i = 0; i < verts.Length; i++)
+        // Iterating over all vertices is expensive, so approximate the altitude guess by iterating every 17 verts
+        for (int i = 0; i < verts.Length; i += 17)
         {
             worldSpaceVertex = quadToWorldMatrix.MultiplyPoint(verts[i]);
             altitude = Vector3.Distance(worldSpaceVertex, worldSpacePlanetPos) - planetRadius;
@@ -171,23 +176,32 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
     // Min altitude or max altitude must be between quad min/max altitude, otherwise don't bother generating anything (quad is outside of scatter altitude bounds)
     private bool ScatterEligible(Scatter scatter)
     {
+        if (quad.SubdivisionLevel < scatter.minimumSubdivision)
+        {
+            // Scatter can never appear on this subdivision level
+            return false;
+        }
         if (scatter.distribution._MaxAltitude < quadLowestPoint || scatter.distribution._MinAltitude > quadHighestPoint)
         {
             return false;
         }
-        float maxNoise = scatter.noise[quad].noise.Max();
-        if (maxNoise == 0)
+        // Pick 3 points on a quad to sample the noise. Not hugely accurate but good enough
+        float noiseSample = scatter.noise[quad].noise[0] + scatter.noise[quad].noise[28] + scatter.noise[quad].noise[700];
+        // Absolutely no noise on this quad
+        if (noiseSample == 0)
         {
             return false;
         }
         return true;
     }
-    public void Cleanup()           //Clean up scatter data, then the quad data
+    public void Cleanup()           // Clean up scatter data, then the quad data
     {
+        if (cleaned) { return; }
         foreach (ScatterData scatterData in data)
         {
             scatterData.Cleanup();
         }
+        data.Clear();
         vertices?.Release();
         normals?.Release();
         triangles?.Release();
@@ -197,5 +211,6 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
             Mod.ParallaxInstance.scatterManagers[planetID].OnQuadUpdate -= OnQuadDataUpdate;
             eventsRegistered = false;
         }
+        cleaned = true;
     }
 }

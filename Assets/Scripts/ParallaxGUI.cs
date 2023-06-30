@@ -9,7 +9,8 @@ using static ModApi.Utilities;
 enum ChangeType
 {
     Distribution,
-    Material
+    Material,
+    Renderer
 }
 public class ParallaxGUI : MonoBehaviour
 {
@@ -58,11 +59,48 @@ public class ParallaxGUI : MonoBehaviour
             {
 
             }
+            if (currentChangeType == ChangeType.Renderer)
+            {
+                ScatterRenderer renderer = manager.scatterRenderers.Where(x => x.scatter.DisplayName == currentScatter.DisplayName).First();
+                renderer.scatter.maxObjectsToRender = currentScatter.maxObjectsToRender;
+
+                renderer.Cleanup();
+                renderer.Initialize();
+
+                foreach (KeyValuePair<QuadScript, QuadData> data in Mod.ParallaxInstance.quadData)
+                {
+                    foreach (ScatterData scatterData in data.Value.data)
+                    {
+                        if (scatterData.scatter.DisplayName == currentScatter.DisplayName)
+                        {
+                            scatterData.lod0 = renderer.lod0;
+                            scatterData.lod1 = renderer.lod1;
+                            scatterData.lod2 = renderer.lod2;
+                        }
+                    }
+                }
+
+                //renderer.lod0out.Release();
+                //renderer.lod1out.Release();
+                //renderer.lod2out.Release();
+                //
+                //renderer.lod0out = new ComputeBuffer(renderer.scatter.maxObjectsToRender, TransformData.Size(), ComputeBufferType.Append);
+                //renderer.lod1out = new ComputeBuffer(renderer.scatter.maxObjectsToRender, TransformData.Size(), ComputeBufferType.Append);
+                //renderer.lod2out = new ComputeBuffer(renderer.scatter.maxObjectsToRender, TransformData.Size(), ComputeBufferType.Append);
+                //
+                //renderer.materialLOD0.SetBuffer("_Properties", renderer.lod0out);
+                //renderer.materialLOD1.SetBuffer("_Properties", renderer.lod1out);
+                //renderer.materialLOD2.SetBuffer("_Properties", renderer.lod2out);
+                //
+                //renderer.shader.SetBuffer(renderer.lod0kernel, "LOD0OUT", renderer.lod0out);
+                //renderer.shader.SetBuffer(renderer.lod1kernel, "LOD10OUT", renderer.lod1out);
+                //renderer.shader.SetBuffer(renderer.lod2kernel, "LOD2OUT", renderer.lod2out);
+            }
         }
     }
     private void OnGUI()
     {
-        if (visible) { return; }
+        if (!visible) { return; }
         window = GUILayout.Window(GetInstanceID(), window, DrawWindow, "Parallax Configurator");
     }
     static void DrawWindow(int windowID)
@@ -144,7 +182,10 @@ public class ParallaxGUI : MonoBehaviour
                 ShowMaterial(currentScatter.distribution.lod1.material, MaterialType.LOD2);
             }
         }
-        
+
+        // Debug
+
+        currentScatter.maxObjectsToRender = (int)TextAreaLabelSlider("[DEBUG] Max Objects to Render", currentScatter.maxObjectsToRender, 1, 100000, ChangeType.Renderer);
 
         GUILayout.EndVertical();
         UnityEngine.GUI.DragWindow();
@@ -226,7 +267,19 @@ public class ParallaxGUI : MonoBehaviour
     //    
     //}
     // Utils
+    private static float TextAreaLabelSlider(string label, float value, float min, float max, ChangeType type)
+    {
+        //GUILayout.BeginHorizontal();
+        float newValue = InputFields.SliderField(label, value, min, max);
+        //GUILayout.EndHorizontal();
+        if (newValue != value)
+        {
+            anyValueHasChanged = true;
+            currentChangeType = type;
+        }
 
+        return newValue;
+    }
     private static string TextAreaLabelString(string label, string value, ChangeType type)
     {
         GUILayout.BeginHorizontal();

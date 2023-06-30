@@ -80,6 +80,11 @@ public class Scatter
 
     public float sqrRange = 0;
 
+    // No use adding scatters to quads that will always be out of range. This value is 100 by default, and set by ScatterManager
+    public int minimumSubdivision = 100;
+
+    public int maxObjectsToRender = 0;
+
     public string Id { get; }
     public string DisplayName { get; }
     public string DistributionQuadId { get; }

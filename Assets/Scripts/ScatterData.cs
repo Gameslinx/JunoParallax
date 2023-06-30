@@ -67,13 +67,16 @@ public class ScatterData
     public void InitializeDistribute()
     {
         //Initialize Generation - Skipped if this scatter inherits from another
+        int subdivisionDifference = parent.quad.QuadSphere.MaxSubdivisionLevel - parent.quad.SubdivisionLevel;
+        int populationFactor = (int)Mathf.Pow(2, subdivisionDifference);    //This should be 4^subDiff to get the exact same density, but it looks weird when changing quads, so artificially lower it
+        _MaxCount *= populationFactor;
 
         distribution = new ComputeBuffer(parent.vertexCount, sizeof(float), ComputeBufferType.Structured);
         noise = new ComputeBuffer(parent.vertexCount, sizeof(float), ComputeBufferType.Structured);
         positions = new ComputeBuffer(_MaxCount, PositionData.Size(), ComputeBufferType.Append);
 
         distribution.SetData(scatter.noise[parent.quad].distribution);
-        noise.SetData(scatter.noise[parent.quad].noise);    //If the scatter inherits noise from another scatter, this is the parent scatter noise and not noise generated for this scatter
+        noise.SetData(scatter.noise[parent.quad].noise);    // If the scatter inherits noise from another scatter, this is the parent scatter noise and not noise generated for this scatter
 
         shader.SetBuffer(distributeKernel, "Vertices", parent.vertices);
         shader.SetBuffer(distributeKernel, "Triangles", parent.triangles);
@@ -82,9 +85,12 @@ public class ScatterData
         shader.SetBuffer(distributeKernel, "Noise", noise);
         shader.SetBuffer(distributeKernel, "Positions", positions);
 
+        // Quads subdivide into 4 quads, so in order for a lesser subdivided quad to have the same number of trees (and maintain a constant scatter density), increase its pop mult by 4
+        
+
         shader.SetInt("_MaxCount", _MaxCount);
         shader.SetFloat("_Seed", 1);
-        shader.SetInt("_PopulationMultiplier", scatter.distribution._PopulationMultiplier);
+        shader.SetInt("_PopulationMultiplier", scatter.distribution._PopulationMultiplier * populationFactor);
         shader.SetFloat("_SpawnChance", scatter.distribution._SpawnChance);
         shader.SetVector("_MinScale", scatter.distribution._MinScale);
         shader.SetVector("_MaxScale", scatter.distribution._MaxScale);

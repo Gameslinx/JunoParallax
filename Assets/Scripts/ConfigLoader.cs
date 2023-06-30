@@ -99,10 +99,22 @@ public class ScatterShader : ICloneable
         Debug.Log("Textures unloaded");
     }
 }
+public static class ParallaxSettings
+{
+    public static float rangeMultiplier = 1;
+    public static float densityMultiplier = 1;
+    public static float lodChangeMultiplier = 1;
+    public static bool castShadows = true;
+    public static bool receiveShadows = true;
+
+    public static bool enableColliders = false;
+    public static int computeShaderMemory = 2048;
+}
 public class ConfigLoader : MonoBehaviour
 {
     public static XElement shaderBank;
     public static XElement[] configs;
+    public static XElement settings;
     public static Dictionary<string, ScatterBody> bodies = new Dictionary<string, ScatterBody>();
     public static Dictionary<string, ScatterShader> shaderTemplates = new Dictionary<string, ScatterShader>();
 
@@ -162,6 +174,20 @@ public class ConfigLoader : MonoBehaviour
             Debug.Log(" - Parsed " + shader.Name);
         }
     }
+    public static void LoadSettings(string directoryPath)
+    {
+        settings = Directory.GetFiles(directoryPath, "ParallaxSettings.xml").Select(filePath => XElement.Load(filePath)).First();
+        XElement qualityNode = settings.Element("QualitySettings");
+        ParallaxSettings.rangeMultiplier = qualityNode.Element("scatterRangeMultiplier").Value.ToFloat();
+        ParallaxSettings.densityMultiplier = qualityNode.Element("scatterDensityMultiplier").Value.ToFloat();
+        ParallaxSettings.lodChangeMultiplier = qualityNode.Element("scatterLODChangeDistanceMultiplier").Value.ToFloat();
+        ParallaxSettings.castShadows = qualityNode.Element("castShadows").Value.ToBoolean();
+        ParallaxSettings.receiveShadows = qualityNode.Element("receiveShadows").Value.ToBoolean();
+
+        XElement generalNode = settings.Element("GeneralSettings");
+        ParallaxSettings.enableColliders = generalNode.Element("enableColliders").Value.ToBoolean();
+        ParallaxSettings.computeShaderMemory = generalNode.Element("memoryReservedForComputeShaders").Value.ToInt();
+    }
     public static void LoadConfigs(string directoryPath)
     {
         // Load all configs
@@ -194,6 +220,9 @@ public class ConfigLoader : MonoBehaviour
                     thisScatter.inherits = inheritsFrom == null ? false : true;
                     thisScatter.inheritsFrom = inheritsFrom == null ? "" : inheritsFrom.Value;
 
+                    XElement maxObjectsToRender = scatter.Element("maxObjects");
+                    thisScatter.maxObjectsToRender = maxObjectsToRender == null ? 1000 : maxObjectsToRender.Value.ToInt();
+
                     DistributionData distribution = new DistributionData();
 
                     // Parse distribution node
@@ -207,6 +236,7 @@ public class ConfigLoader : MonoBehaviour
                     distribution._Coverage = distributionNode.Element("coverage").Value.ToFloat();
                     distribution._MinAltitude = distributionNode.Element("minAltitude").Value.ToFloat();
                     distribution._MaxAltitude = distributionNode.Element("maxAltitude").Value.ToFloat();
+
                     thisScatter.distribution = distribution;
                     Debug.Log("Parsed distribution");
 

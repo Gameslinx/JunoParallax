@@ -11,22 +11,34 @@ using UnityEngine.Profiling;
 public static class TextureLoader
 {
     public static string assetPath;
+    // Textures that are loaded - no need to load the same one from disk twice if it has already been loaded
+    public static Dictionary<string, Texture2D> activeTextures = new Dictionary<string, Texture2D>();
     public static void Initialize(string path)
     {
         assetPath = path;
     }
     public static Texture2D LoadTexture(string filePath)
     {
-        
         string path = assetPath + "/" + filePath;
         Debug.Log("Loading texture from disk at " + path);
+        if (activeTextures.ContainsKey(filePath))
+        {
+            Debug.Log(" - This texture is already loaded :)");
+            return activeTextures[filePath];
+        }
+        
+        
         if (filePath.EndsWith(".png"))
         {
-            return LoadPNG(path);
+            Texture2D tex = LoadPNG(path);
+            activeTextures.Add(filePath, tex);
+            return tex;
         }
         else if (filePath.EndsWith(".dds"))
         {
-            return LoadDDS(path);
+            Texture2D tex = LoadDDS(path);
+            activeTextures.Add(filePath, tex);
+            return tex;
         }
         else
         {

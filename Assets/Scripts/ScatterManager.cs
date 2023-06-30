@@ -1,7 +1,11 @@
 using Assets.Scripts;
 using Assets.Scripts.Terrain;
+using ModApi.Planet;
+using ModApi.Settings.Core;
+using ModApi.Settings.Core.Events;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class ScatterManager : MonoBehaviour         //Manages scatters on a planet
@@ -11,6 +15,10 @@ public class ScatterManager : MonoBehaviour         //Manages scatters on a plan
     public QuadUpdate OnQuadUpdate;
     public QuadSphereScript quadSphere;
     public Matrix4x4d m = new Matrix4x4d();
+    public IPlanet planet;
+
+    public float splitDist;
+    public float[] lodDistances;
 
     void OnEnable()
     {
@@ -21,7 +29,6 @@ public class ScatterManager : MonoBehaviour         //Manages scatters on a plan
         }
         //scatterRenderer?.Initialize();             //OnEnable can be called before the renderer is assigned, in which case the renderer is manually initialized
     }
-
     void Update()
     {
         m.SetTRS(quadSphere.FramePosition, new Quaterniond(quadSphere.transform.parent.localRotation), Vector3.one);    //Responsible for computing quadToWorld matrix
@@ -49,6 +56,10 @@ public class ScatterManager : MonoBehaviour         //Manages scatters on a plan
         foreach (QuadData quad in Mod.Instance.quadData.Values)     //I kinda wanna change this, it's a bit hacky
         {
             quad.Cleanup();
+        }
+        foreach (ScatterRenderer renderer in scatterRenderers)
+        {
+            renderer.Cleanup();
         }
     }
 }
