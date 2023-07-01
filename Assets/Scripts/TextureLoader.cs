@@ -118,5 +118,12 @@ public static class TextureLoader
         Profiler.EndSample();
         return (texture);
     }
-    
+    public static void UnloadAll()
+    {
+        foreach (KeyValuePair<string, Texture2D> texture in activeTextures)
+        {
+            UnityEngine.Object.Destroy(texture.Value);
+        }
+        activeTextures.Clear();
+    }
 }

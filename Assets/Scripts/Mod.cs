@@ -291,6 +291,8 @@ namespace Assets.Scripts
             managerGO.transform.SetParent(e.QuadSphere.Transform);
             quadSphereIsLoading = false;
         }
+        QuadData parentQuadDataCreate;
+        QuadData parentQuadDataUnload;
         private void OnCreateQuadCompleted(object sender, CreateQuadScriptEventArgs e) 
         {
             if (e.Quad.RenderingData.TerrainMesh == null || e.Quad.SubdivisionLevel < e.QuadSphere.MaxSubdivisionLevel - 2) 
@@ -302,13 +304,12 @@ namespace Assets.Scripts
             // If quad has just subdivided, clean up parent data:
             if (quadData.ContainsKey(e.Quad.Parent) && e.Quad.Parent.Children[0] == e.Quad)
             {
-                QuadData parentQuadData = quadData[e.Quad.Parent];
-                parentQuadData.Cleanup();
+                parentQuadDataCreate = quadData[e.Quad.Parent];
+                parentQuadDataCreate.Cleanup();
             }
 
-            QuadData qd = quadData[e.Quad];
-            qd.RegisterEvents();
-            qd.Initialize();
+            quadData[e.Quad].RegisterEvents();
+            quadData[e.Quad].Initialize();
             //QuadData qd = new QuadData(e.Quad);
             //quadData.Add(e.Quad, qd);
             Profiler.EndSample();
@@ -324,10 +325,10 @@ namespace Assets.Scripts
                 // We need to check if the quad is the first in the parent children. That way, we can avoid initializing the data 4 times (each quad under a parent will unload together)
                 if (e.Quad.Parent.Children[0] == e.Quad)
                 {
-                    QuadData parentQuadData = quadData[e.Quad.Parent];
+                    parentQuadDataUnload = quadData[e.Quad.Parent];
                     // This can be optimized - don't need to completely reinitialize (or clean) the quad. For a future push
-                    parentQuadData.RegisterEvents();
-                    parentQuadData.Initialize();
+                    parentQuadDataUnload.RegisterEvents();
+                    parentQuadDataUnload.Initialize();
                 }
             }
             Profiler.EndSample();

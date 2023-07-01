@@ -49,6 +49,7 @@ public class ScatterManager : MonoBehaviour         //Manages scatters on a plan
         {
             renderer.Cleanup();
         }
+        TextureLoader.UnloadAll();
     }
     private void OnDestroy()
     {
@@ -61,5 +62,6 @@ public class ScatterManager : MonoBehaviour         //Manages scatters on a plan
         {
             renderer.Cleanup();
         }
+        TextureLoader.UnloadAll();
     }
 }

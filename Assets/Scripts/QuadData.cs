@@ -68,13 +68,13 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
     }
     public void RegisterEvents()
     {
-        Mod.ParallaxInstance.scatterManagers[quad.QuadSphere.PlanetData.Id].OnQuadUpdate += OnQuadDataUpdate;
+        planetID = quad.QuadSphere.PlanetData.Id;
+        Mod.ParallaxInstance.scatterManagers[planetID].OnQuadUpdate += OnQuadDataUpdate;
         eventsRegistered = true;
     }
     public void Initialize()        //Initialize buffers, then scatters
     {
         Profiler.BeginSample("Initialize QuadData");
-        planetID = quad.QuadSphere.PlanetData.Id;
         quadDiagLength = GetQuadDiagLength();
         sqrHalfQuadDiagLength = (quadDiagLength / 2.0f) * (quadDiagLength / 2.0f);
         bounds.size = Vector3.one * quadDiagLength;
@@ -94,10 +94,10 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
         triangles.SetData(triangleData);
         normals.SetData(normalData);
 
-        planetNormal = quad.SphereNormal.ToVector3();
+        planetNormal = (Vector3)quad.SphereNormal;
 
         // Request a planet matrix to construct quad to world matrix for determining world space positions in distribution shader (for min/max altitude constraints)
-        OnQuadDataUpdate(Mod.ParallaxInstance.scatterManagers[quad.QuadSphere.PlanetData.Id].RequestPlanetMatrixNow());
+        OnQuadDataUpdate(Mod.ParallaxInstance.scatterManagers[planetID].RequestPlanetMatrixNow());
 
         Profiler.BeginSample("Quad Altitude Range");
         GetQuadAltitudeRange(vertexData);
@@ -121,12 +121,15 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
     {
         // Planet starts out as a cube sphere, radius r, where the circumference is divided up into 4 (4 sides of cube ignoring top and bottom)
         // So quad horizontal width is a function of maxLevel and planet radius
-        float circumference = Mathf.PI * (float)quad.QuadSphere.PlanetData.Radius * 2.0f;
-        float initialQuadWidth = circumference / 4.0f;
-        float finalQuadWidth = initialQuadWidth / Mathf.Pow(2.0f, (float)quad.QuadSphere.MaxSubdivisionLevel);
+        //float circumference = Mathf.PI * (float)quad.QuadSphere.PlanetData.Radius * 2.0f;
+        //float initialQuadWidth = circumference / 4.0f;
+        //float finalQuadWidth = initialQuadWidth / Mathf.Pow(2.0f, (float)quad.QuadSphere.MaxSubdivisionLevel);
         // Cheeky pythagoras
-        finalQuadWidth = Mathf.Sqrt(finalQuadWidth * finalQuadWidth + finalQuadWidth * finalQuadWidth);
-        return finalQuadWidth;
+        //finalQuadWidth = Mathf.Sqrt(finalQuadWidth * finalQuadWidth + finalQuadWidth * finalQuadWidth);
+
+        float fqw = ((Mathf.PI * (float)quad.QuadSphere.PlanetData.Radius * 2.0f) / 4f) / (Mathf.Pow(2.0f, quad.QuadSphere.MaxSubdivisionLevel));
+
+        return Mathf.Sqrt(fqw * fqw + fqw * fqw);
     }
     void OnQuadDataUpdate(Matrix4x4d m)         //Occurs every time before EvaluatePositions is called on ScatterData
     {

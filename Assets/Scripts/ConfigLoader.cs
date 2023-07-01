@@ -20,20 +20,14 @@ public class ScatterShader : ICloneable
     public Dictionary<string, Vector2> scales = new Dictionary<string, Vector2>();
     public Dictionary<string, Color> colors = new Dictionary<string, Color>();
 
-    public List<Texture2D> loadedTextures = new List<Texture2D>();
-
     public Material material;   //This is used in the GUI for setting variables on the material, it just points to a reference of the material in Renderer
     // We want to be able to clone the template and assign its values on a scatter
     public object Clone()
     {
-        if (loadedTextures.Count != 0)
-        {
-            Debug.Log("[Exception] WARNING - Creating a deep clone of a ScatterShader with textures loaded! NOT recommended");
-        }
         var clone = new ScatterShader();
         clone.name = name;
         clone.resourceName = resourceName;
-        foreach (var texture in textures )
+        foreach (var texture in textures)
         {
             clone.textures.Add(texture.Key, texture.Value);
         }
@@ -60,7 +54,6 @@ public class ScatterShader : ICloneable
         foreach (KeyValuePair<string, string> texture in textures)
         {
             Texture2D tex = TextureLoader.LoadTexture(texture.Value);
-            loadedTextures.Add(tex);
 
             Debug.Log("Setting material property: " + texture.Key + " = " + texture.Value);
             material.SetTexture(texture.Key, tex);
@@ -87,16 +80,6 @@ public class ScatterShader : ICloneable
         }
         this.material = material;
         return material;
-    }
-    public void UnloadTextures()
-    {
-        Debug.Log("Unloading textures");
-        foreach (Texture2D texture in loadedTextures)
-        {
-            UnityEngine.Object.Destroy(texture);
-        }
-        loadedTextures.Clear();
-        Debug.Log("Textures unloaded");
     }
 }
 public static class ParallaxSettings

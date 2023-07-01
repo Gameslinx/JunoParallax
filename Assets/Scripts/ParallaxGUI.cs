@@ -64,6 +64,7 @@ public class ParallaxGUI : MonoBehaviour
                 ScatterRenderer renderer = manager.scatterRenderers.Where(x => x.scatter.DisplayName == currentScatter.DisplayName).First();
                 renderer.scatter.maxObjectsToRender = currentScatter.maxObjectsToRender;
 
+                TextureLoader.UnloadAll();
                 renderer.Cleanup();
                 renderer.Initialize();
 
