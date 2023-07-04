@@ -34,7 +34,6 @@ public class ScatterData
         this.scatter = scatter;
         this.renderer = renderer;
         _MaxCount = parent.triangleCount * scatter.distribution._PopulationMultiplier;
-        Start();
     }
     public void Start()
     {
@@ -64,16 +63,16 @@ public class ScatterData
         countKernel = shader.FindKernel("DetermineCount");
         evaluateKernel = shader.FindKernel("Evaluate");
     }
+    int populationFactor = 0;
     public void InitializeDistribute()
     {
         //Initialize Generation - Skipped if this scatter inherits from another
-        int subdivisionDifference = parent.quad.QuadSphere.MaxSubdivisionLevel - parent.quad.SubdivisionLevel;
-        int populationFactor = (int)Mathf.Pow(2, subdivisionDifference);    //This should be 4^subDiff to get the exact same density, but it looks weird when changing quads, so artificially lower it
+        populationFactor = (int)Mathf.Pow(2, parent.quad.QuadSphere.MaxSubdivisionLevel - parent.quad.SubdivisionLevel);
         _MaxCount *= populationFactor;
 
-        distribution = new ComputeBuffer(parent.vertexCount, sizeof(float), ComputeBufferType.Structured);
-        noise = new ComputeBuffer(parent.vertexCount, sizeof(float), ComputeBufferType.Structured);
-        positions = new ComputeBuffer(_MaxCount, PositionData.Size(), ComputeBufferType.Append);
+        distribution = new ComputeBuffer(parent.vertexCount, 4, ComputeBufferType.Structured);
+        noise = new ComputeBuffer(parent.vertexCount, 4, ComputeBufferType.Structured);
+        positions = new ComputeBuffer(_MaxCount, 28, ComputeBufferType.Append);
 
         distribution.SetData(scatter.noise[parent.quad].distribution);
         noise.SetData(scatter.noise[parent.quad].noise);    // If the scatter inherits noise from another scatter, this is the parent scatter noise and not noise generated for this scatter
@@ -138,8 +137,8 @@ public class ScatterData
     }
     private void ComputeDispatchArgs()  //Determine dispatch args and store them on the GPU
     {
-        dispatchArgs = new ComputeBuffer(1, sizeof(uint) * 3, ComputeBufferType.IndirectArguments);
-        objectLimits = new ComputeBuffer(1, sizeof(uint) * 3, ComputeBufferType.IndirectArguments);     //IndirectArgs must be size 3 at least
+        dispatchArgs = new ComputeBuffer(1, 12, ComputeBufferType.IndirectArguments);
+        objectLimits = new ComputeBuffer(1, 12, ComputeBufferType.IndirectArguments);     //IndirectArgs must be size 3 at least
         uint[] indirectArgs = { 1, 1, 1 };
         dispatchArgs.SetData(indirectArgs);
         objectLimits.SetData(indirectArgs);
@@ -155,12 +154,22 @@ public class ScatterData
         // Don't evaluate quads uninitialized, invisible or out of range
         if (!ready) { return; }
         if (!parent.isVisible) { return; }
-        if (parent.sqrQuadCameraDistance > scatter.sqrRange + (parent.quadDiagLength * parent.quadDiagLength)) { return; }  //There's a chance this is wrong :)
+        if (parent.sqrQuadCameraDistance > scatter.sqrRange + (parent.quadDiagLength * parent.quadDiagLength)) { return; }
         shader.SetMatrix("_ObjectToWorldMatrix", parent.quadToWorldMatrix);
         shader.SetFloats("_CameraFrustumPlanes", Utils.planeNormals);
         shader.SetVector("_WorldSpaceCameraPosition", Camera.main.transform.position);
         shader.SetVector("_PlanetNormal", parent.planetNormal);
         shader.DispatchIndirect(evaluateKernel, dispatchArgs);
+    }
+    public void Pause()
+    {
+        renderer.OnEvaluatePositions -= EvaluatePositions;
+        //ShaderPool.Return(shader);
+    }
+    public void Resume()
+    {
+        renderer.OnEvaluatePositions += EvaluatePositions;
+        //shader = ShaderPool.Retrieve();
     }
     public void Cleanup()
     {

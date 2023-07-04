@@ -487,9 +487,9 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
 
         //For debugging command buffers:
 
-        Graphics.DrawMeshInstancedIndirect(meshLod0, 0, materialLOD0, rendererBounds, argslod0, 0, null, shadowsLOD0, true, 29, Camera.main);
-        Graphics.DrawMeshInstancedIndirect(meshLod1, 0, materialLOD1, rendererBounds, argslod1, 0, null, shadowsLOD1, true, 29, Camera.main);
-        Graphics.DrawMeshInstancedIndirect(meshLod2, 0, materialLOD2, rendererBounds, argslod2, 0, null, shadowsLOD2, true, 29, Camera.main);
+        Graphics.DrawMeshInstancedIndirect(meshLod0, 0, materialLOD0, rendererBounds, argslod0, 0, null, ShadowCastingMode.Off, false, 29, Camera.main);
+        Graphics.DrawMeshInstancedIndirect(meshLod1, 0, materialLOD1, rendererBounds, argslod1, 0, null, ShadowCastingMode.Off, false, 29, Camera.main);
+        Graphics.DrawMeshInstancedIndirect(meshLod2, 0, materialLOD2, rendererBounds, argslod2, 0, null, ShadowCastingMode.Off, false, 29, Camera.main);
     }
     private void PrepareLOD0()
     {

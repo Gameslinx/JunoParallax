@@ -36,6 +36,11 @@ public class ScatterManager : MonoBehaviour         //Manages scatters on a plan
         {
             OnQuadUpdate(m);                         //Distance checks, recalculate matrix, etc
         }
+        // Hacky as all hell but... seems to work?
+        if (Camera.main.farClipPlane < 10000)
+        {
+            Camera.main.farClipPlane = 10000;
+        }
     }
     public Matrix4x4d RequestPlanetMatrixNow()
     {

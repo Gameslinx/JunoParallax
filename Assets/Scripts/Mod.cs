@@ -177,6 +177,11 @@ namespace Assets.Scripts
         private void OnQuadSphereLoading(object sender, PlanetQuadSphereEventArgs e)
         {
             Debug.Log("Sphere loading: " + e.Planet.PlanetNode.Name);
+            if (!ConfigLoader.bodies.ContainsKey(e.Planet.PlanetNode.Name))
+            {
+                Debug.Log(" - This is not a Parallax body");
+                return;
+            }
             quadSphereIsLoading = true;
             // TEMPORARY
             if (scatterObjects.ContainsKey(e.Planet.PlanetData.Id))
@@ -216,6 +221,11 @@ namespace Assets.Scripts
         private void OnQuadSphereUnloading(object sender, PlanetQuadSphereEventArgs e)
         {
             Debug.Log("Sphere unloading: " + e.Planet.PlanetNode.Name);
+            if (!ConfigLoader.bodies.ContainsKey(e.Planet.PlanetNode.Name))
+            {
+                Debug.Log(" - This is not a Parallax body");
+                return;
+            }
             quadSphereIsUnloading = true;
             Guid id = e.Planet.PlanetData.Id;
             if (!scatterObjects.ContainsKey(id))
@@ -250,29 +260,29 @@ namespace Assets.Scripts
             quadSphereIsUnloading = false;
             Debug.Log("Quad sphere unloaded: " + e.Planet.PlanetData.Name);
         }
-        public Scatter[] activeScatters;   //Scatters that are currently active right now - This holds every scatter on the current planet
+        public Scatter[] activeScatters = new Scatter[0];   //Scatters that are currently active right now - This holds every scatter on the current planet
         private void OnCreateQuadStarted(object sender, CreateQuadScriptEventArgs e)
         {
             Profiler.BeginSample("OnCreateQuadStarted (Parallax)");
             CreateQuadData data = e.CreateQuadData;
-
+            ScatterNoise sn;
             for (int i = 0; i < activeScatters.Length; i++)
             {
-                float[] dummyNoise = activeScatters[i].GetNoiseData(data);
-                float[] dummyDistribution = activeScatters[i].GetDistributionData(data);
-
-                ScatterNoise sn = new ScatterNoise(dummyDistribution, dummyNoise);
+                sn = new ScatterNoise(activeScatters[i].GetDistributionData(data), activeScatters[i].GetNoiseData(data));
                 activeScatters[i].noise.Add(e.Quad, sn);
             }
-            
             QuadData qd = new QuadData(e.Quad);                                     //Change this to iterate through scatters
-            
             quadData.Add(e.Quad, qd);
             Profiler.EndSample();
         }
         private void OnQuadSphereLoaded(object sender, PlanetQuadSphereEventArgs e)
         {
             Debug.Log("Quad Sphere Loaded: " + e.Planet.PlanetData.Name);
+            if (!ConfigLoader.bodies.ContainsKey(e.Planet.PlanetNode.Name))
+            {
+                Debug.Log(" - This is not a Parallax body");
+                return;
+            }
             currentBody = e.QuadSphere;
             CalculateNewLODDistances(splitDist);
             QuadSphereScript script = e.QuadSphere as QuadSphereScript;
@@ -291,8 +301,6 @@ namespace Assets.Scripts
             managerGO.transform.SetParent(e.QuadSphere.Transform);
             quadSphereIsLoading = false;
         }
-        QuadData parentQuadDataCreate;
-        QuadData parentQuadDataUnload;
         private void OnCreateQuadCompleted(object sender, CreateQuadScriptEventArgs e) 
         {
             if (e.Quad.RenderingData.TerrainMesh == null || e.Quad.SubdivisionLevel < e.QuadSphere.MaxSubdivisionLevel - 2) 
@@ -304,8 +312,7 @@ namespace Assets.Scripts
             // If quad has just subdivided, clean up parent data:
             if (quadData.ContainsKey(e.Quad.Parent) && e.Quad.Parent.Children[0] == e.Quad)
             {
-                parentQuadDataCreate = quadData[e.Quad.Parent];
-                parentQuadDataCreate.Cleanup();
+                quadData[e.Quad.Parent].Pause();
             }
 
             quadData[e.Quad].RegisterEvents();
@@ -318,6 +325,9 @@ namespace Assets.Scripts
         {
             // Quad sphere is unloading - all quads will be destroyed
             if (quadSphereIsUnloading) { return; }
+
+            // For some reason, flying over a planet in the planet studio quickly will result in exceptions because the quad is null. Stop this from happening
+            if (e.Quad.Parent.Children == null) { return; }
             Profiler.BeginSample("OnUnloadQuadStarted (Parallax)");
             // We need to reinitialize the parent data, should it be contained
             if (quadData.ContainsKey(e.Quad.Parent))
@@ -325,10 +335,7 @@ namespace Assets.Scripts
                 // We need to check if the quad is the first in the parent children. That way, we can avoid initializing the data 4 times (each quad under a parent will unload together)
                 if (e.Quad.Parent.Children[0] == e.Quad)
                 {
-                    parentQuadDataUnload = quadData[e.Quad.Parent];
-                    // This can be optimized - don't need to completely reinitialize (or clean) the quad. For a future push
-                    parentQuadDataUnload.RegisterEvents();
-                    parentQuadDataUnload.Initialize();
+                    quadData[e.Quad.Parent].Resume();
                 }
             }
             Profiler.EndSample();

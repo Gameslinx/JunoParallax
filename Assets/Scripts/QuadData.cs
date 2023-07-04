@@ -86,9 +86,9 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
         vertexCount = vertexData.Length;
         triangleCount = triangleData.Length / 3;
 
-        vertices = new ComputeBuffer(vertexCount, sizeof(float) * 3, ComputeBufferType.Structured);
-        triangles = new ComputeBuffer(triangleCount * 3, sizeof(int), ComputeBufferType.Structured);
-        normals = new ComputeBuffer(vertexCount, sizeof(float) * 3, ComputeBufferType.Structured);
+        vertices = new ComputeBuffer(vertexCount, 12, ComputeBufferType.Structured);
+        triangles = new ComputeBuffer(triangleCount, 12, ComputeBufferType.Structured);
+        normals = new ComputeBuffer(vertexCount, 12, ComputeBufferType.Structured);
         
         vertices.SetData(vertexData);
         triangles.SetData(triangleData);
@@ -100,7 +100,7 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
         OnQuadDataUpdate(Mod.ParallaxInstance.scatterManagers[planetID].RequestPlanetMatrixNow());
 
         Profiler.BeginSample("Quad Altitude Range");
-        GetQuadAltitudeRange(vertexData);
+        GetQuadAltitudeRange();
         Profiler.EndSample();
 
         for (int i = 0; i < Mod.Instance.activeScatters.Length; i++)
@@ -109,7 +109,9 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
             // Does the scatter lie in the given altitude range?
             if (ScatterEligible(scatter))
             {
-                data.Add(new ScatterData(this, scatter, Mod.ParallaxInstance.scatterRenderers[scatter]));
+                ScatterData sd = new ScatterData(this, scatter, Mod.ParallaxInstance.scatterRenderers[scatter]);
+                sd.Start();
+                data.Add(sd);
             }
         }
 
@@ -141,7 +143,7 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
     {
         if (quad.RenderingData == null) { Debug.Log("Quad rendering data was null"); return; }
         Matrix4x4 mQuad = m.ToMatrix4x4();
-        var qpos = quad.RenderingData.LocalPosition;
+        Vector3d qpos = quad.RenderingData.LocalPosition;
         mQuad.m03 = (float)((m.m00 * qpos.x) + (m.m01 * qpos.y) + (m.m02 * qpos.z) + m.m03);
         mQuad.m13 = (float)((m.m10 * qpos.x) + (m.m11 * qpos.y) + (m.m12 * qpos.z) + m.m13);
         mQuad.m23 = (float)((m.m20 * qpos.x) + (m.m21 * qpos.y) + (m.m22 * qpos.z) + m.m23);
@@ -161,16 +163,16 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
     {
         sqrQuadCameraDistance = (worldSpacePosition - Camera.main.transform.position).sqrMagnitude;
     }
-    private void GetQuadAltitudeRange(Vector3[] verts)
+    private void GetQuadAltitudeRange()
     {
         Vector3 worldSpaceVertex = Vector3.zero;
         float altitude = 0;
         Vector3 worldSpacePlanetPos = (Vector3)quad.QuadSphere.FramePosition;
         float planetRadius = (float)quad.QuadSphere.PlanetData.Radius;
         // Iterating over all vertices is expensive, so approximate the altitude guess by iterating every 17 verts
-        for (int i = 0; i < verts.Length; i += 17)
+        for (int i = 0; i < vertexCount; i += 17)
         {
-            worldSpaceVertex = quadToWorldMatrix.MultiplyPoint(verts[i]);
+            worldSpaceVertex = quadToWorldMatrix.MultiplyPoint(vertexData[i]);
             altitude = Vector3.Distance(worldSpaceVertex, worldSpacePlanetPos) - planetRadius;
             if (altitude > quadHighestPoint) { quadHighestPoint = altitude; }
             if (altitude < quadLowestPoint) {  quadLowestPoint = altitude; }
@@ -197,12 +199,28 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
         }
         return true;
     }
+    // Set this quad as inactive because it has been subdivided
+    public void Pause()
+    {
+        for (int i = 0; i < data.Count; i++)
+        {
+            data[i].Pause();
+        }
+    }
+    // Set this parent as active because its children have just collapsed (what a sentence)
+    public void Resume()
+    {
+        for (int i = 0; i < data.Count; i++)
+        {
+            data[i].Resume();
+        }
+    }
     public void Cleanup()           // Clean up scatter data, then the quad data
     {
         if (cleaned) { return; }
-        foreach (ScatterData scatterData in data)
+        for (int i = 0; i < data.Count; i++)
         {
-            scatterData.Cleanup();
+            data[i].Cleanup();
         }
         data.Clear();
         vertices?.Release();
