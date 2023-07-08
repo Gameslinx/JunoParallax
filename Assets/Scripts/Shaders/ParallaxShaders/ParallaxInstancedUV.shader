@@ -6,19 +6,16 @@ Shader "Custom/ParallaxInstancedUV"
 	Properties
 	{
 		_MainTex("_MainTex", 2D) = "white" {}
-		[NoScaleOffset] _InfluenceMap("_InfluenceMap", 2D) = "white" {}
 
-		_EdgeBumpMap("_EdgeBumpMap", 2D) = "bump" {}
+		_BumpMap("_BumpMap", 2D) = "bump" {}
 		_Metallic("_Metallic", Range(0.001, 200)) = 0.2
 		_Gloss("_Gloss", Range(0, 250)) = 0
 		_MetallicTint("_MetallicTint", COLOR) = (0,0,0)
 
 		_PlanetOrigin("_PlanetOrigin", vector) = (0,0,0)
 
-		_NormalSpecularInfluence("_NormalSpecularInfluence", Range(0, 1)) = 1
 		_Hapke("_Hapke", Range(0.3, 5)) = 1
 
-		_MainTexUVs("_MainTexUVs", vector) = (0,0,0)
 		_BumpScale("_BumpScale", Range(0, 10)) = 1
 		_EmissionColor("_EmissionColor", Color) = (0,0,0,0)
 
@@ -47,9 +44,8 @@ Shader "Custom/ParallaxInstancedUV"
 
 			float3 _FresnelColor;
             float _FresnelPower;
-			sampler2D _EdgeBumpMap;
-			float2 _EdgeBumpMap_ST;
 			float _BumpScale;
+			float2 _BumpMap_ST;
 
 			v2f vert(appdata_t i, uint instanceID: SV_InstanceID)
 			{
@@ -83,7 +79,7 @@ Shader "Custom/ParallaxInstancedUV"
 				fixed4 surfaceCol = tex2D(_MainTex, i.uv.xy * _MainTex_ST) * float4(i.color.rgb, 1) * _Color;
 
 				
-				float3 normalMap = normalize(UnpackNormal(tex2D(_EdgeBumpMap, i.uv * _EdgeBumpMap_ST))) * _BumpScale;
+				float3 normalMap = normalize(UnpackNormal(tex2D(_BumpMap, i.uv * _BumpMap_ST))) * _BumpScale;
 				normalMap.z = sqrt(1.0 - saturate(dot(normalMap.xy, normalMap.xy)));
                 float3x3 TBN = float3x3(normalize(i.tangentWorld), normalize(i.binormalWorld), normalize(i.worldNormal));
                 TBN = transpose(TBN);
@@ -147,8 +143,7 @@ Shader "Custom/ParallaxInstancedUV"
 
 			float3 _FresnelColor;
             float _FresnelPower;
-			sampler2D _EdgeBumpMap;
-			float2 _EdgeBumpMap_ST;
+			float2 _BumpMap_ST;
 			float _BumpScale;
 
 			v2f_lighting vert(appdata_t i, uint instanceID: SV_InstanceID)
@@ -182,7 +177,7 @@ Shader "Custom/ParallaxInstancedUV"
 				fixed4 surfaceCol = tex2D(_MainTex, i.uv.xy * _MainTex_ST) * float4(i.color.rgb, 1) * _Color;
 
 				
-				float3 normalMap = normalize(UnpackNormal(tex2D(_EdgeBumpMap, i.uv * _EdgeBumpMap_ST))) * _BumpScale;
+				float3 normalMap = normalize(UnpackNormal(tex2D(_BumpMap, i.uv * _BumpMap_ST))) * _BumpScale;
 				normalMap.z = sqrt(1.0 - saturate(dot(normalMap.xy, normalMap.xy)));
                 float3x3 TBN = float3x3(normalize(i.tangentWorld), normalize(i.binormalWorld), normalize(i.worldNormal));
                 TBN = transpose(TBN);

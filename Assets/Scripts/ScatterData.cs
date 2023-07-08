@@ -72,7 +72,7 @@ public class ScatterData
 
         distribution = new ComputeBuffer(parent.vertexCount, 4, ComputeBufferType.Structured);
         noise = new ComputeBuffer(parent.vertexCount, 4, ComputeBufferType.Structured);
-        positions = new ComputeBuffer(_MaxCount, 28, ComputeBufferType.Append);
+        positions = new ComputeBuffer(_MaxCount, 32, ComputeBufferType.Append);
 
         distribution.SetData(scatter.noise[parent.quad].distribution);
         noise.SetData(scatter.noise[parent.quad].noise);    // If the scatter inherits noise from another scatter, this is the parent scatter noise and not noise generated for this scatter
@@ -97,6 +97,8 @@ public class ScatterData
         shader.SetFloat("_Coverage", scatter.distribution._Coverage);
         shader.SetFloat("_MinAltitude", scatter.distribution._MinAltitude);
         shader.SetFloat("_MaxAltitude", scatter.distribution._MaxAltitude);
+        shader.SetFloat("_AlignToTerrainNormal", scatter.distribution._AlignToTerrainNormal);
+        shader.SetFloat("_MaxNormalDeviance", scatter.distribution._MaxNormalDeviance);
         shader.SetMatrix("_ObjectToWorldMatrix", parent.quadToWorldMatrix);
         shader.SetFloat("_PlanetRadius", (float)parent.quad.QuadSphere.PlanetData.Radius);
         shader.SetVector("_PlanetOrigin", (Vector3)parent.quad.QuadSphere.FramePosition);
@@ -118,6 +120,8 @@ public class ScatterData
         lod2 = renderer.lod2;
 
         shader.SetBuffer(evaluateKernel, "PositionsIn", positions);
+        shader.SetBuffer(evaluateKernel, "Triangles", parent.triangles);
+        shader.SetBuffer(evaluateKernel, "Normals", parent.normals);
         shader.SetBuffer(evaluateKernel, "LOD0", lod0);
         shader.SetBuffer(evaluateKernel, "LOD1", lod1);
         shader.SetBuffer(evaluateKernel, "LOD2", lod2);

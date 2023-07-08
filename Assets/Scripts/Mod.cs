@@ -119,60 +119,94 @@ namespace Assets.Scripts
         public const string keyword = "Parallax Support Scatter (V1)";
         private void OnTerrainDataInitializing(object sender, PlanetTerrainDataEventArgs e)
         {
-            Debug.Log("Logging all biomes and subbiomes for planet: " + e.TerrainData.PlanetData.Name);
-            foreach (var biome in e.TerrainData.Biomes)
+
+            Scatter scatter = ConfigLoader.bodies["Luna"].scatters["TinyRocks"];
+
+            // Taken from CustomVertexDataMod1 - only modification is keyword removal
+
+            var terrainData = e.TerrainData;
+            var planetData = terrainData.PlanetData;
+
+            //if (planetData.Author == "Jundroo" || planetData.Author == "NathanMikeska")
+            if (planetData.Name == "Droo" || planetData.Name == "Luna")
             {
-                Debug.Log("Biome: " + biome.name);
-                var subBiomes = biome.GetSubBiomes();
-                foreach (var subBiome in subBiomes)
+                // Add some noise modifiers (and some modifiers to store the noise in custom vertex data)
+                var scatterNoiseXml = XElement.Parse(scatter.ScatterNoiseXml).Elements("Modifier").ToList();
+                terrainData.AddModifiersFromXml(scatterNoiseXml, 0);
+
+                Debug.Log("Modifiers: " + scatterNoiseXml);
+
+                // Loop through all sub biomes and set their custom data (random junk data for testing)
+                foreach (var biome in terrainData.Biomes)
                 {
-                    Debug.Log(" - SubBiome: " + subBiome.Name);
-                }
-            }
-            e.TerrainData.PlanetData.ModKeywords.Add(keyword);
-            foreach (ScatterBody body in ConfigLoader.bodies.Values)
-            {
-                foreach (Scatter scatter in body.scatters.Values)
-                {
-                    var terrainData = e.TerrainData;
-                    var planetData = terrainData.PlanetData;
-                    if (planetData.Name == scatter.planetName)
+                    var subBiomes = biome.GetSubBiomes();
+                    foreach (var subBiome in subBiomes)
                     {
-                        // Add some noise modifiers (and some modifiers to store the noise in custom vertex data)
-                        var scatterNoiseXml = XElement.Parse(scatter.ScatterNoiseXml).Elements("Modifier").ToList();
-                        terrainData.AddModifiersFromXml(scatterNoiseXml, 0);
-                        Dictionary<string, Biome> scatterBiomes = scatter.distribution.biomes;
-                        // Loop through all sub biomes and set their custom data (random junk data for testing)
-                        foreach (var biome in terrainData.Biomes)
-                        {
-                            if (scatterBiomes.ContainsKey(biome.name))
-                            {
-                                Dictionary<string, SubBiome> scatterSubBiomes = scatterBiomes[biome.name].subBiomes;
-                                var subBiomes = biome.GetSubBiomes();
-                                foreach (var subBiome in subBiomes)
-                                {
-                                    if (scatterSubBiomes.ContainsKey(subBiome.Name))
-                                    {
-                                        SubBiome scatterSubBiome = scatterSubBiomes[subBiome.Name];
-                                        scatter.SetSubBiomeTerrainData(subBiome.PrimaryData, scatterSubBiome.flatNoiseIntensity);
-                                        scatter.SetSubBiomeTerrainData(subBiome.SlopeData, scatterSubBiome.slopeNoiseIntensity);
-                                    }
-                                }
-                            }
-                        }
+                        scatter.SetSubBiomeTerrainData(subBiome.PrimaryData, 1);
+                        scatter.SetSubBiomeTerrainData(subBiome.SlopeData, 1);
                     }
                 }
             }
+
+            //Debug.Log("Logging all biomes and subbiomes for planet: " + e.TerrainData.PlanetData.Name);
+            //foreach (var biome in e.TerrainData.Biomes)
+            //{
+            //    Debug.Log("Biome: " + biome.name);
+            //    var subBiomes = biome.GetSubBiomes();
+            //    foreach (var subBiome in subBiomes)
+            //    {
+            //        Debug.Log(" - SubBiome: " + subBiome.Name);
+            //    }
+            //}
+            //e.TerrainData.PlanetData.ModKeywords.Add(keyword);
+            //foreach (ScatterBody body in ConfigLoader.bodies.Values)
+            //{
+            //    foreach (Scatter scatter in body.scatters.Values)
+            //    {
+            //        var terrainData = e.TerrainData;
+            //        var planetData = terrainData.PlanetData;
+            //        Debug.Log("Planet data name: " + planetData.Name + ", scatter planet name: " + scatter.planetName);
+            //        if (planetData.Name == scatter.planetName)
+            //        {
+            //            // Add some noise modifiers (and some modifiers to store the noise in custom vertex data)
+            //            var scatterNoiseXml = XElement.Parse(scatter.ScatterNoiseXml).Elements("Modifier").ToList();
+            //            terrainData.AddModifiersFromXml(scatterNoiseXml, 0);
+            //            Debug.Log("Added modifiers from XML");
+            //            Dictionary<string, Biome> scatterBiomes = scatter.distribution.biomes;
+            //            // Loop through all sub biomes and set their custom data (random junk data for testing)
+            //            foreach (var biome in terrainData.Biomes)
+            //            {
+            //                Debug.Log("Biome: " + biome.name);
+            //                if (scatterBiomes.ContainsKey(biome.name))
+            //                {
+            //                    Dictionary<string, SubBiome> scatterSubBiomes = scatterBiomes[biome.name].subBiomes;
+            //                    var subBiomes = biome.GetSubBiomes();
+            //                    foreach (var subBiome in subBiomes)
+            //                    {
+            //                        Debug.Log("SubBiome: " + subBiome.Name);
+            //                        if (scatterSubBiomes.ContainsKey(subBiome.Name))
+            //                        {
+            //                            Debug.Log("Setting subbiome data for " + body.bodyName);
+            //                            SubBiome scatterSubBiome = scatterSubBiomes[subBiome.Name];
+            //                            scatter.SetSubBiomeTerrainData(subBiome.PrimaryData, scatterSubBiome.flatNoiseIntensity);
+            //                            scatter.SetSubBiomeTerrainData(subBiome.SlopeData, scatterSubBiome.slopeNoiseIntensity);
+            //                        }
+            //                    }
+            //                }
+            //            }
+            //        }
+            //    }
+            //}
         }
         private void OnPlanetInitialized(object sender, EventArgs e)
         {
             PlanetScriptEventArgs args = (PlanetScriptEventArgs)e;
             Debug.Log("Planet initialized: " + args.PlanetScript.name);
-            args.PlanetScript.QuadSphereLoading += OnQuadSphereLoading;
-            args.PlanetScript.QuadSphereLoaded += OnQuadSphereLoaded;
-
-            args.PlanetScript.QuadSphereUnloading += OnQuadSphereUnloading;
-            args.PlanetScript.QuadSphereUnloaded += OnQuadSphereUnloaded;
+            //args.PlanetScript.QuadSphereLoading += OnQuadSphereLoading;
+            //args.PlanetScript.QuadSphereLoaded += OnQuadSphereLoaded;
+            //
+            //args.PlanetScript.QuadSphereUnloading += OnQuadSphereUnloading;
+            //args.PlanetScript.QuadSphereUnloaded += OnQuadSphereUnloaded;
         }
         private void OnQuadSphereLoading(object sender, PlanetQuadSphereEventArgs e)
         {
@@ -218,6 +252,36 @@ namespace Assets.Scripts
             scatterObjects.Add(e.Planet.PlanetData.Id, managerGO);
             scatterManagers.Add(e.Planet.PlanetData.Id, manager);
         }
+        
+        
+        public Scatter[] activeScatters = new Scatter[0];   //Scatters that are currently active right now - This holds every scatter on the current planet
+        
+        private void OnQuadSphereLoaded(object sender, PlanetQuadSphereEventArgs e)
+        {
+            Debug.Log("Quad Sphere Loaded: " + e.Planet.PlanetData.Name);
+            if (!ConfigLoader.bodies.ContainsKey(e.Planet.PlanetNode.Name))
+            {
+                Debug.Log(" - This is not a Parallax body");
+                return;
+            }
+            currentBody = e.QuadSphere;
+            CalculateNewLODDistances(splitDist);
+            QuadSphereScript script = e.QuadSphere as QuadSphereScript;
+            GameObject managerGO = scatterObjects[e.Planet.PlanetData.Id];
+
+            if (e.QuadSphere == null) { Debug.Log("Quad sphere is null??"); }
+            if (managerGO == null) { Debug.Log("Manager is null??"); }
+            if (managerGO.GetComponent<ScatterManager>() == null) { Debug.Log("Manager is null"); }
+
+            managerGO.GetComponent<ScatterManager>().quadSphere = script;
+            //if (scatterObjects.ContainsKey(e.Planet.PlanetData.Id))
+            //{
+            //    Debug.Log("Skipping parenting, planet already has a manager");
+            //    return;
+            //}
+            managerGO.transform.SetParent(e.QuadSphere.Transform);
+            quadSphereIsLoading = false;
+        }
         private void OnQuadSphereUnloading(object sender, PlanetQuadSphereEventArgs e)
         {
             Debug.Log("Sphere unloading: " + e.Planet.PlanetNode.Name);
@@ -251,106 +315,106 @@ namespace Assets.Scripts
 
             scatterObjects.Remove(id);
             scatterManagers.Remove(id);
-            
+
             UnityEngine.Object.Destroy(managerGO);
-            
+
         }
         private void OnQuadSphereUnloaded(object sender, PlanetQuadSphereEventArgs e)
         {
             quadSphereIsUnloading = false;
             Debug.Log("Quad sphere unloaded: " + e.Planet.PlanetData.Name);
         }
-        public Scatter[] activeScatters = new Scatter[0];   //Scatters that are currently active right now - This holds every scatter on the current planet
         private void OnCreateQuadStarted(object sender, CreateQuadScriptEventArgs e)
         {
-            Profiler.BeginSample("OnCreateQuadStarted (Parallax)");
+            //Profiler.BeginSample("OnCreateQuadStarted (Parallax)");
             CreateQuadData data = e.CreateQuadData;
             ScatterNoise sn;
-            for (int i = 0; i < activeScatters.Length; i++)
-            {
-                sn = new ScatterNoise(activeScatters[i].GetDistributionData(data), activeScatters[i].GetNoiseData(data));
-                activeScatters[i].noise.Add(e.Quad, sn);
-            }
-            QuadData qd = new QuadData(e.Quad);                                     //Change this to iterate through scatters
-            quadData.Add(e.Quad, qd);
-            Profiler.EndSample();
-        }
-        private void OnQuadSphereLoaded(object sender, PlanetQuadSphereEventArgs e)
-        {
-            Debug.Log("Quad Sphere Loaded: " + e.Planet.PlanetData.Name);
-            if (!ConfigLoader.bodies.ContainsKey(e.Planet.PlanetNode.Name))
-            {
-                Debug.Log(" - This is not a Parallax body");
-                return;
-            }
-            currentBody = e.QuadSphere;
-            CalculateNewLODDistances(splitDist);
-            QuadSphereScript script = e.QuadSphere as QuadSphereScript;
-            GameObject managerGO = scatterObjects[e.Planet.PlanetData.Id];
 
-            if (e.QuadSphere == null) { Debug.Log("Quad sphere is null??"); }
-            if (managerGO == null) { Debug.Log("Manager is null??"); }
-            if (managerGO.GetComponent<ScatterManager>() == null) { Debug.Log("Manager is null"); }
+            float[] distributiond = ConfigLoader.bodies["Luna"].scatters["TinyRocks"].GetNoiseData(e.CreateQuadData);
 
-            managerGO.GetComponent<ScatterManager>().quadSphere = script;
-            //if (scatterObjects.ContainsKey(e.Planet.PlanetData.Id))
+            var quadDatad = e.CreateQuadData;
+            var meshData = quadDatad.TerrainMeshData.Item;
+            if (meshData.VertexType == typeof(MeshDataTerrain.TerrainVertexBasic))
+            {
+                var verts = meshData.VerticesBasic;
+                for (int b = 0; b < verts.Length; ++b)
+                {
+                    verts[b].Color = new half4((half)(distributiond[b]), (half)(distributiond[b]), (half)(distributiond[b]), (half)1);
+                }
+            }
+            else
+            {
+                var verts = meshData.Vertices;
+                for (int b = 0; b < verts.Length; ++b)
+                {
+                    verts[b].Color = new half4((half)(distributiond[b]), (half)(distributiond[b]), (half)(distributiond[b]), (half)1);
+                }
+            }
+
+
+
+
+            //for (int i = 0; i < activeScatters.Length; i++)
             //{
-            //    Debug.Log("Skipping parenting, planet already has a manager");
-            //    return;
+            //    float[] noise = activeScatters[i].GetDistributionData(data);
+            //    float[] distribution = activeScatters[i].GetNoiseData(data);
+            //    sn = new ScatterNoise(noise, distribution);
+            //    activeScatters[i].noise.Add(e.Quad, sn);
             //}
-            managerGO.transform.SetParent(e.QuadSphere.Transform);
-            quadSphereIsLoading = false;
+            //QuadData qd = new QuadData(e.Quad);                                     //Change this to iterate through scatters
+            //quadData.Add(e.Quad, qd);
+            //Profiler.EndSample();
         }
         private void OnCreateQuadCompleted(object sender, CreateQuadScriptEventArgs e) 
         {
-            if (e.Quad.RenderingData.TerrainMesh == null || e.Quad.SubdivisionLevel < e.QuadSphere.MaxSubdivisionLevel - 2) 
-            {
-                return;
-            }
-            Profiler.BeginSample("OnCreateQuadComplete (Parallax)");
-            // Determine if quad has any parents. If it does, we need to clean up the QuadData. Similarly, on quad unload we need to reinitialize the quaddata on its parent if it has any
-            // If quad has just subdivided, clean up parent data:
-            if (quadData.ContainsKey(e.Quad.Parent) && e.Quad.Parent.Children[0] == e.Quad)
-            {
-                quadData[e.Quad.Parent].Pause();
-            }
-
-            quadData[e.Quad].RegisterEvents();
-            quadData[e.Quad].Initialize();
-            //QuadData qd = new QuadData(e.Quad);
-            //quadData.Add(e.Quad, qd);
-            Profiler.EndSample();
+            //if (e.Quad.RenderingData.TerrainMesh == null || e.Quad.SubdivisionLevel < e.QuadSphere.MaxSubdivisionLevel - 2) 
+            //{
+            //    return;
+            //}
+            //Profiler.BeginSample("OnCreateQuadComplete (Parallax)");
+            //// Determine if quad has any parents. If it does, we need to clean up the QuadData. Similarly, on quad unload we need to reinitialize the quaddata on its parent if it has any
+            //// If quad has just subdivided, clean up parent data:
+            //if (quadData.ContainsKey(e.Quad.Parent) && e.Quad.Parent.Children[0] == e.Quad)
+            //{
+            //    quadData[e.Quad.Parent].Pause();
+            //}
+            //
+            //quadData[e.Quad].RegisterEvents();
+            //quadData[e.Quad].Initialize();
+            ////QuadData qd = new QuadData(e.Quad);
+            ////quadData.Add(e.Quad, qd);
+            //Profiler.EndSample();
         }
         private void OnUnloadQuadStarted(object sender, UnloadQuadScriptEventArgs e)
         {
             // Quad sphere is unloading - all quads will be destroyed
-            if (quadSphereIsUnloading) { return; }
-
-            // For some reason, flying over a planet in the planet studio quickly will result in exceptions because the quad is null. Stop this from happening
-            if (e.Quad.Parent.Children == null) { return; }
-            Profiler.BeginSample("OnUnloadQuadStarted (Parallax)");
-            // We need to reinitialize the parent data, should it be contained
-            if (quadData.ContainsKey(e.Quad.Parent))
-            {
-                // We need to check if the quad is the first in the parent children. That way, we can avoid initializing the data 4 times (each quad under a parent will unload together)
-                if (e.Quad.Parent.Children[0] == e.Quad)
-                {
-                    quadData[e.Quad.Parent].Resume();
-                }
-            }
-            Profiler.EndSample();
+            //if (quadSphereIsUnloading) { return; }
+            //
+            //// For some reason, flying over a planet in the planet studio quickly will result in exceptions because the quad is null. Stop this from happening
+            //if (e.Quad.Parent.Children == null) { return; }
+            //Profiler.BeginSample("OnUnloadQuadStarted (Parallax)");
+            //// We need to reinitialize the parent data, should it be contained
+            //if (quadData.ContainsKey(e.Quad.Parent))
+            //{
+            //    // We need to check if the quad is the first in the parent children. That way, we can avoid initializing the data 4 times (each quad under a parent will unload together)
+            //    if (e.Quad.Parent.Children[0] == e.Quad)
+            //    {
+            //        quadData[e.Quad.Parent].Resume();
+            //    }
+            //}
+            //Profiler.EndSample();
         }
         private void OnUnloadQuadCompleted(object sender, UnloadQuadScriptEventArgs e)
         {
-            Profiler.BeginSample("OnUnloadQuadComplete (Parallax)");
-            quadData[e.Quad].Cleanup();
-            quadData.Remove(e.Quad);
-
-            for (int i = 0; i < activeScatters.Length; i++)
-            {
-                activeScatters[i].noise.Remove(e.Quad);
-            }
-            Profiler.EndSample();
+            //Profiler.BeginSample("OnUnloadQuadComplete (Parallax)");
+            //quadData[e.Quad].Cleanup();
+            //quadData.Remove(e.Quad);
+            //
+            //for (int i = 0; i < activeScatters.Length; i++)
+            //{
+            //    activeScatters[i].noise.Remove(e.Quad);
+            //}
+            //Profiler.EndSample();
         }
         // Utilities
 

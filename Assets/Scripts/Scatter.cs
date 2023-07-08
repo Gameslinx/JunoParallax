@@ -18,6 +18,8 @@ public struct DistributionData
     public float _Coverage;
     public float _MinAltitude;
     public float _MaxAltitude;
+    public uint _AlignToTerrainNormal;
+    public float _MaxNormalDeviance;
     public Vector3 _MinScale;
     public Vector3 _MaxScale;
     public LOD lod0;

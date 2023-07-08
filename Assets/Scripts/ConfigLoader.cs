@@ -197,6 +197,7 @@ public class ConfigLoader : MonoBehaviour
                     // Create new scatter
                     string scatterName = scatter.Attribute("name").Value;
                     Scatter thisScatter = new Scatter(planetName + "_" + scatterName, scatterName);
+                    thisScatter.planetName = planetName;
                     Debug.Log("Parsing scatter: " + scatterName);
 
                     XElement inheritsFrom = scatter.Element("inheritsFrom");
@@ -219,6 +220,9 @@ public class ConfigLoader : MonoBehaviour
                     distribution._Coverage = distributionNode.Element("coverage").Value.ToFloat();
                     distribution._MinAltitude = distributionNode.Element("minAltitude").Value.ToFloat();
                     distribution._MaxAltitude = distributionNode.Element("maxAltitude").Value.ToFloat();
+                    bool alignToTerrainNormal = distributionNode.Element("alignToTerrainNormal").Value.ToBoolean();
+                    distribution._AlignToTerrainNormal = alignToTerrainNormal == true ? (uint)1 : (uint)0;
+                    distribution._MaxNormalDeviance = distributionNode.Element("maxNormalDeviance").Value.ToFloat();
 
                     thisScatter.distribution = distribution;
                     Debug.Log("Parsed distribution");
@@ -382,7 +386,13 @@ public class ConfigLoader : MonoBehaviour
         string strength = noiseNode.Element("strength").Value;
         string interpolation = noiseNode.Element("interpolation").Value;
 
-        string modifier = $"<Modifiers>\n\t<Modifier type=\"VertexData.VertexDataNoise\" enabled=\"true\" name=\"{name}\" container=\"Scatter Noise\" basicView=\"true\" pass=\"Height\" noiseType=\"{noiseType}\" maskDataIndex=\"-1\" seed=\"{seed}\" lockSeed=\"false\" frequency=\"{frequency}\" strength=\"{strength}\" interpolation=\"{interpolation}\" dataIndex=\"7\" />\n\t<Modifier type=\"VertexData.CustomData.UpdateCustomDataFloat\" enabled=\"true\" name=\"Update Custom Data (Float)\" container=\"Scatter Noise\" pass=\"Height\" customDataId=\"{scatter.Id}_Noise_Vertex\" dataIndex=\"7\" />\n</Modifiers>";
+        //string modifier = $"<Modifiers>\n\t<Modifier type=\"VertexData.VertexDataNoise\" enabled=\"true\" name=\"{name}\" container=\"Scatter Noise\" basicView=\"true\" pass=\"Height\" noiseType=\"{noiseType}\" maskDataIndex=\"-1\" seed=\"{seed}\" lockSeed=\"false\" frequency=\"{frequency}\" strength=\"{strength}\" interpolation=\"{interpolation}\" dataIndex=\"7\" />\n\t<Modifier type=\"VertexData.CustomData.UpdateCustomDataFloat\" enabled=\"true\" name=\"Update Custom Data (Float)\" container=\"Scatter Noise\" pass=\"Height\" customDataId=\"{scatter.Id}_Noise_Vertex\" dataIndex=\"7\" />\n</Modifiers>";
+
+        string modifier =
+@"<Modifiers>
+    <Modifier type=""VertexData.VertexDataNoise"" enabled=""true"" name=""Noise"" container=""Scatter Noise"" basicView=""true"" pass=""Biome"" noiseType=""Perlin"" maskDataIndex=""-1"" seed=""0"" lockSeed=""false"" frequency=""100"" strength=""1"" interpolation=""Quintic"" dataIndex=""7"" />
+    <Modifier type=""VertexData.CustomData.UpdateCustomDataFloat"" enabled=""true"" name=""Update Custom Data (Float)"" container=""Scatter Noise"" pass=""Biome"" customDataId=""Luna_TinyRocks_Noise_Vertex"" dataIndex=""7"" />
+</Modifiers>";
 
         Debug.Log("Modifier parsed from config to XML:" + modifier);
         return modifier;

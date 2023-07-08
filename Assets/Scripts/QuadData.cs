@@ -14,9 +14,10 @@ public struct PositionData
     public Vector3 pos;
     public Vector3 scale;
     public float rot;
+    public uint index;
     public static int Size()
     {
-        return sizeof(float) * 7;
+        return sizeof(float) * 8;
     }
 };
 public struct TransformData
@@ -181,6 +182,7 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
     // Min altitude or max altitude must be between quad min/max altitude, otherwise don't bother generating anything (quad is outside of scatter altitude bounds)
     private bool ScatterEligible(Scatter scatter)
     {
+        return true;
         if (quad.SubdivisionLevel < scatter.minimumSubdivision)
         {
             // Scatter can never appear on this subdivision level
@@ -191,10 +193,14 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
             return false;
         }
         // Pick 3 points on a quad to sample the noise. Not hugely accurate but good enough
-        float noiseSample = scatter.noise[quad].noise[0] + scatter.noise[quad].noise[28] + scatter.noise[quad].noise[700];
+        Profiler.BeginSample("Get max noise");
+        float noiseSample = scatter.noise[quad].noise.Max(); //scatter.noise[quad].noise[0] + scatter.noise[quad].noise[28] + scatter.noise[quad].noise[700] + scatter.noise[quad].noise[330];
+        Profiler.EndSample();
         // Absolutely no noise on this quad
+        Debug.Log("noiseSample: " + noiseSample);
         if (noiseSample == 0)
         {
+            Debug.Log("Noise is 0?");
             return false;
         }
         return true;

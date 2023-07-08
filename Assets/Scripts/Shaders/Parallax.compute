@@ -32,8 +32,11 @@ float _MaxAltitude;
 
 float3 _PlanetOrigin;
 float _PlanetRadius;
+float _MaxNormalDeviance;
 
 uint _NumTris;
+
+uint _MultiFractal;
 
 [numthreads(32,1,1)]
 void Distribute (uint3 id : SV_DispatchThreadID)
@@ -56,6 +59,12 @@ void Distribute (uint3 id : SV_DispatchThreadID)
     float3 norm1 = Normals[index1];
     float3 norm2 = Normals[index2];
     float3 norm3 = Normals[index3];
+
+    float normalDeviance = GetNormalDeviance(norm1, norm2, norm3);
+    if (normalDeviance < 1 - pow(_MaxNormalDeviance, 3))
+    {
+        return;
+    }
 
     float noise1 = Noise[index1] * Distribution[index1];
     float noise2 = Noise[index2] * Distribution[index2];
@@ -92,6 +101,7 @@ void Distribute (uint3 id : SV_DispatchThreadID)
         output.pos = localPos;
         output.scale = scale;
         output.rot = rot;
+        output.index = id.x * 3;
 
         float r4 = Rand(float2(r1, r2) + _Seed * 1.23133 + i);
 
@@ -130,7 +140,7 @@ float _Lod01Split;
 float _Lod12Split;
 float _MaxRange;
 float _MaxEvaluateCount;
-uint _AlignToTerrainNormal;
+
 
 // Define cull radius as the radius before frustum culling can begin
 // Define cull limit as the extents to the camera frustum before culling can begin (trees, for example, are tall. We want to be able to see any part of the tree without it disappearing)
@@ -160,7 +170,17 @@ void Evaluate (uint3 id : SV_DispatchThreadID)
         return;
     }
 
-    float4x4 mat = GetTRSMatrix(pos.pos, float3(0, pos.rot, 0), pos.scale);
+    uint index1 = Triangles[pos.index];
+    uint index2 = Triangles[pos.index + 1];
+    uint index3 = Triangles[pos.index + 2];
+
+    float3 normal1 = Normals[index1];
+    float3 normal2 = Normals[index1];
+    float3 normal3 = Normals[index1];
+
+    float3 avgNormal = TriangleAverage(normal1, normal2, normal3);
+    
+    float4x4 mat = GetTRSMatrix(pos.pos, float3(0, pos.rot, 0), pos.scale, avgNormal);
     mat = mul(_ObjectToWorldMatrix, mat);
 
     TransformData object;
