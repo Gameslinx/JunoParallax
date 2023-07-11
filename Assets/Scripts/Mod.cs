@@ -263,6 +263,29 @@ namespace Assets.Scripts
         public Scatter[] activeScatters = new Scatter[0];   //Scatters that are currently active right now - This holds every scatter on the current planet
         private void OnCreateQuadStarted(object sender, CreateQuadScriptEventArgs e)
         {
+            //float[] distributiond = ConfigLoader.bodies["Luna"].scatters["TinyRocks"].GetNoiseData(e.CreateQuadData);
+            //
+            //var quadDatad = e.CreateQuadData;
+            //var meshData = quadDatad.TerrainMeshData.Item;
+            //if (meshData.VertexType == typeof(MeshDataTerrain.TerrainVertexBasic))
+            //{
+            //    var verts = meshData.VerticesBasic;
+            //    for (int b = 0; b < verts.Length; ++b)
+            //    {
+            //        verts[b].Color = new half4((half)(distributiond[b]), (half)(distributiond[b]), (half)(distributiond[b]), (half)1);
+            //    }
+            //}
+            //else
+            //{
+            //    var verts = meshData.Vertices;
+            //    for (int b = 0; b < verts.Length; ++b)
+            //    {
+            //        verts[b].Color = new half4((half)(distributiond[b]), (half)(distributiond[b]), (half)(distributiond[b]), (half)1);
+            //    }
+            //}
+
+            //return;
+
             Profiler.BeginSample("OnCreateQuadStarted (Parallax)");
             CreateQuadData data = e.CreateQuadData;
             ScatterNoise sn;

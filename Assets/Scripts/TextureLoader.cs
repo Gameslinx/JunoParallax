@@ -20,10 +20,8 @@ public static class TextureLoader
     public static Texture2D LoadTexture(string filePath)
     {
         string path = assetPath + "/" + filePath;
-        Debug.Log("Loading texture from disk at " + path);
         if (activeTextures.ContainsKey(filePath))
         {
-            Debug.Log(" - This texture is already loaded :)");
             return activeTextures[filePath];
         }
         
@@ -70,29 +68,23 @@ public static class TextureLoader
         int height = data[13] * 256 + data[12];
         int width = data[17] * 256 + data[16];
 
-        Debug.Log("Width: " + width + ", Height: " + height);
-
         int DDS_HEADER_SIZE = 128;
         byte[] dxtBytes = new byte[data.Length - DDS_HEADER_SIZE];
         Buffer.BlockCopy(data, DDS_HEADER_SIZE, dxtBytes, 0, data.Length - DDS_HEADER_SIZE);
         int mipMapCount = (data[28]) | (data[29] << 8) | (data[30] << 16) | (data[31] << 24);
-        Debug.Log("Mipmap count: " + mipMapCount);
         TextureFormat format = TextureFormat.DXT1;
         if (data[84] == 'D')
         {
             if (data[87] == 49) //Also char '1'
             {
                 format = TextureFormat.DXT1;
-                Debug.Log("DXT 1");
             }
             else if (data[87] == 53)    //Also char '5'
             {
                 format = TextureFormat.DXT5;
-                Debug.Log("DXT 5");
             }
             else
             {
-                Debug.Log("Texture is not a DXT 1 or DXT5");
                 format = TextureFormat.DXT5;    //Assume DXT5_NM and cry about it if it doesn't work
             }
         }

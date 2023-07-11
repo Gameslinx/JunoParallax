@@ -1,4 +1,5 @@
 using Assets.Scripts;
+using Assets.Scripts.Flight.GameView.Cameras;
 using Assets.Scripts.Terrain;
 using System;
 using System.Collections;
@@ -14,9 +15,10 @@ public struct PositionData
     public Vector3 pos;
     public Vector3 scale;
     public float rot;
+    public uint index;
     public static int Size()
     {
-        return sizeof(float) * 7;
+        return sizeof(float) * 8;
     }
 };
 public struct TransformData
@@ -59,6 +61,8 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
     Guid planetID;
     bool eventsRegistered = false;
 
+    public ScatterManager manager;
+
     public QuadData(QuadScript quad)
     {
         this.quad = quad;
@@ -69,7 +73,8 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
     public void RegisterEvents()
     {
         planetID = quad.QuadSphere.PlanetData.Id;
-        Mod.ParallaxInstance.scatterManagers[planetID].OnQuadUpdate += OnQuadDataUpdate;
+        manager = Mod.ParallaxInstance.scatterManagers[planetID];
+        manager.OnQuadUpdate += OnQuadDataUpdate;
         eventsRegistered = true;
     }
     public void Initialize()        //Initialize buffers, then scatters
@@ -97,7 +102,7 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
         planetNormal = (Vector3)quad.SphereNormal;
 
         // Request a planet matrix to construct quad to world matrix for determining world space positions in distribution shader (for min/max altitude constraints)
-        OnQuadDataUpdate(Mod.ParallaxInstance.scatterManagers[planetID].RequestPlanetMatrixNow());
+        OnQuadDataUpdate(manager.RequestPlanetMatrixNow());
 
         Profiler.BeginSample("Quad Altitude Range");
         GetQuadAltitudeRange();
@@ -161,7 +166,7 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
     }
     private void GetCameraDistance()
     {
-        sqrQuadCameraDistance = (worldSpacePosition - Camera.main.transform.position).sqrMagnitude;
+        sqrQuadCameraDistance = (worldSpacePosition - manager.mainCamera.transform.position).sqrMagnitude;
     }
     private void GetQuadAltitudeRange()
     {
@@ -229,7 +234,7 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
 
         if (eventsRegistered)
         {
-            Mod.ParallaxInstance.scatterManagers[planetID].OnQuadUpdate -= OnQuadDataUpdate;
+            manager.OnQuadUpdate -= OnQuadDataUpdate;
             eventsRegistered = false;
         }
         cleaned = true;

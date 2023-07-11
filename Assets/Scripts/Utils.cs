@@ -1,4 +1,5 @@
 using Assets.Scripts;
+using Assets.Scripts.Flight.GameView.Cameras;
 using Assets.Scripts.Terrain;
 using System.Collections;
 using System.Collections.Generic;
@@ -10,7 +11,7 @@ public class Utils : MonoBehaviour
     public static Plane[] planes = new Plane[6];
     private void Update()
     {
-        ConstructFrustumPlanes(Camera.main, out planeNormals);  //Compute frustum planes for frustum culling
+        ConstructFrustumPlanes(CameraManagerScript.Instance.CurrentCameraController.CameraTransform.gameObject.GetComponent<Camera>(), out planeNormals);  //Compute frustum planes for frustum culling
     }
     public static void ConstructFrustumPlanes(Camera camera, out float[] planeNormals)
     {

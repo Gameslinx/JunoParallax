@@ -55,27 +55,22 @@ public class ScatterShader : ICloneable
         {
             Texture2D tex = TextureLoader.LoadTexture(texture.Value);
 
-            Debug.Log("Setting material property: " + texture.Key + " = " + texture.Value);
             material.SetTexture(texture.Key, tex);
         }
         foreach (KeyValuePair<string, float> floatValue in floats)
         {
-            Debug.Log("Setting material property: " + floatValue.Key + " = " + floatValue.Value);
             material.SetFloat(floatValue.Key, floatValue.Value);
         }
         foreach (KeyValuePair<string, Vector3> vector in vectors)
         {
-            Debug.Log("Setting material property: " + vector.Key + " = " + vector.Value);
             material.SetVector(vector.Key, vector.Value);
         }
         foreach (KeyValuePair<string, Vector2> scale in scales)
         {
-            Debug.Log("Setting material property: " + scale.Key + " = " + scale.Value);
             material.SetTextureScale(scale.Key, scale.Value);   // Key must be the name of the texture
         }
         foreach (KeyValuePair<string, Color> color in colors)
         {
-            Debug.Log("Setting material property: " + color.Key + " = " + color.Value);
             material.SetColor(color.Key, color.Value);
         }
         this.material = material;
@@ -197,6 +192,7 @@ public class ConfigLoader : MonoBehaviour
                     // Create new scatter
                     string scatterName = scatter.Attribute("name").Value;
                     Scatter thisScatter = new Scatter(planetName + "_" + scatterName, scatterName);
+                    thisScatter.planetName = planetName;
                     Debug.Log("Parsing scatter: " + scatterName);
 
                     XElement inheritsFrom = scatter.Element("inheritsFrom");
@@ -213,12 +209,16 @@ public class ConfigLoader : MonoBehaviour
                     distribution._PopulationMultiplier = distributionNode.Element("populationMultiplier").Value.ToInt();
                     distribution._SpawnChance = distributionNode.Element("spawnChance").Value.ToFloat();
                     distribution._Range = distributionNode.Element("range").Value.ToFloat();
+                    distribution._Seed = distributionNode.Element("seed").Value.ToFloat();
                     distribution._MinScale = distributionNode.Element("minScale").Value.ToVector3();
                     distribution._MaxScale = distributionNode.Element("maxScale").Value.ToVector3();
                     distribution._SizeJitterAmount = distributionNode.Element("sizeJitterAmount").Value.ToFloat();
                     distribution._Coverage = distributionNode.Element("coverage").Value.ToFloat();
                     distribution._MinAltitude = distributionNode.Element("minAltitude").Value.ToFloat();
                     distribution._MaxAltitude = distributionNode.Element("maxAltitude").Value.ToFloat();
+                    bool alignToTerrainNormal = distributionNode.Element("alignToTerrainNormal").Value.ToBoolean();
+                    distribution._AlignToTerrainNormal = alignToTerrainNormal == true ? (uint)1 : (uint)0;
+                    distribution._MaxNormalDeviance = distributionNode.Element("maxNormalDeviance").Value.ToFloat();
 
                     thisScatter.distribution = distribution;
                     Debug.Log("Parsed distribution");

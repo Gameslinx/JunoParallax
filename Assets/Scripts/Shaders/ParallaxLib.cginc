@@ -1,6 +1,7 @@
 #include "UnityCG.cginc"
 float4 _CameraFrustumPlanes[6];
 float3 _PlanetNormal;
+uint _AlignToTerrainNormal;
 struct TransformData
 {
     float4x4 mat;
@@ -10,6 +11,7 @@ struct PositionData
     float3 pos;
     float3 scale;
     float rot;
+    uint index;
     // Add an integer here to indicate which triangle this object came from
 };
 
@@ -27,9 +29,21 @@ float TriangleAverage(float p1, float p2, float p3, float r1, float r2)
 {
     return ((1 - sqrt(r1)) * p1) + ((sqrt(r1) * (1 - r2)) * p2) + ((r2 * sqrt(r1)) * p3);
 }
+float3 TriangleAverage(float3 p1, float3 p2, float3 p3)
+{
+    return (p1 + p2 + p3) / 3;
+}
 float DegToRad(float deg)
 {
     return (3.14159 / 180.0f) * deg;
+}
+float GetNormalDeviance(float3 normal1, float3 normal2, float3 normal3)
+{
+    float nrmDev1 = dot(normal1, normal2);
+    float nrmDev2 = dot(normal1, normal3);
+    float nrmDev3 = dot(normal2, normal3);
+    float normalDeviance = min(nrmDev1, min(nrmDev2, nrmDev3)); // Min - The vectors are at their most diverged (align the least)
+    return normalDeviance;
 }
 float4x4 GetTranslationMatrix(float3 pos)
 {
@@ -106,10 +120,18 @@ float4x4 TransformToPlanetNormal(float3 a, float3 b)
     full[3].z = 0;
     return full;
 }
-float4x4 GetTRSMatrix(float3 position, float3 rotationAngles, float3 scale)
+float4x4 GetTRSMatrix(float3 position, float3 rotationAngles, float3 scale, float3 terrainNormal)
 {
     
-    float3 nrm = normalize(_PlanetNormal);
+    float3 nrm;
+    if (_AlignToTerrainNormal == 0)
+    {
+        nrm = normalize(_PlanetNormal);
+    }
+    else
+    {
+        nrm = normalize(terrainNormal);
+    }
     float3 up = float3(0,1,0);
     //if (_AlignToNormal == 1)
     //{

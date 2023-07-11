@@ -1,4 +1,5 @@
 using Assets.Scripts;
+using Assets.Scripts.Flight.GameView.Cameras;
 using UnityEngine;
 
 public class ScatterData
@@ -72,7 +73,7 @@ public class ScatterData
 
         distribution = new ComputeBuffer(parent.vertexCount, 4, ComputeBufferType.Structured);
         noise = new ComputeBuffer(parent.vertexCount, 4, ComputeBufferType.Structured);
-        positions = new ComputeBuffer(_MaxCount, 28, ComputeBufferType.Append);
+        positions = new ComputeBuffer(_MaxCount, 32, ComputeBufferType.Append);
 
         distribution.SetData(scatter.noise[parent.quad].distribution);
         noise.SetData(scatter.noise[parent.quad].noise);    // If the scatter inherits noise from another scatter, this is the parent scatter noise and not noise generated for this scatter
@@ -88,7 +89,7 @@ public class ScatterData
         
 
         shader.SetInt("_MaxCount", _MaxCount);
-        shader.SetFloat("_Seed", 1);
+        shader.SetFloat("_Seed", scatter.distribution._Seed);
         shader.SetInt("_PopulationMultiplier", scatter.distribution._PopulationMultiplier * populationFactor);
         shader.SetFloat("_SpawnChance", scatter.distribution._SpawnChance);
         shader.SetVector("_MinScale", scatter.distribution._MinScale);
@@ -97,6 +98,8 @@ public class ScatterData
         shader.SetFloat("_Coverage", scatter.distribution._Coverage);
         shader.SetFloat("_MinAltitude", scatter.distribution._MinAltitude);
         shader.SetFloat("_MaxAltitude", scatter.distribution._MaxAltitude);
+        shader.SetFloat("_AlignToTerrainNormal", scatter.distribution._AlignToTerrainNormal);
+        shader.SetFloat("_MaxNormalDeviance", scatter.distribution._MaxNormalDeviance);
         shader.SetMatrix("_ObjectToWorldMatrix", parent.quadToWorldMatrix);
         shader.SetFloat("_PlanetRadius", (float)parent.quad.QuadSphere.PlanetData.Radius);
         shader.SetVector("_PlanetOrigin", (Vector3)parent.quad.QuadSphere.FramePosition);
@@ -118,6 +121,8 @@ public class ScatterData
         lod2 = renderer.lod2;
 
         shader.SetBuffer(evaluateKernel, "PositionsIn", positions);
+        shader.SetBuffer(evaluateKernel, "Triangles", parent.triangles);
+        shader.SetBuffer(evaluateKernel, "Normals", parent.normals);
         shader.SetBuffer(evaluateKernel, "LOD0", lod0);
         shader.SetBuffer(evaluateKernel, "LOD1", lod1);
         shader.SetBuffer(evaluateKernel, "LOD2", lod2);
@@ -157,7 +162,7 @@ public class ScatterData
         if (parent.sqrQuadCameraDistance > scatter.sqrRange + (parent.quadDiagLength * parent.quadDiagLength)) { return; }
         shader.SetMatrix("_ObjectToWorldMatrix", parent.quadToWorldMatrix);
         shader.SetFloats("_CameraFrustumPlanes", Utils.planeNormals);
-        shader.SetVector("_WorldSpaceCameraPosition", Camera.main.transform.position);
+        shader.SetVector("_WorldSpaceCameraPosition", parent.manager.mainCamera.transform.position);
         shader.SetVector("_PlanetNormal", parent.planetNormal);
         shader.DispatchIndirect(evaluateKernel, dispatchArgs);
     }
