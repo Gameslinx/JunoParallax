@@ -117,5 +117,10 @@ public static class TextureLoader
             UnityEngine.Object.Destroy(texture.Value);
         }
         activeTextures.Clear();
+
+
+        
+
+
     }
 }

@@ -153,6 +153,7 @@ public class ParallaxGUI : MonoBehaviour
         }
         if (showDistribution)
         {
+            currentScatter.distribution._Seed = TextAreaLabelFloat("Seed", currentScatter.distribution._Seed, ChangeType.Distribution);
             currentScatter.distribution._PopulationMultiplier = TextAreaLabelInt("Population Multiplier", currentScatter.distribution._PopulationMultiplier, 1, 200, ChangeType.Distribution);
             currentScatter.distribution._SpawnChance = TextAreaLabelFloat("Spawn Chance", currentScatter.distribution._SpawnChance, ChangeType.Distribution);
             currentScatter.distribution._Range = TextAreaLabelFloat("Max Range", currentScatter.distribution._Range, ChangeType.Distribution);
@@ -162,6 +163,8 @@ public class ParallaxGUI : MonoBehaviour
             currentScatter.distribution._SizeJitterAmount = TextAreaLabelFloat("Size Randomness", currentScatter.distribution._SizeJitterAmount, ChangeType.Distribution);
             currentScatter.distribution._MinAltitude = TextAreaLabelFloat("Min Altitude", currentScatter.distribution._MinAltitude, ChangeType.Distribution);
             currentScatter.distribution._MaxAltitude = TextAreaLabelFloat("Max Altitude", currentScatter.distribution._MaxAltitude, ChangeType.Distribution);
+            currentScatter.distribution._MaxNormalDeviance = TextAreaLabelFloat("Max Normal Deviance", currentScatter.distribution._MaxNormalDeviance, ChangeType.Distribution);
+            currentScatter.distribution._AlignToTerrainNormal = ((uint)TextAreaLabelFloat("Align To Terrain Normal", currentScatter.distribution._AlignToTerrainNormal == (uint)1 ? 1f : 0f, ChangeType.Distribution));
             if (GUILayout.Button("Show LOD 1"))
             {
                 showLOD1 = !showLOD1;

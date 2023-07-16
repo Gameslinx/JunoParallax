@@ -263,7 +263,10 @@ namespace Assets.Scripts
         public Scatter[] activeScatters = new Scatter[0];   //Scatters that are currently active right now - This holds every scatter on the current planet
         private void OnCreateQuadStarted(object sender, CreateQuadScriptEventArgs e)
         {
-            //float[] distributiond = ConfigLoader.bodies["Luna"].scatters["TinyRocks"].GetNoiseData(e.CreateQuadData);
+            // For debugging noise
+
+            //float[] distributiond = ConfigLoader.bodies["Vulco"].scatters["MedRocks"].GetNoiseData(e.CreateQuadData);
+            //float[] noised = ConfigLoader.bodies["Vulco"].scatters["MedRocks"].GetDistributionData(e.CreateQuadData);
             //
             //var quadDatad = e.CreateQuadData;
             //var meshData = quadDatad.TerrainMeshData.Item;
@@ -272,7 +275,9 @@ namespace Assets.Scripts
             //    var verts = meshData.VerticesBasic;
             //    for (int b = 0; b < verts.Length; ++b)
             //    {
-            //        verts[b].Color = new half4((half)(distributiond[b]), (half)(distributiond[b]), (half)(distributiond[b]), (half)1);
+            //        //distributiond[b] = distributiond[b] * 0.5f + 0.5f;
+            //        //noised[b] = noised[b] * 0.5f + 0.5f;
+            //        verts[b].Color = new half4((half)(distributiond[b] * noised[b]), (half)(distributiond[b] * noised[b]), (half)(distributiond[b] * noised[b]), (half)1);
             //    }
             //}
             //else
@@ -280,7 +285,9 @@ namespace Assets.Scripts
             //    var verts = meshData.Vertices;
             //    for (int b = 0; b < verts.Length; ++b)
             //    {
-            //        verts[b].Color = new half4((half)(distributiond[b]), (half)(distributiond[b]), (half)(distributiond[b]), (half)1);
+            //        //distributiond[b] = distributiond[b] * 0.5f + 0.5f;
+            //        //noised[b] = noised[b] * 0.5f + 0.5f;
+            //        verts[b].Color = new half4((half)(distributiond[b] * noised[b]), (half)(distributiond[b] * noised[b]), (half)(distributiond[b] * noised[b]), (half)1);
             //    }
             //}
 

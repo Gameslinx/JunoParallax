@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Inst-Ind-Color
-  m_Shader: {fileID: 4800000, guid: 6ecb039510b63ff42986debb07ea38b2, type: 3}
+  m_Shader: {fileID: 4800000, guid: 263c1ec9cbed35c4aa27f0934a06d9b2, type: 3}
   m_ValidKeywords: []
   m_InvalidKeywords: []
   m_LightmapFlags: 4
@@ -21,7 +21,7 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _BumpMap:
-        m_Texture: {fileID: 2800000, guid: b78dbebbc26dbd549b8734d6f17d74f7, type: 3}
+        m_Texture: {fileID: 2800000, guid: 08426e477cc990045a9ca21932b59397, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _DetailAlbedoMap:
@@ -37,11 +37,15 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _EmissionMap:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: 6ca5daa3415451940921fa7e2c3db9e8, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _IceMask:
+        m_Texture: {fileID: 2800000, guid: 24971a5f74f25a64c85261552d0252a7, type: 3}
+        m_Scale: {x: 3, y: 3}
+        m_Offset: {x: 0, y: 0}
     - _MainTex:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: 24971a5f74f25a64c85261552d0252a7, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetallicGlossMap:
@@ -68,17 +72,19 @@ Material:
     - _DetailNormalMapScale: 1
     - _DitherFactor: 1
     - _DstBlend: 0
-    - _FresnelPower: 8.6
+    - _FresnelPower: 4.1
     - _Gloss: 250
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1
-    - _Hapke: 1
+    - _Hapke: 0.6
     - _HeightCutoff: 0.69
     - _HeightFactor: 1.66
+    - _IceDistortion: 0.1
+    - _IceTransparency: 0
     - _InitialTime: 0
     - _MaxBrightness: 1
-    - _Metallic: 0.8
+    - _Metallic: 2.3
     - _Mode: 0
     - _OcclusionStrength: 1
     - _Parallax: 0.02
@@ -91,12 +97,13 @@ Material:
     - _WaveSpeed: 0.64
     - _ZWrite: 1
     m_Colors:
-    - _Color: {r: 0.8121122, g: 0.8867924, b: 0.6977216, a: 1}
-    - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _FresnelColor: {r: 0, g: 0, b: 0, a: 1}
-    - _MetallicTint: {r: 0, g: 0, b: 0, a: 1}
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _EmissionColor: {r: 0.7924528, g: 0.40528262, b: 0.025418244, a: 1}
+    - _FresnelColor: {r: 1, g: 1, b: 1, a: 1}
+    - _MetallicTint: {r: 1, g: 1, b: 1, a: 1}
     - _PlanetOrigin: {r: 0, g: -115, b: 0, a: 1}
     - _ShaderOffset: {r: 0, g: 0, b: 0, a: 1}
+    - _ThisPos: {r: 0, g: 0, b: 0, a: 1}
     - _WindSpeed: {r: 25, g: 25, b: 25, a: 1}
     - _WorldSize: {r: 0, g: 0, b: 0, a: 1}
   m_BuildTextureStacks: []

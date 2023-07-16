@@ -64,6 +64,12 @@ void Distribute (uint3 id : SV_DispatchThreadID)
         return;
     }
 
+    float avgDistribution = (Distribution[index1] + Distribution[index2] + Distribution[index3]) / 3;
+    if (avgDistribution < _Coverage)
+    { 
+        return; 
+    }
+
     float noise1 = Noise[index1] * Distribution[index1];
     float noise2 = Noise[index2] * Distribution[index2];
     float noise3 = Noise[index3] * Distribution[index3];
@@ -78,7 +84,6 @@ void Distribute (uint3 id : SV_DispatchThreadID)
         float r2 = Rand(float2(id.x, r1) + _Seed * 1.23133 + i);
 
         float3 localPos = TriangleAverage(vert1, vert2, vert3, r1, r2);
-        float3 localNormal = TriangleAverage(norm1, norm2, norm3, r1, r2);
         float noise = (((1 - sqrt(r1)) * noise1) + ((sqrt(r1) * (1 - r2)) * noise2) + ((r2 * sqrt(r1)) * noise3)) * 0.5 + 0.5;  //Get between 0 and 1
 
         // World position is used for context based parameters such as min/max altitude constraints
@@ -171,11 +176,13 @@ void Evaluate (uint3 id : SV_DispatchThreadID)
     uint index2 = Triangles[pos.index + 1];
     uint index3 = Triangles[pos.index + 2];
 
-    float3 normal1 = Normals[index1];
-    float3 normal2 = Normals[index1];
-    float3 normal3 = Normals[index1];
+    // Calculating the average normal using (nrm1 + nrm2 + nrm3) / 3 does not work, so compute face normal from vertex positions
 
-    float3 avgNormal = TriangleAverage(normal1, normal2, normal3);
+    float3 vert1 = Vertices[index1];
+    float3 vert2 = Vertices[index2];
+    float3 vert3 = Vertices[index3];
+
+    float3 avgNormal = normalize(cross(vert2 - vert1, vert3 - vert1));
 
     float4x4 mat = GetTRSMatrix(pos.pos, float3(0, pos.rot, 0), pos.scale, avgNormal);
 

@@ -122,7 +122,7 @@ public class ScatterData
 
         shader.SetBuffer(evaluateKernel, "PositionsIn", positions);
         shader.SetBuffer(evaluateKernel, "Triangles", parent.triangles);
-        shader.SetBuffer(evaluateKernel, "Normals", parent.normals);
+        shader.SetBuffer(evaluateKernel, "Vertices", parent.vertices);
         shader.SetBuffer(evaluateKernel, "LOD0", lod0);
         shader.SetBuffer(evaluateKernel, "LOD1", lod1);
         shader.SetBuffer(evaluateKernel, "LOD2", lod2);
