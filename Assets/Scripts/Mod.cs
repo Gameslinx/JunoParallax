@@ -134,6 +134,10 @@ namespace Assets.Scripts
             {
                 foreach (Scatter scatter in body.scatters.Values)
                 {
+                    if (scatter.sharesNoise) 
+                    { 
+                        continue; 
+                    }
                     var terrainData = e.TerrainData;
                     var planetData = terrainData.PlanetData;
                     if (planetData.Name == scatter.planetName)
@@ -142,7 +146,7 @@ namespace Assets.Scripts
                         var scatterNoiseXml = XElement.Parse(scatter.ScatterNoiseXml).Elements("Modifier").ToList();
                         terrainData.AddModifiersFromXml(scatterNoiseXml, 0);
                         Dictionary<string, Biome> scatterBiomes = scatter.distribution.biomes;
-                        // Loop through all sub biomes and set their custom data (random junk data for testing)
+                        // Loop through all sub biomes and set their custom data
                         foreach (var biome in terrainData.Biomes)
                         {
                             if (scatterBiomes.ContainsKey(biome.name))
@@ -298,6 +302,11 @@ namespace Assets.Scripts
             ScatterNoise sn;
             for (int i = 0; i < activeScatters.Length; i++)
             {
+                if (activeScatters[i].sharesNoise)
+                {
+                    // This scatter shares noise with another scatter, so there's no need to try and fetch the noise on it
+                    continue;
+                }
                 sn = new ScatterNoise(activeScatters[i].GetDistributionData(data), activeScatters[i].GetNoiseData(data));
                 activeScatters[i].noise.Add(e.Quad, sn);
             }

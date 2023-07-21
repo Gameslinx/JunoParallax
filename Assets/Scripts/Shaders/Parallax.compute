@@ -65,9 +65,9 @@ void Distribute (uint3 id : SV_DispatchThreadID)
     }
 
     float avgDistribution = (Distribution[index1] + Distribution[index2] + Distribution[index3]) / 3;
-    if (avgDistribution < _Coverage)
+    if (avgDistribution < 0.5)
     { 
-        return; 
+        return;
     }
 
     float noise1 = Noise[index1] * Distribution[index1];

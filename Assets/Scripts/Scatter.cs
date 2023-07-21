@@ -88,6 +88,9 @@ public class Scatter
 
     public int maxObjectsToRender = 0;
 
+    public bool sharesNoise = false;
+    public Scatter sharesNoiseWith; //If this scatter uses the same noise parameters as another scatter, this will be set to that scatter. Otherwise, it'll point to this scatter
+
     public string Id { get; }
     public string DisplayName { get; }
     public string DistributionQuadId { get; }

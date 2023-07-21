@@ -197,7 +197,7 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
         }
         //return true;
         // Pick 3 points on a quad to sample the noise. Not hugely accurate but good enough
-        float noiseSample = scatter.noise[quad].noise[0] + scatter.noise[quad].noise[28] + scatter.noise[quad].noise[700];
+        float noiseSample = scatter.sharesNoiseWith.noise[quad].noise[0] + scatter.sharesNoiseWith.noise[quad].noise[28] + scatter.sharesNoiseWith.noise[quad].noise[700];
         // Absolutely no noise on this quad
         if (noiseSample == 0)
         {

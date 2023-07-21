@@ -75,8 +75,8 @@ public class ScatterData
         noise = new ComputeBuffer(parent.vertexCount, 4, ComputeBufferType.Structured);
         positions = new ComputeBuffer(_MaxCount, 32, ComputeBufferType.Append);
 
-        distribution.SetData(scatter.noise[parent.quad].distribution);
-        noise.SetData(scatter.noise[parent.quad].noise);    // If the scatter inherits noise from another scatter, this is the parent scatter noise and not noise generated for this scatter
+        distribution.SetData(scatter.sharesNoiseWith.noise[parent.quad].distribution);
+        noise.SetData(scatter.sharesNoiseWith.noise[parent.quad].noise);    // If the scatter inherits noise from another scatter, this is the parent scatter noise and not noise generated for this scatter
 
         shader.SetBuffer(distributeKernel, "Vertices", parent.vertices);
         shader.SetBuffer(distributeKernel, "Triangles", parent.triangles);
@@ -87,7 +87,6 @@ public class ScatterData
 
         // Quads subdivide into 4 quads, so in order for a lesser subdivided quad to have the same number of trees (and maintain a constant scatter density), increase its pop mult by 4
         
-
         shader.SetInt("_MaxCount", _MaxCount);
         shader.SetFloat("_Seed", scatter.distribution._Seed);
         shader.SetInt("_PopulationMultiplier", scatter.distribution._PopulationMultiplier * populationFactor);
@@ -176,9 +175,23 @@ public class ScatterData
         renderer.OnEvaluatePositions += EvaluatePositions;
         //shader = ShaderPool.Retrieve();
     }
+    public void GUITool_Reinitialize()
+    {
+        positions?.Release();
+        distribution?.Release();
+        noise?.Release();
+        dispatchArgs?.Release();
+        objectLimits?.Release();
+
+        InitializeDistribute();
+        InitializeEvaluate();
+        GeneratePositions();
+        ComputeDispatchArgs();
+    }
     public void Cleanup()
     {
         renderer.OnEvaluatePositions -= EvaluatePositions;
+
         positions?.Release();
         distribution?.Release();
         noise?.Release();

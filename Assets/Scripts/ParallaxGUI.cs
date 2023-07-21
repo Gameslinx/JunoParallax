@@ -3,8 +3,11 @@ using Assets.Scripts.Terrain;
 using ModApi.Common;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.UIElements;
 using static ModApi.Utilities;
+using static ScatterRenderer;
 
 enum ChangeType
 {
@@ -49,8 +52,7 @@ public class ParallaxGUI : MonoBehaviour
                     {
                         if (scatterData.scatter.DisplayName == currentScatter.DisplayName)
                         {
-                            scatterData.Cleanup();
-                            scatterData.Start();
+                            scatterData.GUITool_Reinitialize();
                         }
                     }
                 }

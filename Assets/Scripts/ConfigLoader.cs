@@ -189,7 +189,7 @@ public class ConfigLoader : MonoBehaviour
                 List<XElement> scatters = planetNode.Element("Scatters").Elements("Scatter").ToList();
                 foreach (XElement scatter in scatters)
                 {
-                    // Create new scatter
+                    // Create new scatter and parse optional properties
                     string scatterName = scatter.Attribute("name").Value;
                     Scatter thisScatter = new Scatter(planetName + "_" + scatterName, scatterName);
                     thisScatter.planetName = planetName;
@@ -198,6 +198,10 @@ public class ConfigLoader : MonoBehaviour
                     XElement inheritsFrom = scatter.Element("inheritsFrom");
                     thisScatter.inherits = inheritsFrom == null ? false : true;
                     thisScatter.inheritsFrom = inheritsFrom == null ? "" : inheritsFrom.Value;
+
+                    XElement sharesNoiseWith = scatter.Element("sharesNoiseWith");
+                    thisScatter.sharesNoise = sharesNoiseWith == null ? false : true;
+                    thisScatter.sharesNoiseWith = sharesNoiseWith == null ? thisScatter : body.scatters[sharesNoiseWith.Value];
 
                     XElement maxObjectsToRender = scatter.Element("maxObjects");
                     thisScatter.maxObjectsToRender = maxObjectsToRender == null ? 1000 : maxObjectsToRender.Value.ToInt();
@@ -281,7 +285,10 @@ public class ConfigLoader : MonoBehaviour
 
                     Debug.Log("Parsed Material");
 
-                    thisScatter.Register();
+                    if (!thisScatter.sharesNoise)
+                    {
+                        thisScatter.Register();
+                    }
 
                     body.scatters.Add(scatterName, thisScatter);
                 }
