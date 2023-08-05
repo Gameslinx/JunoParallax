@@ -23,6 +23,12 @@ public class ScatterManager : MonoBehaviour         //Manages scatters on a plan
 
     public float splitDist;
     public float[] lodDistances;
+    public Scatter[] activeScatters = new Scatter[0];
+
+    // Stuff for capturing screen texture
+    public RenderTexture screenTexture;
+    public GameObject cameraObject;
+    public bool requiresScreenTexture = false;
 
     void OnEnable()
     {
@@ -32,7 +38,6 @@ public class ScatterManager : MonoBehaviour         //Manages scatters on a plan
             renderer.Initialize();
         }
         RegisterEvents();
-        //scatterRenderer?.Initialize();             //OnEnable can be called before the renderer is assigned, in which case the renderer is manually initialized
     }
     void Update()
     {

@@ -82,7 +82,7 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
         Profiler.BeginSample("Initialize QuadData");
         quadDiagLength = GetQuadDiagLength();
         sqrHalfQuadDiagLength = (quadDiagLength / 2.0f) * (quadDiagLength / 2.0f);
-        bounds.size = Vector3.one * quadDiagLength;
+        bounds.size = Vector3.one * quadDiagLength * 1.11f;
 
         vertexData = quad.RenderingData.TerrainMesh.vertices;
         triangleData = quad.RenderingData.TerrainMesh.triangles;

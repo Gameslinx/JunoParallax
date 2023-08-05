@@ -1,6 +1,7 @@
 using Assets.Scripts;
 using Assets.Scripts.Terrain;
 using ModApi.Common;
+using ModApi.Common.SimpleTypes;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.Mathematics;
@@ -159,6 +160,7 @@ public class ParallaxGUI : MonoBehaviour
             currentScatter.distribution._PopulationMultiplier = TextAreaLabelInt("Population Multiplier", currentScatter.distribution._PopulationMultiplier, 1, 200, ChangeType.Distribution);
             currentScatter.distribution._SpawnChance = TextAreaLabelFloat("Spawn Chance", currentScatter.distribution._SpawnChance, ChangeType.Distribution);
             currentScatter.distribution._Range = TextAreaLabelFloat("Max Range", currentScatter.distribution._Range, ChangeType.Distribution);
+            currentScatter.sqrRange = currentScatter.distribution._Range * currentScatter.distribution._Range;
             currentScatter.distribution._Coverage = TextAreaLabelFloat("Coverage", currentScatter.distribution._Coverage, ChangeType.Distribution);
             currentScatter.distribution._MinScale = TextAreaLabelVector("Min Scale", currentScatter.distribution._MinScale, ChangeType.Distribution);
             currentScatter.distribution._MaxScale = TextAreaLabelVector("Max Scale", currentScatter.distribution._MaxScale, ChangeType.Distribution);
@@ -188,11 +190,29 @@ public class ParallaxGUI : MonoBehaviour
                 ShowMaterial(currentScatter.distribution.lod1.material, MaterialType.LOD2);
             }
         }
+        // This doesn't work, and I'm not sure exactly why
+        if (GUILayout.Button("Capture Cubemap (Bugged)"))
+        {
+            RenderTexture rt = new RenderTexture(1024, 1024, 24);
+            rt.dimension = UnityEngine.Rendering.TextureDimension.Cube;
+            rt.hideFlags = HideFlags.HideAndDontSave;
+            for (int i = 0; i < 6; i++)
+            {
+                manager.mainCamera.RenderToCubemap(rt, i);
+
+                Texture2D tex = new Texture2D(1024, 1024, TextureFormat.RGB24, false);
+                tex.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0);
+                tex.Apply();
+
+                byte[] image = tex.EncodeToPNG();
+                System.IO.File.WriteAllBytes("C:/Users/tuvee/Pictures/cubemap" + i + ".png", image);
+            }
+            
+        }
 
         // Debug
 
         currentScatter.maxObjectsToRender = (int)TextAreaLabelSlider("[DEBUG] Max Objects to Render", currentScatter.maxObjectsToRender, 1, 100000, ChangeType.Renderer);
-
         GUILayout.EndVertical();
         UnityEngine.GUI.DragWindow();
     }

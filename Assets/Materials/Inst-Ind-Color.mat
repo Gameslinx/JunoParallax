@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Inst-Ind-Color
-  m_Shader: {fileID: 4800000, guid: 263c1ec9cbed35c4aa27f0934a06d9b2, type: 3}
+  m_Shader: {fileID: 4800000, guid: 361f21dcaaf8f8c40a3e7bcf819c5bd9, type: 3}
   m_ValidKeywords: []
   m_InvalidKeywords: []
   m_LightmapFlags: 4
@@ -21,7 +21,7 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _BumpMap:
-        m_Texture: {fileID: 2800000, guid: 08426e477cc990045a9ca21932b59397, type: 3}
+        m_Texture: {fileID: 2800000, guid: 1b67de375e71648449f12d0901284b42, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _DetailAlbedoMap:
@@ -41,11 +41,11 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _IceMask:
-        m_Texture: {fileID: 2800000, guid: 24971a5f74f25a64c85261552d0252a7, type: 3}
-        m_Scale: {x: 3, y: 3}
+        m_Texture: {fileID: 2800000, guid: 2829586a03b94124faca45636fdabd9b, type: 3}
+        m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
-        m_Texture: {fileID: 2800000, guid: 24971a5f74f25a64c85261552d0252a7, type: 3}
+        m_Texture: {fileID: 2800000, guid: 1ac1cd2730ea88549809f2bae3d98a07, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetallicGlossMap:
@@ -60,31 +60,35 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _ScreenTexture:
+        m_Texture: {fileID: 8400000, guid: 49da72edcdc412a43ac3d7087d388ecc, type: 2}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _WindMap:
         m_Texture: {fileID: 2800000, guid: 7e0107a8846bb0e4c9577b5371c896f9, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _BumpScale: 1
+    - _BumpScale: 4.45
     - _CurrentTime: 0
     - _Cutoff: 0.26
     - _DetailNormalMapScale: 1
     - _DitherFactor: 1
     - _DstBlend: 0
-    - _FresnelPower: 4.1
-    - _Gloss: 250
+    - _FresnelPower: 5.8
+    - _Gloss: 7
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1
     - _Hapke: 0.6
     - _HeightCutoff: 0.69
     - _HeightFactor: 1.66
-    - _IceDistortion: 0.1
+    - _IceDistortion: 0.001
     - _IceTransparency: 0
     - _InitialTime: 0
     - _MaxBrightness: 1
-    - _Metallic: 2.3
+    - _Metallic: 0.001
     - _Mode: 0
     - _OcclusionStrength: 1
     - _Parallax: 0.02
@@ -99,8 +103,9 @@ Material:
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0.7924528, g: 0.40528262, b: 0.025418244, a: 1}
-    - _FresnelColor: {r: 1, g: 1, b: 1, a: 1}
-    - _MetallicTint: {r: 1, g: 1, b: 1, a: 1}
+    - _FresnelColor: {r: 0, g: 0, b: 0, a: 1}
+    - _IceInteriorColor: {r: 0.509434, g: 0.509434, b: 0.509434, a: 1}
+    - _MetallicTint: {r: 0, g: 0, b: 0, a: 1}
     - _PlanetOrigin: {r: 0, g: -115, b: 0, a: 1}
     - _ShaderOffset: {r: 0, g: 0, b: 0, a: 1}
     - _ThisPos: {r: 0, g: 0, b: 0, a: 1}

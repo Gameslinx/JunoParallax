@@ -42,7 +42,7 @@ public class ShaderViewer : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        Graphics.DrawMeshInstancedIndirect(mesh, 0, material, bounds, argsBuffer, 0, null, UnityEngine.Rendering.ShadowCastingMode.On, true);
+        Graphics.DrawMeshInstancedIndirect(mesh, 0, material, bounds, argsBuffer, 0, null, UnityEngine.Rendering.ShadowCastingMode.On, true, 3);
     }
     private void OnDisable()
     {

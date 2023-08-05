@@ -47,6 +47,10 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
     public ShadowCastingMode shadowsLOD1;
     public ShadowCastingMode shadowsLOD2;
 
+    int layerlod0 = 0;
+    int layerlod1 = 0;
+    int layerlod2 = 0;
+
     void Prerequisites()    //Load mesh, materials...
     {
         Mesh mesh = Mod.Instance.ResourceLoader.LoadAsset<Mesh>(scatter.material._Mesh);
@@ -159,9 +163,9 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
 
         //For debugging command buffers:
 
-        Graphics.DrawMeshInstancedIndirect(meshLod0, 0, materialLOD0, rendererBounds, argslod0, 0, null, shadowsLOD0, true, 0, manager.mainCamera);
-        Graphics.DrawMeshInstancedIndirect(meshLod1, 0, materialLOD1, rendererBounds, argslod1, 0, null, shadowsLOD1, true, 0, manager.mainCamera);
-        Graphics.DrawMeshInstancedIndirect(meshLod2, 0, materialLOD2, rendererBounds, argslod2, 0, null, shadowsLOD2, true, 0, manager.mainCamera);
+        Graphics.DrawMeshInstancedIndirect(meshLod0, 0, materialLOD0, rendererBounds, argslod0, 0, null, shadowsLOD0, true, layerlod0, manager.mainCamera);
+        Graphics.DrawMeshInstancedIndirect(meshLod1, 0, materialLOD1, rendererBounds, argslod1, 0, null, shadowsLOD1, true, layerlod1, manager.mainCamera);
+        Graphics.DrawMeshInstancedIndirect(meshLod2, 0, materialLOD2, rendererBounds, argslod2, 0, null, shadowsLOD2, true, layerlod2, manager.mainCamera);
     }
     void EvaluatePoints()
     {

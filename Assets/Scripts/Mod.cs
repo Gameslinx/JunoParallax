@@ -153,11 +153,17 @@ namespace Assets.Scripts
                             {
                                 Dictionary<string, SubBiome> scatterSubBiomes = scatterBiomes[biome.name].subBiomes;
                                 var subBiomes = biome.GetSubBiomes();
+                                Debug.Log("SubBiomes count: " + subBiomes.Count);
+                                int subBiomeCount = -1;
                                 foreach (var subBiome in subBiomes)
                                 {
-                                    if (scatterSubBiomes.ContainsKey(subBiome.Name))
+                                    //SubBiomes could have null names - guard against this and use index instead
+                                    subBiomeCount++;
+                                    string name = subBiome.Name;
+                                    if (name == null) { name = subBiomeCount.ToString(); }
+                                    if (scatterSubBiomes.ContainsKey(name))
                                     {
-                                        SubBiome scatterSubBiome = scatterSubBiomes[subBiome.Name];
+                                        SubBiome scatterSubBiome = scatterSubBiomes[name];
                                         scatter.SetSubBiomeTerrainData(subBiome.PrimaryData, scatterSubBiome.flatNoiseIntensity);
                                         scatter.SetSubBiomeTerrainData(subBiome.SlopeData, scatterSubBiome.slopeNoiseIntensity);
                                     }
@@ -206,6 +212,7 @@ namespace Assets.Scripts
             ScatterBody body = ConfigLoader.bodies[e.Planet.PlanetNode.Name];
             Scatter[] scatters = body.scatters.Values.ToArray();
             activeScatters = scatters;
+            manager.activeScatters = activeScatters;
             Debug.Log("Active scatter count: " + activeScatters.Length);
             foreach (Scatter scatter in scatters)
             {
@@ -218,7 +225,9 @@ namespace Assets.Scripts
                 scatterRenderers.Add(scatter, renderer);
             }
             Utils utils = managerGO.AddComponent<Utils>();
+
             
+
             scatterObjects.Add(e.Planet.PlanetData.Id, managerGO);
             scatterManagers.Add(e.Planet.PlanetData.Id, manager);
         }
@@ -269,9 +278,8 @@ namespace Assets.Scripts
         {
             // For debugging noise
 
-            //float[] distributiond = ConfigLoader.bodies["Vulco"].scatters["MedRocks"].GetNoiseData(e.CreateQuadData);
-            //float[] noised = ConfigLoader.bodies["Vulco"].scatters["MedRocks"].GetDistributionData(e.CreateQuadData);
-            //
+            //float[] noised = ConfigLoader.bodies["Jastrus"].scatters["TinyRocks"].GetNoiseData(e.CreateQuadData);
+            //float[] distributiond = ConfigLoader.bodies["Jastrus"].scatters["TinyRocks"].GetDistributionData(e.CreateQuadData);
             //var quadDatad = e.CreateQuadData;
             //var meshData = quadDatad.TerrainMeshData.Item;
             //if (meshData.VertexType == typeof(MeshDataTerrain.TerrainVertexBasic))
@@ -280,8 +288,8 @@ namespace Assets.Scripts
             //    for (int b = 0; b < verts.Length; ++b)
             //    {
             //        //distributiond[b] = distributiond[b] * 0.5f + 0.5f;
-            //        //noised[b] = noised[b] * 0.5f + 0.5f;
-            //        verts[b].Color = new half4((half)(distributiond[b] * noised[b]), (half)(distributiond[b] * noised[b]), (half)(distributiond[b] * noised[b]), (half)1);
+            //        //noised[b] = (noised[b] + 1f) * 0.5f;
+            //        verts[b].Color = new half4((half)(noised[b] * distributiond[b]), (half)(noised[b] * distributiond[b]), (half)(noised[b] * distributiond[b]), (half)1);
             //    }
             //}
             //else
@@ -290,11 +298,10 @@ namespace Assets.Scripts
             //    for (int b = 0; b < verts.Length; ++b)
             //    {
             //        //distributiond[b] = distributiond[b] * 0.5f + 0.5f;
-            //        //noised[b] = noised[b] * 0.5f + 0.5f;
-            //        verts[b].Color = new half4((half)(distributiond[b] * noised[b]), (half)(distributiond[b] * noised[b]), (half)(distributiond[b] * noised[b]), (half)1);
+            //        //noised[b] = (noised[b] + 1f) * 0.5f;
+            //        verts[b].Color = new half4((half)(noised[b] * distributiond[b]), (half)(noised[b] * distributiond[b]), (half)(noised[b] * distributiond[b]), (half)1);
             //    }
             //}
-
             //return;
 
             Profiler.BeginSample("OnCreateQuadStarted (Parallax)");

@@ -21,6 +21,7 @@ public struct DistributionData
     public uint _AlignToTerrainNormal;
     public float _MaxNormalDeviance;
     public float _Seed;
+    public bool _RidgedNoise;
     public Vector3 _MinScale;
     public Vector3 _MaxScale;
     public LOD lod0;

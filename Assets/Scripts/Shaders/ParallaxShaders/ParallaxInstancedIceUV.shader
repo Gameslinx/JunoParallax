@@ -3,13 +3,15 @@
 	Properties
 	{
 		_MainTex("_MainTex", 2D) = "white" {}
-
 		_IceMask("_IceMask", 2D) = "black" {}
 		_BumpMap("_BumpMap", 2D) = "bump" {}
+		_ScreenTexture("_ScreenTexture", 2D) = "red" {}
+
 		_Metallic("_Metallic", Range(0.001, 20)) = 0.2
 		_Gloss("_Gloss", Range(0, 250)) = 0
 		_MetallicTint("_MetallicTint", COLOR) = (0,0,0)
 		_Color("_Color", COLOR) = (1,1,1)
+		_IceInteriorColor("_IceInteriorColor", COLOR) = (1,1,1)
 		_FresnelPower("_FresnelPower", Range(0.001, 20)) = 1
 		_FresnelColor("_FresnelColor", COLOR) = (0,0,0)
 		_PlanetOrigin("_PlanetOrigin", vector) = (0,0,0)
@@ -29,12 +31,12 @@
 	}
 	SubShader
 	{
+		//Cull Off
 		GrabPass
         {
             "_BackgroundTexture"
         }
-		//Cull Off
-		Tags {"Queue" = "Transparent" }
+		Tags {"Queue" = "Transparent+1001" }
 		Pass
 		{
 			Tags { "LightMode" = "ForwardBase" }
@@ -50,7 +52,7 @@
 			uniform sampler2D _IceMask;
 
 			float _BumpScale;
-
+			float3 _IceInteriorColor;
 			float _FresnelPower;
 			float3 _FresnelColor;
 			float _IceDistortion;
@@ -108,49 +110,49 @@
 				float4 grabPos = i.grabPos;
 				grabPos.x += worldNormal.x * _IceDistortion;
 				grabPos.y += worldNormal.y * _IceDistortion;
-				float4 newCol = tex2Dproj(_BackgroundTexture, grabPos) * float4(i.color.rgb * _Color.rgb, 1);
+				float4 newCol = tex2Dproj(_BackgroundTexture, grabPos) * float4(_IceInteriorColor, 1);
 				
-				color = lerp(color, _LightColor0, iceTransparency);
+				color = lerp(color, 0, iceTransparency);
 				return lerp(color.rgb, newCol.rgb, iceTransparency);
 			}
 			ENDCG
 
 		}
-		Pass
-        {
-            Tags{ "LightMode" = "ShadowCaster" }
-            CGPROGRAM
-            #pragma vertex vert
-            #pragma fragment frag
-            #include "ParallaxUtilsUV.cginc"
-
-            float _Cutoff;
-          
-            shadow_v2f vert(shadow_appdata_t v, uint instanceID : SV_InstanceID)
-            {
-                shadow_v2f o;
-                float4x4 mat = _Properties[instanceID].mat;
-                float4 pos = mul(mat, v.vertex) + float4(_ShaderOffset, 0);
-                float3 world_vertex = mul(unity_ObjectToWorld, pos);
-                
-                o.pos = UnityObjectToClipPos(pos);
-                float clamped = min(o.pos.z, o.pos.w*UNITY_NEAR_CLIP_VALUE);
-                o.pos.z = lerp(o.pos.z, clamped, unity_LightShadowBias.y);
-                o.uv = v.uv;
-                o.color = 1;//_Properties[instanceID].color;
-                
-                return o;
-            }
-        
-            float4 frag(shadow_v2f i, uint instanceID : SV_InstanceID) : SV_Target
-            {
-                if (InterleavedGradientNoise(i.color.a, i.pos.xy + i.pos.z))
-				discard;
-
-                SHADOW_CASTER_FRAGMENT(i)
-            }
-            ENDCG
-        }
+		//Pass
+        //{
+        //    Tags{ "LightMode" = "ShadowCaster" }
+        //    CGPROGRAM
+        //    #pragma vertex vert
+        //    #pragma fragment frag
+        //    #include "ParallaxUtilsUV.cginc"
+		//
+        //    float _Cutoff;
+        //  
+        //    shadow_v2f vert(shadow_appdata_t v, uint instanceID : SV_InstanceID)
+        //    {
+        //        shadow_v2f o;
+        //        float4x4 mat = _Properties[instanceID].mat;
+        //        float4 pos = mul(mat, v.vertex) + float4(_ShaderOffset, 0);
+        //        float3 world_vertex = mul(unity_ObjectToWorld, pos);
+        //        
+        //        o.pos = UnityObjectToClipPos(pos);
+        //        float clamped = min(o.pos.z, o.pos.w*UNITY_NEAR_CLIP_VALUE);
+        //        o.pos.z = lerp(o.pos.z, clamped, unity_LightShadowBias.y);
+        //        o.uv = v.uv;
+        //        o.color = 1;//_Properties[instanceID].color;
+        //        
+        //        return o;
+        //    }
+        //
+        //    float4 frag(shadow_v2f i, uint instanceID : SV_InstanceID) : SV_Target
+        //    {
+        //        if (InterleavedGradientNoise(i.color.a, i.pos.xy + i.pos.z))
+		//		discard;
+		//
+        //        SHADOW_CASTER_FRAGMENT(i)
+        //    }
+        //    ENDCG
+        //}
 		Pass
 		{
 			Tags { "LightMode" = "ForwardAdd" }
@@ -172,6 +174,7 @@
 			float3 _FresnelColor;
 			float _IceDistortion;
 			float _IceTransparency;
+			float3 _IceInteriorColor;
 
 			v2f_screenPos_lighting vert(appdata_t i, uint instanceID: SV_InstanceID)
 			{
@@ -223,8 +226,8 @@
 				float4 grabPos = i.grabPos;
 				grabPos.x += worldNormal.x * _IceDistortion;
 				grabPos.y += worldNormal.y * _IceDistortion;
-				float4 newCol = tex2Dproj(_BackgroundTexture, grabPos) * float4(i.color.rgb * _Color.rgb, 1);
-				
+				float4 newCol = tex2Dproj(_BackgroundTexture, grabPos) * float4(_IceInteriorColor, 1);
+
 				color = lerp(color, _LightColor0, iceTransparency);
 				color = lerp(color, newCol, iceTransparency);
 				return float4(color.rgb * attenuation, attenuation);

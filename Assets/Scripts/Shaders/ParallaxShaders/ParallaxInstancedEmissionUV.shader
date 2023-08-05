@@ -1,6 +1,4 @@
 ﻿
-
-
 Shader "Custom/ParallaxInstancedEmissionUV"
 {
 	Properties

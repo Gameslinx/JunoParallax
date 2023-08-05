@@ -33,6 +33,7 @@ float _MaxAltitude;
 float3 _PlanetOrigin;
 float _PlanetRadius;
 float _MaxNormalDeviance;
+uint _AbsoluteNoise;
 
 uint _NumTris;
 
@@ -85,6 +86,10 @@ void Distribute (uint3 id : SV_DispatchThreadID)
 
         float3 localPos = TriangleAverage(vert1, vert2, vert3, r1, r2);
         float noise = (((1 - sqrt(r1)) * noise1) + ((sqrt(r1) * (1 - r2)) * noise2) + ((r2 * sqrt(r1)) * noise3)) * 0.5 + 0.5;  //Get between 0 and 1
+        if (_AbsoluteNoise == 1)
+        {
+            noise = (1 - abs(noise)) * 2 - 1;
+        }
 
         // World position is used for context based parameters such as min/max altitude constraints
         float3 worldPos = mul(_ObjectToWorldMatrix, float4(localPos, 1)).xyz;

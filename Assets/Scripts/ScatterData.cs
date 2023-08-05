@@ -102,6 +102,7 @@ public class ScatterData
         shader.SetMatrix("_ObjectToWorldMatrix", parent.quadToWorldMatrix);
         shader.SetFloat("_PlanetRadius", (float)parent.quad.QuadSphere.PlanetData.Radius);
         shader.SetVector("_PlanetOrigin", (Vector3)parent.quad.QuadSphere.FramePosition);
+        shader.SetInt("_AbsoluteNoise", scatter.distribution._RidgedNoise == true ? 1 : 0);
 
         shader.SetInt("_NumTris", parent.triangleCount);
 
@@ -158,7 +159,7 @@ public class ScatterData
         // Don't evaluate quads uninitialized, invisible or out of range
         if (!ready) { return; }
         if (!parent.isVisible) { return; }
-        if (parent.sqrQuadCameraDistance > scatter.sqrRange + (parent.quadDiagLength * parent.quadDiagLength)) { return; }
+        if (parent.sqrQuadCameraDistance > scatter.sqrRange + (parent.quadDiagLength * 1.5f * parent.quadDiagLength)) { return; }
         shader.SetMatrix("_ObjectToWorldMatrix", parent.quadToWorldMatrix);
         shader.SetFloats("_CameraFrustumPlanes", Utils.planeNormals);
         shader.SetVector("_WorldSpaceCameraPosition", parent.manager.mainCamera.transform.position);

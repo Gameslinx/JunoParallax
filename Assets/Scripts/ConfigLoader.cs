@@ -107,6 +107,7 @@ public class ConfigLoader : MonoBehaviour
         foreach (XElement shader in shaderNodes )
         {
             string name = shader.GetStringAttribute("name");
+            string requiresScreenTex = shader.GetStringAttribute("requiresScreenTexture");
             Debug.Log("Shader: " + name);
             XElement propertiesNode = shader.Element("Properties");
 
@@ -223,6 +224,7 @@ public class ConfigLoader : MonoBehaviour
                     bool alignToTerrainNormal = distributionNode.Element("alignToTerrainNormal").Value.ToBoolean();
                     distribution._AlignToTerrainNormal = alignToTerrainNormal == true ? (uint)1 : (uint)0;
                     distribution._MaxNormalDeviance = distributionNode.Element("maxNormalDeviance").Value.ToFloat();
+                    distribution._RidgedNoise = false;
 
                     thisScatter.distribution = distribution;
                     Debug.Log("Parsed distribution");
@@ -382,18 +384,47 @@ public class ConfigLoader : MonoBehaviour
     }
     public static string GetNoiseProperties(XElement noiseNode, Scatter scatter)    //This looks really hacky and I promise it is but it works :D
     {
-        string name = noiseNode.Element("name").Value;
+        // This whole method can be improved to better support more noise types
         string noiseType = noiseNode.Element("noiseType").Value;
+        string modifier = "";
+        if (noiseType == "Perlin")
+        {
+            modifier = ParsePerlinNoise(noiseNode, scatter);
+        }
+        else if (noiseType == "PerlinFractal")
+        {
+            modifier = ParseFractalNoise(noiseNode, scatter);
+        }
+
+        Debug.Log("Modifier parsed from config to XML:" + modifier);
+        return modifier;
+    }
+    public static string ParsePerlinNoise(XElement noiseNode, Scatter scatter)
+    {
+        string name = noiseNode.Element("name").Value;
         string seed = noiseNode.Element("seed").Value;
         string frequency = noiseNode.Element("frequency").Value;
         string strength = noiseNode.Element("strength").Value;
         string interpolation = noiseNode.Element("interpolation").Value;
 
-        string modifier = $"<Modifiers>\n\t<Modifier type=\"VertexData.VertexDataNoise\" enabled=\"true\" name=\"{name}\" container=\"Scatter Noise\" basicView=\"true\" pass=\"Height\" noiseType=\"{noiseType}\" maskDataIndex=\"-1\" seed=\"{seed}\" lockSeed=\"false\" frequency=\"{frequency}\" strength=\"{strength}\" interpolation=\"{interpolation}\" dataIndex=\"7\" />\n\t<Modifier type=\"VertexData.CustomData.UpdateCustomDataFloat\" enabled=\"true\" name=\"Update Custom Data (Float)\" container=\"Scatter Noise\" pass=\"Height\" customDataId=\"{scatter.Id}_Noise_Vertex\" dataIndex=\"7\" />\n</Modifiers>";
-
-        Debug.Log("Modifier parsed from config to XML:" + modifier);
+        string modifier = $"<Modifiers>\n\t<Modifier type=\"VertexData.VertexDataNoise\" enabled=\"true\" name=\"{name}\" container=\"Scatter Noise\" basicView=\"true\" pass=\"Height\" noiseType=\"Perlin\" maskDataIndex=\"-1\" seed=\"{seed}\" lockSeed=\"false\" frequency=\"{frequency}\" strength=\"{strength}\" interpolation=\"{interpolation}\" dataIndex=\"7\" />\n\t<Modifier type=\"VertexData.CustomData.UpdateCustomDataFloat\" enabled=\"true\" name=\"Update Custom Data (Float)\" container=\"Scatter Noise\" pass=\"Height\" customDataId=\"{scatter.Id}_Noise_Vertex\" dataIndex=\"7\" />\n</Modifiers>";
         return modifier;
     }
-    // Get names of planets in each config
+    public static string ParseFractalNoise(XElement noiseNode, Scatter scatter)
+    {
+        string name = noiseNode.Element("name").Value;
+        string seed = noiseNode.Element("seed").Value;
+        string frequency = noiseNode.Element("frequency").Value;
+        string strength = noiseNode.Element("strength").Value;
+        string interpolation = noiseNode.Element("interpolation").Value;
+        string octaves = noiseNode.Element("octaves").Value;
+        string gain = noiseNode.Element("gain").Value;
+        string lacunarity = noiseNode.Element("lacunarity").Value;
+        string fractalType = noiseNode.Element("fractalType").Value;
 
+        scatter.distribution._RidgedNoise = noiseNode.Element("ridgedNoise").Value.ToBoolean();
+
+        string modifier = $"<Modifiers>\n\t<Modifier type=\"VertexData.VertexDataNoise\" enabled=\"true\" name=\"{name}\" container=\"Scatter Noise\" basicView=\"true\" pass=\"Height\" noiseType=\"PerlinFractal\" maskDataIndex=\"-1\" seed=\"{seed}\" lockSeed=\"false\" frequency=\"{frequency}\" strength=\"{strength}\" fractalType=\"{fractalType}\" octaves=\"{octaves}\" fractalLacunarityType=\"Default\" lacunarity=\"{lacunarity}\" fractalAmplitudeType=\"Default\" gain=\"{gain}\" interpolation=\"{interpolation}\" dataIndex=\"7\" /> \n\t <Modifier type=\"VertexData.CustomData.UpdateCustomDataFloat\" enabled=\"true\" name=\"Update Custom Data (Float)\" container=\"Scatter Noise\" pass=\"Height\" customDataId=\"{scatter.Id}_Noise_Vertex\" dataIndex=\"7\" />\n</Modifiers>";
+        return modifier;
+    }
 }
