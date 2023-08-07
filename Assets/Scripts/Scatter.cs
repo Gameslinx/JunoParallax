@@ -8,6 +8,10 @@ using ModApi.Planet;
 using ModApi.Planet.Events;
 using System.Xml.Linq;
 using System.Linq;
+using System.Collections.Concurrent;
+using System.Threading.Tasks;
+using Assets.Scripts;
+using Unity.Mathematics;
 
 public struct DistributionData
 {
@@ -92,6 +96,8 @@ public class Scatter
     public bool sharesNoise = false;
     public Scatter sharesNoiseWith; //If this scatter uses the same noise parameters as another scatter, this will be set to that scatter. Otherwise, it'll point to this scatter
 
+    public IQuadSphere quadSphere;
+
     public string Id { get; }
     public string DisplayName { get; }
     public string DistributionQuadId { get; }
@@ -104,18 +110,174 @@ public class Scatter
     public string NoiseVertexId { get; }
     public int NoiseVertexIndex { get; private set; }
     public Dictionary<QuadScript, ScatterNoise> noise = new Dictionary<QuadScript, ScatterNoise>();
-    
+    // Store all matrix data on ALL MAX LEVEL quads with this scatter on
+    // Transforms: GameObject is parented to the quad sphere transform, and the Quad's planetposition is added to this local position
+    public LinkedList<RawColliderData> colliderData = new LinkedList<RawColliderData>();
+    public List<ColliderData> collidersToAdd = new List<ColliderData>();
+    public List<ColliderData> collidersToRemove = new List<ColliderData>();
+    public Dictionary<Matrix4x4, GameObject> activeObjects = new Dictionary<Matrix4x4, GameObject>();
+    bool isProcessingColliderData = false;
+    public ScatterRenderer renderer;
     public Scatter(string id, string displayName)
     {
         distribution = new DistributionData();
         distribution._PopulationMultiplier = 1;
-
         this.Id = id;
         this.DisplayName = displayName;
         this.DistributionVertexId = $"{id}_Distribution_Vertex";
         this.DistributionQuadId = $"{id}_Distribution_Quad";
         this.NoiseVertexId = $"{id}_Noise_Vertex";
         this.NoiseQuadId = $"{id}_Noise_Quad";
+    }
+    public void AddColliderData(RawColliderData data)
+    {
+        colliderData.AddLast(data);
+    }
+    public void RemoveColliderData(RawColliderData data)
+    {
+        colliderData.Remove(data);    // Discard the matrix4x4[] out
+    }
+    public async void ProcessColliderData()
+    {
+        if (isProcessingColliderData || colliderData.Count == 0) { return; }
+        isProcessingColliderData = true;
+        // Get number of objects within range
+        Quaterniond localRotation = new Quaterniond(colliderData.First.Value.quad.QuadSphere.transform.parent.localRotation);
+        Vector3 cameraPosition = Camera.main.transform.position;
+        collidersToAdd.Clear();
+        collidersToRemove.Clear();
+        await Task.Run(() =>
+        {
+            Matrix4x4 mat = Matrix4x4.identity;
+
+            Matrix4x4 quadToWorld;
+            Matrix4x4d m = new Matrix4x4d();
+
+            Vector3 position = Vector3.zero;
+            Vector3 vert1;
+            Vector3 vert2;
+            Vector3 vert3;
+            Vector3 avgNormal;
+            QuadData qd;
+            
+            Vector3 quadPosition;
+            float quadDiagDist = 0;
+
+            foreach (RawColliderData data in colliderData)
+            {
+                List<Matrix4x4> toAdd = new List<Matrix4x4>();
+                List<Matrix4x4> toRemove = new List<Matrix4x4>();
+                // Compute quad to world matrix
+                m.SetTRS(data.quad.QuadSphere.FramePosition, localRotation, Vector3.one);
+                quadToWorld = m.ToMatrix4x4();
+                Vector3d qpos = data.quad.RenderingData.LocalPosition;
+                quadToWorld.m03 = (float)((m.m00 * qpos.x) + (m.m01 * qpos.y) + (m.m02 * qpos.z) + m.m03);
+                quadToWorld.m13 = (float)((m.m10 * qpos.x) + (m.m11 * qpos.y) + (m.m12 * qpos.z) + m.m13);
+                quadToWorld.m23 = (float)((m.m20 * qpos.x) + (m.m21 * qpos.y) + (m.m22 * qpos.z) + m.m23);
+
+                quadPosition.x = quadToWorld.m03;
+                quadPosition.y = quadToWorld.m13;
+                quadPosition.z = quadToWorld.m23;
+
+                quadDiagDist = (float)Vector3d.Distance(data.quad.RenderingData.BoundingBox.Max, data.quad.RenderingData.BoundingBox.Min);
+
+                if (Vector3.SqrMagnitude(cameraPosition - quadPosition) > quadDiagDist * quadDiagDist * 2.25f)
+                {
+                    continue;
+                }
+
+                qd = Mod.ParallaxInstance.quadData[data.quad];
+                for (int i = 0; i < data.data.Length; i++)
+                {
+                    //mat = Matrix4x4.TRS(data.data[i].pos, Quaternion.Euler(0, data.data[i].rot, 0), data.data[i].scale);
+                    //position = mat.GetColumn(3);
+                    position = quadToWorld.MultiplyPoint(data.data[i].pos);
+
+                    uint triIndex = data.data[i].index;
+                    int index1 = qd.triangleData[triIndex];
+                    int index2 = qd.triangleData[triIndex + 1];
+                    int index3 = qd.triangleData[triIndex + 2];
+
+                    vert1 = qd.vertexData[index1];
+                    vert2 = qd.vertexData[index2];
+                    vert3 = qd.vertexData[index3];
+
+                    avgNormal = Vector3.Normalize(Vector3.Cross(vert2 - vert1, vert3 - vert1));
+                    if (distribution._AlignToTerrainNormal == 0)
+                    {
+                        avgNormal = Vector3.Normalize((Vector3)data.quad.SphereNormal);
+                    }
+                    Utils.GetTRSMatrix(data.data[i].pos, new Vector3(0, data.data[i].rot, 0), data.data[i].scale, avgNormal, ref mat);
+
+                    if (Vector3.SqrMagnitude(cameraPosition - position) < 625)
+                    {
+                        if (!activeObjects.ContainsKey(mat))
+                        {
+                            toAdd.Add(mat);
+                            
+                            activeObjects.Add(mat, null);
+                        }
+                    }
+                    else
+                    {
+                        if (activeObjects.ContainsKey(mat))
+                        {
+                            toRemove.Add(mat);
+                            
+                            //activeObjects.Remove(mat);
+                        }
+                    }
+                }
+                collidersToAdd.Add(new ColliderData(data.quad, toAdd));
+                collidersToRemove.Add(new ColliderData(data.quad, toRemove));
+            }
+            
+        });
+
+        // Now process the objects in range and add colliders
+        GameObject go;
+        Vector3 pos = Vector3.zero;
+        Vector3 rot1 = Vector3.zero;
+        Vector3 rot2 = Vector3.zero;
+        Vector3 scale = Vector3.one;
+        foreach (ColliderData data in collidersToAdd)
+        {
+            List<Matrix4x4> matrices = data.data;
+            foreach (Matrix4x4 matrix in matrices)
+            {
+                go = ColliderPool.Retrieve();
+                go.transform.SetParent(data.quad.QuadSphere.transform, false);
+                pos.x = matrix.m03; pos.y = matrix.m13; pos.z = matrix.m23;
+
+                rot1 = matrix.GetColumn(2);
+                rot2 = matrix.GetColumn(1);
+
+                scale.x = new Vector4(matrix.m00, matrix.m10, matrix.m20, matrix.m30).magnitude;
+                scale.y = new Vector4(matrix.m01, matrix.m11, matrix.m21, matrix.m31).magnitude;
+                scale.z = new Vector4(matrix.m02, matrix.m12, matrix.m22, matrix.m32).magnitude;
+                go.transform.localPosition = data.quad.PlanetPosition.ToVector3() + pos;
+                go.transform.localRotation = Quaternion.LookRotation(rot1, rot2);
+                go.transform.localScale = scale;
+
+                go.GetComponent<MeshFilter>().sharedMesh = renderer.meshLod0;
+
+                go.SetActive(true);
+
+                activeObjects[matrix] = go;
+            }
+        }
+        foreach (ColliderData data in collidersToRemove)
+        {
+            List<Matrix4x4> matrices = data.data;
+            foreach (Matrix4x4 matrix in matrices)
+            {
+                go = activeObjects[matrix];
+                go.SetActive(false);
+                ColliderPool.Return(go);
+                activeObjects.Remove(matrix);
+            }
+        }
+        isProcessingColliderData = false;
     }
     public void Register()
     {

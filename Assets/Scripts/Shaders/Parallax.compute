@@ -196,7 +196,7 @@ void Evaluate (uint3 id : SV_DispatchThreadID)
     TransformData object;
     object.mat = mat;
 
-    // Sort by LOD then by cascade
+    // Sort by LOD then by cascade //
     if (lodDist > 1.0) { return; }
     if (lodDist > _Lod12Split)  //We are in LOD2
     {

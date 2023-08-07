@@ -39,6 +39,7 @@ public class ScatterManager : MonoBehaviour         //Manages scatters on a plan
         }
         RegisterEvents();
     }
+    int i = 0;
     void Update()
     {
         m.SetTRS(quadSphere.FramePosition, new Quaterniond(quadSphere.transform.parent.localRotation), Vector3.one);    //Responsible for computing quadToWorld matrix
@@ -50,6 +51,13 @@ public class ScatterManager : MonoBehaviour         //Manages scatters on a plan
         if (mainCamera.farClipPlane < 10000)
         {
             mainCamera.farClipPlane = 10000;
+        }
+    }
+    void FixedUpdate()
+    {
+        for (i = 0; i < Mod.ParallaxInstance.activeScatters.Length; i++)
+        {
+            Mod.ParallaxInstance.activeScatters[i].ProcessColliderData();
         }
     }
     public Matrix4x4d RequestPlanetMatrixNow()

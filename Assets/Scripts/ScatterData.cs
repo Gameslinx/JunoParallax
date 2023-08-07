@@ -1,6 +1,9 @@
 using Assets.Scripts;
 using Assets.Scripts.Flight.GameView.Cameras;
+using Unity.Collections;
 using UnityEngine;
+using UnityEngine.Profiling;
+using UnityEngine.Rendering;
 
 public class ScatterData
 {
@@ -28,6 +31,9 @@ public class ScatterData
     int evaluateKernel;
 
     bool ready = false;
+
+    PositionData[] rawColliderData;
+    RawColliderData colliderData;
 
     public ScatterData(QuadData parent, Scatter scatter, ScatterRenderer renderer)
     {
@@ -153,6 +159,28 @@ public class ScatterData
         shader.SetBuffer(countKernel, "DispatchArgs", dispatchArgs);
         shader.SetBuffer(evaluateKernel, "ObjectLimits", objectLimits);     //We need to early return out from evaluation if the thread exceeds the number of objects - prevents funny floaters
         shader.Dispatch(countKernel, 1, 1, 1);
+
+        if (ParallaxSettings.enableColliders && parent.quad.SubdivisionLevel == parent.quad.QuadSphere.MaxSubdivisionLevel)
+        {
+            // Process colliders
+            AsyncGPUReadback.Request(objectLimits, GetCount);
+        }
+    }
+    int[] count = new int[] { 0, 0, 0 };
+    public void GetCount(AsyncGPUReadbackRequest req)
+    {
+        Profiler.BeginSample("Async Readback");
+        count = req.GetData<int>().ToArray(); //Creates garbage, unfortunate
+        if (parent.quad.SubdivisionLevel == parent.quad.QuadSphere.MaxSubdivisionLevel)
+        {
+            Debug.Log("Quad ID " + parent.quad.Id + ", Scatter " + scatter.DisplayName + ", object count: " + count[0]);
+        }
+        
+        rawColliderData = new PositionData[count[0]];
+        positions.GetData(rawColliderData);
+        colliderData = new RawColliderData(parent.quad, rawColliderData);
+        scatter.AddColliderData(colliderData);
+        Profiler.EndSample();
     }
     public void EvaluatePositions()     //Evaluate LODs and frustum cull
     {
@@ -184,6 +212,8 @@ public class ScatterData
         dispatchArgs?.Release();
         objectLimits?.Release();
 
+        scatter.RemoveColliderData(colliderData);
+
         InitializeDistribute();
         InitializeEvaluate();
         GeneratePositions();
@@ -198,6 +228,8 @@ public class ScatterData
         noise?.Release();
         dispatchArgs?.Release();
         objectLimits?.Release();
+
+        scatter.RemoveColliderData(colliderData);
 
         ShaderPool.Return(shader);
     }

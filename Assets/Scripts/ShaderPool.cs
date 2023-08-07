@@ -22,7 +22,6 @@ public class ShaderPool
     public static ComputeShader Retrieve()
     {
         // NOTE: Shaders retrived from the pool CAN have their previous buffers/values set. REASSIGN EVERYTHING before dispatching to prevent weird shit
-        // Not safe from running out of compute shaders yet
         if (computeShaders.Count - 1 == 0)
         {
             // Pool is about to run out!
@@ -31,5 +30,51 @@ public class ShaderPool
             return UnityEngine.Object.Instantiate(Mod.ParallaxInstance.quadShader);
         }
         return computeShaders.Dequeue();
+    }
+}
+public class ColliderPool
+{
+    public static Queue<GameObject> objects = new Queue<GameObject>();
+    static float memoryOverBudget = 0;
+    public static Material mat;
+    public static GameObject originalObject;
+    public static void Initialize(int count)
+    {
+        mat = new Material(Shader.Find("Standard"));
+        for (int i = 0; i < count; i++)
+        {
+            GameObject go = GameObject.CreatePrimitive(PrimitiveType.Cube); //new GameObject();
+            go.layer = 29;
+            //go.AddComponent<MeshFilter>();
+            //go.AddComponent<MeshCollider>();
+            //go.AddComponent<AutoDisabler>();
+            //go.AddComponent<MeshRenderer>();
+            //go.GetComponent<MeshRenderer>().sharedMaterial = mat;
+
+
+
+            UnityEngine.Object.Destroy(go.GetComponent<Collider>());
+            go.AddComponent<MeshCollider>();
+
+            go.SetActive(false);
+            GameObject.DontDestroyOnLoad(go);
+            objects.Enqueue(go);
+            if (i == 0) { originalObject = go; }
+        }
+    }
+    public static void Return(GameObject go)
+    {
+        objects.Enqueue(go);
+    }
+    public static GameObject Retrieve()
+    {
+        if (objects.Count - 1 == 0)
+        {
+            // Pool is about to run out!
+            memoryOverBudget += 0.41f;
+            Debug.Log("[Parallax] WARNING: Object pool is empty - this will lead to frame stuttering. Increase the allocated memory in ParallaxSettings.xml. Additional " + memoryOverBudget + "mb required!");
+            return UnityEngine.Object.Instantiate(originalObject);
+        }
+        return objects.Dequeue();
     }
 }

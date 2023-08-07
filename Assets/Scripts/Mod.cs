@@ -108,6 +108,7 @@ namespace Assets.Scripts
             int numShaders = (int)((float)ParallaxSettings.computeShaderMemory / memoryUsagePerComputeShader);
             Debug.Log("Initializing shader pool with " + numShaders + " compute shaders");
             ShaderPool.Initialize(numShaders);
+            ColliderPool.Initialize(5000);
             Profiler.EndSample();
 
             NumericSetting<float> lodDistance = Game.Instance.QualitySettings.Terrain.LodDistance;
@@ -220,8 +221,10 @@ namespace Assets.Scripts
                 ScatterRenderer renderer = managerGO.AddComponent<ScatterRenderer>();
                 manager.scatterRenderers.Add(renderer);
                 renderer.scatter = scatter;
+                scatter.renderer = renderer;
                 renderer.manager = manager;
                 renderer.Initialize();
+                scatter.quadSphere = e.QuadSphere;
                 scatterRenderers.Add(scatter, renderer);
             }
             Utils utils = managerGO.AddComponent<Utils>();

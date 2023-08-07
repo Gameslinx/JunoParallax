@@ -20,6 +20,10 @@ public struct PositionData
     {
         return sizeof(float) * 8;
     }
+    public Matrix4x4 ToMatrix4x4()
+    {
+        return Matrix4x4.TRS(pos, Quaternion.Euler(0, rot, 0), scale);
+    }
 };
 public struct TransformData
 {
@@ -29,6 +33,26 @@ public struct TransformData
         return sizeof(float) * 16;
     }
 };
+public class RawColliderData
+{
+    public QuadScript quad;
+    public PositionData[] data;
+    public RawColliderData(QuadScript quad, PositionData[] data)
+    {
+        this.quad = quad;
+        this.data = data;
+    }
+}
+public class ColliderData
+{
+    public QuadScript quad;
+    public List<Matrix4x4> data;
+    public ColliderData(QuadScript quad, List<Matrix4x4> data)
+    {
+        this.quad = quad;
+        this.data = data;
+    }
+}
 public class QuadData       //Holds the data for the quad - Verts, normals, triangles. Holds scatter data, too, but quad data is global and used for all scatters
 {
     public QuadScript quad;
@@ -38,8 +62,8 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
     public float sqrQuadCameraDistance = 0;
 
     public Vector3[] vertexData;
-    private int[] triangleData;
-    private Vector3[] normalData;
+    public int[] triangleData;
+    public Vector3[] normalData;
 
     public ComputeBuffer vertices;
     public ComputeBuffer normals;
@@ -66,7 +90,6 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
     public QuadData(QuadScript quad)
     {
         this.quad = quad;
-
         //RegisterEvents();
         //Initialize();
     }
