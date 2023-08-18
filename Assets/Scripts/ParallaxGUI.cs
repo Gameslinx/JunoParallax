@@ -30,11 +30,15 @@ public class ParallaxGUI : MonoBehaviour
     static bool anyValueHasChanged = false;
     static ChangeType currentChangeType;
     static bool visible = false;
+    static bool showingCollideables = false;
     void Start()
     {
 
     }
+    private void OnDisable()
+    {
 
+    }
     void Update()
     {
         bool flag = UnityEngine.Input.GetKey(KeyCode.LeftAlt) && UnityEngine.Input.GetKeyDown(KeyCode.P); 
@@ -191,23 +195,60 @@ public class ParallaxGUI : MonoBehaviour
             }
         }
         // This doesn't work, and I'm not sure exactly why
-        if (GUILayout.Button("Capture Cubemap (Bugged)"))
+        if (GUILayout.Button("[Debug] Show Collideable Scatters"))
         {
-            RenderTexture rt = new RenderTexture(1024, 1024, 24);
-            rt.dimension = UnityEngine.Rendering.TextureDimension.Cube;
-            rt.hideFlags = HideFlags.HideAndDontSave;
-            for (int i = 0; i < 6; i++)
+            showingCollideables = !showingCollideables;
+            if (!showingCollideables)
             {
-                manager.mainCamera.RenderToCubemap(rt, i);
+                foreach (Scatter scatter in Mod.ParallaxInstance.activeScatters)
+                {
+                    Color col = Color.black;
+                    float val = 0;
 
-                Texture2D tex = new Texture2D(1024, 1024, TextureFormat.RGB24, false);
-                tex.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0);
-                tex.Apply();
+                    if (scatter.material._Shader.TryGetColor("_FresnelColor", out col))
+                    {
+                        scatter.renderer.materialLOD0.SetColor("_FresnelColor", col);
+                    }
+                    if (scatter.material._Shader.TryGetFloat("_FresnelPower", out val))
+                    {
+                        scatter.renderer.materialLOD0.SetFloat("_FresnelPower", val);
+                    }
 
-                byte[] image = tex.EncodeToPNG();
-                System.IO.File.WriteAllBytes("C:/Users/tuvee/Pictures/cubemap" + i + ".png", image);
+                    if (scatter.distribution.lod0.material._Shader.TryGetColor("_FresnelColor", out col))
+                    {
+                        scatter.renderer.materialLOD1.SetColor("_FresnelColor", col);
+                    }
+                    if (scatter.distribution.lod0.material._Shader.TryGetFloat("_FresnelPower", out val))
+                    {
+                        scatter.renderer.materialLOD1.SetFloat("_FresnelPower", val);
+                    }
+
+                    if (scatter.distribution.lod1.material._Shader.TryGetColor("_FresnelColor", out col))
+                    {
+                        scatter.renderer.materialLOD2.SetColor("_FresnelColor", col);
+                    }
+                    if (scatter.distribution.lod1.material._Shader.TryGetFloat("_FresnelPower", out val))
+                    {
+                        scatter.renderer.materialLOD2.SetFloat("_FresnelPower", val);
+                    }
+                }
             }
-            
+            if (showingCollideables) 
+            { 
+                foreach (Scatter scatter in Mod.ParallaxInstance.activeScatters)
+                {
+                    Color enabled = new Color(0.65f, 1.3f, 0.5f);
+                    Color disabled = new Color(1.3f, 0.6f, 0.45f);
+                    scatter.renderer.materialLOD0.SetColor("_FresnelColor", scatter.collisionLevel >= ParallaxSettings.collisionSizeThreshold ? enabled : disabled);
+                    scatter.renderer.materialLOD0.SetFloat("_FresnelPower", 3);
+
+                    scatter.renderer.materialLOD1.SetColor("_FresnelColor", scatter.collisionLevel >= ParallaxSettings.collisionSizeThreshold ? enabled : disabled);
+                    scatter.renderer.materialLOD1.SetFloat("_FresnelPower", 3);
+
+                    scatter.renderer.materialLOD2.SetColor("_FresnelColor", scatter.collisionLevel >= ParallaxSettings.collisionSizeThreshold ? enabled : disabled);
+                    scatter.renderer.materialLOD2.SetFloat("_FresnelPower", 3);
+                }
+            }
         }
 
         // Debug

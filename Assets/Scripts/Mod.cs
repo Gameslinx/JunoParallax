@@ -17,7 +17,10 @@ namespace Assets.Scripts
     using Assets.Scripts.Terrain.Events;
     using ModApi;
     using ModApi.Common;
+    using ModApi.Craft;
     using ModApi.Flight;
+    using ModApi.Flight.Events;
+    using ModApi.Flight.GameView;
     using ModApi.Mods;
     using ModApi.Planet;
     using ModApi.Planet.CustomData;
@@ -31,6 +34,7 @@ namespace Assets.Scripts
     using UnityEngine;
     using UnityEngine.Assertions.Must;
     using UnityEngine.Profiling;
+    using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
     using static Assets.Scripts.Terrain.MeshDataTerrain;
     using static UnityEngine.Mesh;
 
@@ -51,7 +55,7 @@ namespace Assets.Scripts
         public Dictionary<System.Guid, GameObject> scatterObjects = new Dictionary<Guid, GameObject>();                //Holds the manager GOs for each planet
         public Dictionary<System.Guid, ScatterManager> scatterManagers = new Dictionary<Guid, ScatterManager>();
         public Dictionary<QuadScript, QuadData> quadData = new Dictionary<QuadScript, QuadData>();
-
+        // Only stored until the collider processing system has processed the data on this quad
         public IQuadSphere currentBody;
 
         // Memory usage of each compute shader instance in mb
@@ -108,13 +112,13 @@ namespace Assets.Scripts
             int numShaders = (int)((float)ParallaxSettings.computeShaderMemory / memoryUsagePerComputeShader);
             Debug.Log("Initializing shader pool with " + numShaders + " compute shaders");
             ShaderPool.Initialize(numShaders);
-            ColliderPool.Initialize(5000);
+            ColliderPool.initAmount = 5000;
+            Game.Instance.SceneManager.SceneLoading += ColliderPool.SceneLoading;
             Profiler.EndSample();
 
             NumericSetting<float> lodDistance = Game.Instance.QualitySettings.Terrain.LodDistance;
             splitDist = lodDistance;
             lodDistance.Changed += SplitDistChanged;
-
             QuadScript.CreateQuadStarted += OnCreateQuadStarted;
         }
         public const string keyword = "Parallax Support Scatter (V1)";
@@ -225,6 +229,7 @@ namespace Assets.Scripts
                 renderer.manager = manager;
                 renderer.Initialize();
                 scatter.quadSphere = e.QuadSphere;
+                scatter.manager = manager;
                 scatterRenderers.Add(scatter, renderer);
             }
             Utils utils = managerGO.AddComponent<Utils>();
@@ -248,7 +253,6 @@ namespace Assets.Scripts
             {
                 return;
             }
-
             // Clean up every quad - We don't want this handled automatically because data is reinitialized on lower subdivisions, but we know every quad will be destroyed here
             foreach (KeyValuePair<QuadScript, QuadData> qd in quadData)
             {
@@ -264,12 +268,10 @@ namespace Assets.Scripts
                 scatterRenderers.Remove(scatter);
             }
             GameObject managerGO = scatterObjects[id];
-
             scatterObjects.Remove(id);
             scatterManagers.Remove(id);
             
             UnityEngine.Object.Destroy(managerGO);
-            
         }
         private void OnQuadSphereUnloaded(object sender, PlanetQuadSphereEventArgs e)
         {
@@ -342,11 +344,7 @@ namespace Assets.Scripts
             if (managerGO.GetComponent<ScatterManager>() == null) { Debug.Log("Manager is null"); }
 
             managerGO.GetComponent<ScatterManager>().quadSphere = script;
-            //if (scatterObjects.ContainsKey(e.Planet.PlanetData.Id))
-            //{
-            //    Debug.Log("Skipping parenting, planet already has a manager");
-            //    return;
-            //}
+
             managerGO.transform.SetParent(e.QuadSphere.Transform);
             quadSphereIsLoading = false;
         }
@@ -402,7 +400,6 @@ namespace Assets.Scripts
             Profiler.EndSample();
         }
         // Utilities
-
         private void SplitDistChanged(object sender, SettingChangedEventArgs<float> e)
         {
             Debug.Log("LOD split distance changed");

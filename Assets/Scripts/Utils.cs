@@ -1,6 +1,7 @@
 using Assets.Scripts;
 using Assets.Scripts.Flight.GameView.Cameras;
 using Assets.Scripts.Terrain;
+using ModApi.Flight.GameView;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Mathematics;
@@ -80,5 +81,19 @@ public class Utils : MonoBehaviour
     public static void GetTRSMatrix(Vector3 position, Vector3 rotationAngles, Vector3 scale, Vector3 terrainNormal, ref Matrix4x4 mat)
     {
         mat = GetTranslationMatrix(position) * TransformToPlanetNormal(terrainNormal) * GetRotationMatrix(rotationAngles) * Matrix4x4.Scale(scale);
+    }
+    public static float SqrMinDistanceToACraft(Vector3 worldSpacePosition, List<Vector3> craftWorldSpacePositions)
+    {
+        float minDist = float.MaxValue;
+        float dist = 0;
+        for (int i = 0; i < craftWorldSpacePositions.Count; i++)
+        {
+            dist = Vector3.SqrMagnitude(worldSpacePosition - craftWorldSpacePositions[i]);
+            if (dist < minDist)
+            {
+                minDist = dist;
+            }
+        }
+        return minDist;
     }
 }

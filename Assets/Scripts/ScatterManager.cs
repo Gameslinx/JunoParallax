@@ -55,9 +55,16 @@ public class ScatterManager : MonoBehaviour         //Manages scatters on a plan
     }
     void FixedUpdate()
     {
+        if (!ParallaxSettings.enableColliders)
+        {
+            return;
+        }
         for (i = 0; i < Mod.ParallaxInstance.activeScatters.Length; i++)
         {
-            Mod.ParallaxInstance.activeScatters[i].ProcessColliderData();
+            if (Mod.ParallaxInstance.activeScatters[i].collisionLevel >= ParallaxSettings.collisionSizeThreshold)
+            {
+                Mod.ParallaxInstance.activeScatters[i].ProcessColliderData();
+            }
         }
     }
     public Matrix4x4d RequestPlanetMatrixNow()

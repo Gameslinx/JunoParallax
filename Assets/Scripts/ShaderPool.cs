@@ -1,4 +1,5 @@
 using Assets.Scripts;
+using ModApi.Scenes.Events;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -38,32 +39,38 @@ public class ColliderPool
     static float memoryOverBudget = 0;
     public static Material mat;
     public static GameObject originalObject;
+    public static int initAmount = 0;
     public static void Initialize(int count)
     {
+        Debug.Log("Object pool initialized");
         mat = new Material(Shader.Find("Standard"));
         for (int i = 0; i < count; i++)
         {
             GameObject go = GameObject.CreatePrimitive(PrimitiveType.Cube); //new GameObject();
+            UnityEngine.Object.Destroy(go.GetComponent<MeshRenderer>());
+            UnityEngine.Object.Destroy(go.GetComponent<MeshFilter>());
             go.layer = 29;
-            //go.AddComponent<MeshFilter>();
-            //go.AddComponent<MeshCollider>();
-            //go.AddComponent<AutoDisabler>();
-            //go.AddComponent<MeshRenderer>();
-            //go.GetComponent<MeshRenderer>().sharedMaterial = mat;
-
-
-
             UnityEngine.Object.Destroy(go.GetComponent<Collider>());
             go.AddComponent<MeshCollider>();
-
             go.SetActive(false);
             GameObject.DontDestroyOnLoad(go);
             objects.Enqueue(go);
             if (i == 0) { originalObject = go; }
         }
     }
+    public static void SceneLoading(object sender, SceneEventArgs e)
+    {
+        foreach (GameObject go in objects)
+        {
+            UnityEngine.Object.Destroy(go);
+        }
+        objects.Clear();
+        Initialize(initAmount);
+    }
     public static void Return(GameObject go)
     {
+        // Gameobjects with parents are also destroyed when that parent is destroyed.
+        go.transform.SetParent(null);
         objects.Enqueue(go);
     }
     public static GameObject Retrieve()

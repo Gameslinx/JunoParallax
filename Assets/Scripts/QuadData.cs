@@ -98,6 +98,7 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
         planetID = quad.QuadSphere.PlanetData.Id;
         manager = Mod.ParallaxInstance.scatterManagers[planetID];
         manager.OnQuadUpdate += OnQuadDataUpdate;
+        manager.quadSphere = quad.QuadSphere;
         eventsRegistered = true;
     }
     public void Initialize()        //Initialize buffers, then scatters

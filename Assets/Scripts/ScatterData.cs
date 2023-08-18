@@ -160,7 +160,7 @@ public class ScatterData
         shader.SetBuffer(evaluateKernel, "ObjectLimits", objectLimits);     //We need to early return out from evaluation if the thread exceeds the number of objects - prevents funny floaters
         shader.Dispatch(countKernel, 1, 1, 1);
 
-        if (ParallaxSettings.enableColliders && parent.quad.SubdivisionLevel == parent.quad.QuadSphere.MaxSubdivisionLevel)
+        if (ParallaxSettings.enableColliders && scatter.collisionLevel >= ParallaxSettings.collisionSizeThreshold && parent.quad.SubdivisionLevel == parent.quad.QuadSphere.MaxSubdivisionLevel)
         {
             // Process colliders
             AsyncGPUReadback.Request(objectLimits, GetCount);
@@ -171,10 +171,6 @@ public class ScatterData
     {
         Profiler.BeginSample("Async Readback");
         count = req.GetData<int>().ToArray(); //Creates garbage, unfortunate
-        if (parent.quad.SubdivisionLevel == parent.quad.QuadSphere.MaxSubdivisionLevel)
-        {
-            Debug.Log("Quad ID " + parent.quad.Id + ", Scatter " + scatter.DisplayName + ", object count: " + count[0]);
-        }
         
         rawColliderData = new PositionData[count[0]];
         positions.GetData(rawColliderData);

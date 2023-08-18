@@ -76,6 +76,26 @@ public class ScatterShader : ICloneable
         this.material = material;
         return material;
     }
+    public bool TryGetColor(string name, out Color color)
+    {
+        if (colors.ContainsKey(name))
+        {
+            color = colors[name];
+            return true;
+        }
+        color = Color.black;
+        return false;
+    }
+    public bool TryGetFloat(string name, out float value)
+    {
+        if (floats.ContainsKey(name))
+        {
+            value = floats[name];
+            return true;
+        }
+        value = 0;
+        return false;
+    }
 }
 public static class ParallaxSettings
 {
@@ -86,6 +106,7 @@ public static class ParallaxSettings
     public static bool receiveShadows = true;
 
     public static bool enableColliders = false;
+    public static int collisionSizeThreshold = 2;
     public static int computeShaderMemory = 2048;
 }
 public class ConfigLoader : MonoBehaviour
@@ -165,6 +186,7 @@ public class ConfigLoader : MonoBehaviour
 
         XElement generalNode = settings.Element("GeneralSettings");
         ParallaxSettings.enableColliders = generalNode.Element("enableColliders").Value.ToBoolean();
+        ParallaxSettings.collisionSizeThreshold = generalNode.Element("minimumSizeForColliders").Value.ToInt();
         ParallaxSettings.computeShaderMemory = generalNode.Element("memoryReservedForComputeShaders").Value.ToInt();
     }
     public static void LoadConfigs(string directoryPath)
@@ -206,6 +228,8 @@ public class ConfigLoader : MonoBehaviour
 
                     XElement maxObjectsToRender = scatter.Element("maxObjects");
                     thisScatter.maxObjectsToRender = maxObjectsToRender == null ? 1000 : maxObjectsToRender.Value.ToInt();
+
+                    thisScatter.collisionLevel = scatter.Element("collisionLevel").Value.ToInt();
 
                     DistributionData distribution = new DistributionData();
 
@@ -291,6 +315,8 @@ public class ConfigLoader : MonoBehaviour
                     {
                         thisScatter.Register();
                     }
+
+                    thisScatter.RegisterColliders();
 
                     body.scatters.Add(scatterName, thisScatter);
                 }

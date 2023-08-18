@@ -12,6 +12,14 @@ using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using Assets.Scripts;
 using Unity.Mathematics;
+using Assets.Scripts.State;
+using ModApi.Flight.GameView;
+using ModApi.Craft;
+using Assets.Scripts.Settings;
+using ModApi.Settings;
+using ModApi.Scenes.Events;
+using System.Threading;
+using UnityEngine.UIElements;
 
 public struct DistributionData
 {
@@ -97,6 +105,7 @@ public class Scatter
     public Scatter sharesNoiseWith; //If this scatter uses the same noise parameters as another scatter, this will be set to that scatter. Otherwise, it'll point to this scatter
 
     public IQuadSphere quadSphere;
+    public int collisionLevel = -1;
 
     public string Id { get; }
     public string DisplayName { get; }
@@ -112,12 +121,17 @@ public class Scatter
     public Dictionary<QuadScript, ScatterNoise> noise = new Dictionary<QuadScript, ScatterNoise>();
     // Store all matrix data on ALL MAX LEVEL quads with this scatter on
     // Transforms: GameObject is parented to the quad sphere transform, and the Quad's planetposition is added to this local position
+
+    public List<RawColliderData> incomingColliderData = new List<RawColliderData>();
+    public List<RawColliderData> outgoingColliderData = new List<RawColliderData>();
+
     public LinkedList<RawColliderData> colliderData = new LinkedList<RawColliderData>();
     public List<ColliderData> collidersToAdd = new List<ColliderData>();
     public List<ColliderData> collidersToRemove = new List<ColliderData>();
     public Dictionary<Matrix4x4, GameObject> activeObjects = new Dictionary<Matrix4x4, GameObject>();
     bool isProcessingColliderData = false;
     public ScatterRenderer renderer;
+    public ScatterManager manager;
     public Scatter(string id, string displayName)
     {
         distribution = new DistributionData();
@@ -129,25 +143,68 @@ public class Scatter
         this.NoiseVertexId = $"{id}_Noise_Vertex";
         this.NoiseQuadId = $"{id}_Noise_Quad";
     }
+    public void RegisterColliders()
+    {
+        Game.Instance.SceneManager.SceneLoading += OnSceneLoading;
+        Game.Instance.SceneManager.SceneUnloading += OnSceneUnloading;
+    }
     public void AddColliderData(RawColliderData data)
     {
-        colliderData.AddLast(data);
+        incomingColliderData.Add(data);
     }
     public void RemoveColliderData(RawColliderData data)
     {
-        colliderData.Remove(data);    // Discard the matrix4x4[] out
+        outgoingColliderData.Add(data);
     }
+    // Thread safe addition/removal of collider data, called only once the collision processing thread has completed any pending tasks
+    private void ProcessAddingColliderData()
+    {
+        if (incomingColliderData.Count == 0) { return; }
+        for (int i = 0; i < incomingColliderData.Count; i++)
+        {
+            colliderData.AddLast(incomingColliderData[i]);
+        }
+        incomingColliderData.Clear();
+    }
+    private void ProcessRemovingColliderData()
+    {
+        if (outgoingColliderData.Count == 0) { return; }
+        for (int i = 0; i < outgoingColliderData.Count; i++)
+        {
+            colliderData.Remove(outgoingColliderData[i]);
+        }
+        outgoingColliderData.Clear();
+    }
+    List<Vector3> craftWorldPositions = new List<Vector3>();
     public async void ProcessColliderData()
     {
-        if (isProcessingColliderData || colliderData.Count == 0) { return; }
+        if (isProcessingColliderData) { return; }
+        ProcessAddingColliderData();
+        if (colliderData.Count == 0) { return; }
         isProcessingColliderData = true;
-        // Get number of objects within range
-        Quaterniond localRotation = new Quaterniond(colliderData.First.Value.quad.QuadSphere.transform.parent.localRotation);
+        if (manager.quadSphere == null)
+        {
+            Debug.Log("[Exception] The current quad sphere is null - this has been caught, but may adversely affect colliders");
+            return;
+        }
+        // Get planet local rotation for quadToWorld matrix construction
+        Quaterniond localRotation = new Quaterniond(manager.quadSphere.transform.parent.localRotation);
+        Vector3d framePosition = manager.quadSphere.FramePosition;
         Vector3 cameraPosition = Camera.main.transform.position;
         collidersToAdd.Clear();
         collidersToRemove.Clear();
+        craftWorldPositions.Clear();
+        foreach (ICraftNode craft in Game.Instance.FlightScene.FlightState.CraftNodes)
+        {
+            if (craft.IsLoadedInGameView)
+            {
+                craftWorldPositions.Add(craft.FramePosition);
+            }
+        }
+        // Run this task on another thread
         await Task.Run(() =>
         {
+            // Reducing garbage
             Matrix4x4 mat = Matrix4x4.identity;
 
             Matrix4x4 quadToWorld;
@@ -162,13 +219,15 @@ public class Scatter
             
             Vector3 quadPosition;
             float quadDiagDist = 0;
-
+            float distance = 0;
             foreach (RawColliderData data in colliderData)
             {
+                // The quad was cleaned up. This will be handled by ProcessRemovingColliderData, we just want to skip the quad - it will be removed from the colliderData list next cycle
                 List<Matrix4x4> toAdd = new List<Matrix4x4>();
                 List<Matrix4x4> toRemove = new List<Matrix4x4>();
+
                 // Compute quad to world matrix
-                m.SetTRS(data.quad.QuadSphere.FramePosition, localRotation, Vector3.one);
+                m.SetTRS(framePosition, localRotation, Vector3.one);
                 quadToWorld = m.ToMatrix4x4();
                 Vector3d qpos = data.quad.RenderingData.LocalPosition;
                 quadToWorld.m03 = (float)((m.m00 * qpos.x) + (m.m01 * qpos.y) + (m.m02 * qpos.z) + m.m03);
@@ -179,18 +238,24 @@ public class Scatter
                 quadPosition.y = quadToWorld.m13;
                 quadPosition.z = quadToWorld.m23;
 
-                quadDiagDist = (float)Vector3d.Distance(data.quad.RenderingData.BoundingBox.Max, data.quad.RenderingData.BoundingBox.Min);
+                // Compute quad bounds, and don't process quads too far away from any craft
+                quadDiagDist = (float)Vector3d.SqrMagnitude(data.quad.RenderingData.BoundingBox.Max - data.quad.RenderingData.BoundingBox.Min);
 
-                if (Vector3.SqrMagnitude(cameraPosition - quadPosition) > quadDiagDist * quadDiagDist * 2.25f)
+                if (Utils.SqrMinDistanceToACraft(quadPosition, craftWorldPositions) > quadDiagDist * 1.1f)
                 {
                     continue;
                 }
 
+                // Compute which objects are within collision range
+                if (!Mod.ParallaxInstance.quadData.ContainsKey(data.quad))
+                {
+                    // This could cause an issue where GameObjects can't be removed because the quad data has been cleaned up.
+                    // However, when a craft is unloaded, the loaded objects are iterated through to see which need to be cleaned up.
+                    continue;
+                }
                 qd = Mod.ParallaxInstance.quadData[data.quad];
                 for (int i = 0; i < data.data.Length; i++)
                 {
-                    //mat = Matrix4x4.TRS(data.data[i].pos, Quaternion.Euler(0, data.data[i].rot, 0), data.data[i].scale);
-                    //position = mat.GetColumn(3);
                     position = quadToWorld.MultiplyPoint(data.data[i].pos);
 
                     uint triIndex = data.data[i].index;
@@ -208,13 +273,19 @@ public class Scatter
                         avgNormal = Vector3.Normalize((Vector3)data.quad.SphereNormal);
                     }
                     Utils.GetTRSMatrix(data.data[i].pos, new Vector3(0, data.data[i].rot, 0), data.data[i].scale, avgNormal, ref mat);
-
-                    if (Vector3.SqrMagnitude(cameraPosition - position) < 625)
+                    if (Game.Instance.SceneManager.SceneTransitionState == ModApi.Scenes.SceneTransitionState.SceneUnloading)
+                    {
+                        Debug.Log("Thread was running in a scene transition state, cancelling");
+                        activeObjects.Clear();
+                        return;
+                    }
+                    // Determine which objects need to be created and which need to be destroyed
+                    distance = Utils.SqrMinDistanceToACraft(position, craftWorldPositions);
+                    if (distance < 625 && !outgoingColliderData.Contains(data))
                     {
                         if (!activeObjects.ContainsKey(mat))
                         {
                             toAdd.Add(mat);
-                            
                             activeObjects.Add(mat, null);
                         }
                     }
@@ -223,17 +294,22 @@ public class Scatter
                         if (activeObjects.ContainsKey(mat))
                         {
                             toRemove.Add(mat);
-                            
-                            //activeObjects.Remove(mat);
                         }
                     }
                 }
                 collidersToAdd.Add(new ColliderData(data.quad, toAdd));
                 collidersToRemove.Add(new ColliderData(data.quad, toRemove));
             }
-            
         });
-
+        if (Game.Instance.SceneManager.SceneTransitionState == ModApi.Scenes.SceneTransitionState.SceneUnloading)
+        {
+            Debug.Log("Thread was running in a scene transition state, cancelling");
+            activeObjects.Clear();
+            return;
+        }
+        // Remove the collider data, now that we have established that anything in there must have their objects destroyed
+        ProcessRemovingColliderData();
+        
         // Now process the objects in range and add colliders
         GameObject go;
         Vector3 pos = Vector3.zero;
@@ -246,7 +322,9 @@ public class Scatter
             foreach (Matrix4x4 matrix in matrices)
             {
                 go = ColliderPool.Retrieve();
-                go.transform.SetParent(data.quad.QuadSphere.transform, false);
+                //UnityEngine.Object.Destroy(go.GetComponent<Collider>());
+                //go.AddComponent<MeshCollider>();
+                go.transform.SetParent(manager.quadSphere.transform, false);
                 pos.x = matrix.m03; pos.y = matrix.m13; pos.z = matrix.m23;
 
                 rot1 = matrix.GetColumn(2);
@@ -259,7 +337,7 @@ public class Scatter
                 go.transform.localRotation = Quaternion.LookRotation(rot1, rot2);
                 go.transform.localScale = scale;
 
-                go.GetComponent<MeshFilter>().sharedMesh = renderer.meshLod0;
+                go.GetComponent<MeshCollider>().sharedMesh = renderer.meshLod1;
 
                 go.SetActive(true);
 
@@ -272,13 +350,62 @@ public class Scatter
             foreach (Matrix4x4 matrix in matrices)
             {
                 go = activeObjects[matrix];
+                activeObjects.Remove(matrix);
+                if (go == null)
+                {
+                    continue;
+                }
                 go.SetActive(false);
                 ColliderPool.Return(go);
-                activeObjects.Remove(matrix);
             }
         }
         isProcessingColliderData = false;
     }
+    public void CraftIsUnloading()
+    {
+        // Not a catch-all solution but each time a craft is unloading, objects are checked to see how far away from the origin they are. If they are too far, they're culled
+        // HOWEVER some objects may remain, but reloading a scene will clear them. This shouldn't add up often, and only happens when a craft is going out of bounds
+        List<Matrix4x4> objectsToRemove = new List<Matrix4x4>();
+        Vector3 position;
+        foreach (KeyValuePair<Matrix4x4, GameObject> data in activeObjects)
+        {
+            position = data.Key.GetColumn(3);
+            if (Vector3.Magnitude(position) > (Game.Instance.QualitySettings.Physics.PhysicsDistance * 1000) * (Game.Instance.QualitySettings.Physics.PhysicsDistance * 1000))
+            {
+                objectsToRemove.Add(data.Key);
+                data.Value.SetActive(false);
+                ColliderPool.Return(data.Value);
+            }
+        }
+        foreach (Matrix4x4 matrix in objectsToRemove)
+        {
+            activeObjects.Remove(matrix);
+        }
+    }
+    
+    public void OnSceneLoading(object sender, SceneEventArgs e)
+    {
+        activeObjects.Clear();
+        incomingColliderData.Clear();
+        outgoingColliderData.Clear();
+        collidersToAdd.Clear();
+        collidersToRemove.Clear();
+        colliderData.Clear();
+    }
+    public void OnSceneUnloading(object sender, SceneEventArgs e)
+    {
+        foreach (KeyValuePair<Matrix4x4, GameObject> data in activeObjects)
+        {
+            UnityEngine.Object.Destroy(data.Value);
+        }
+        activeObjects.Clear();
+        incomingColliderData.Clear();
+        outgoingColliderData.Clear();
+        collidersToAdd.Clear();
+        collidersToRemove.Clear();
+        colliderData.Clear();
+    }
+    // When a quad is cleaned up, we need to remove the objects on that quad
     public void Register()
     {
         // Register custom per-vertex data to hold the noise results
@@ -295,7 +422,9 @@ public class Scatter
         // Register per-quad data to store the sub-biome distribution results
         this.DistributionQuadIndex = CustomCreateQuadData.Register<CustomCreateQuadDataFloat>(
             this.DistributionQuadId, () => new CustomCreateQuadDataFloat(this.DistributionVertexId));
+
     }
+    
     public void Unregister()
     {
         // Not implemented yet
