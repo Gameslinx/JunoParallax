@@ -210,9 +210,19 @@ public class ScatterData
 
         scatter.RemoveColliderData(colliderData);
 
-        InitializeDistribute();
+        if (!scatter.inherits)
+        {
+            InitializeDistribute();
+        }
+        else
+        {
+            InitializeInheritance();
+        }
         InitializeEvaluate();
-        GeneratePositions();
+        if (!scatter.inherits)
+        {
+            GeneratePositions();
+        }
         ComputeDispatchArgs();
     }
     public void Cleanup()

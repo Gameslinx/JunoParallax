@@ -59,6 +59,10 @@ public class ParallaxGUI : MonoBehaviour
                         {
                             scatterData.GUITool_Reinitialize();
                         }
+                        if (scatterData.scatter.inherits && scatterData.scatter.inheritsFrom == currentScatter.DisplayName)
+                        {
+                            scatterData.GUITool_Reinitialize();
+                        }
                     }
                 }
             }

@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: ModData
   m_EditorClassIdentifier: 
   _assemblies:
+  - Unity.AI.Navigation.dll
   - Parallax2.dll
   _author: Linx
   _description: 
@@ -169,6 +170,9 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: 1c74aa94835847649a70bf3af36fe549, type: 3}
   - {fileID: 919132149155446097, guid: 29060911501d5bf44a5f0a34e90bed0e, type: 3}
   - {fileID: 919132149155446097, guid: 60fef65ecfc40fc48bb137ac1d2dad64, type: 3}
+  - {fileID: 919132149155446097, guid: 99daf57156058b74f9b6024ff6831aad, type: 3}
+  - {fileID: 919132149155446097, guid: 0888c9023d1ef5049807d8bfa232534f, type: 3}
+  - {fileID: 919132149155446097, guid: 8c9c137b3580d81489e936038c039bf5, type: 3}
   _steamDescription: 
   _steamLanguage: English
   _steamPreviewPath: 
