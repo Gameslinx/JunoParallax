@@ -80,6 +80,10 @@
 				
 				o.grabPos = ComputeGrabScreenPos(o.pos);
 				
+				#if ATMOSPHERE
+                    o.atmosColor = GetAtmosphereDataForVertex(o.world_vertex, o.lightDir, _PlanetOrigin, _LightColor0);
+                #endif
+
 				TRANSFER_VERTEX_TO_FRAGMENT(o);
 				return o;
 			}
@@ -114,7 +118,11 @@
 				float4 newCol = tex2Dproj(_BackgroundTexture, grabPos) * float4(_IceInteriorColor, 1);
 				
 				color = lerp(color, 0, iceTransparency);
-				return lerp(color.rgb, newCol.rgb, iceTransparency);
+				color.rgb = lerp(color.rgb, newCol.rgb, iceTransparency);
+				#if ATMOSPHERE
+                    color.rgb = ApplyAtmoColor(i.atmosColor, 1, color.rgb);
+                #endif
+				return color;
 			}
 			ENDCG
 

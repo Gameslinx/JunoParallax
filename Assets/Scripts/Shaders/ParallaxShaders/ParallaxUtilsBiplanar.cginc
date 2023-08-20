@@ -22,6 +22,10 @@ struct v2f
 
     float3 viewDir : TEXCOORD8;
     float3 lightDir : TEXCOORD9;
+
+    #if ATMOSPHERE
+        float3 atmosColor : TEXCOORD10;
+    #endif
     
     LIGHTING_COORDS(3, 4)
 };
@@ -56,6 +60,10 @@ struct v2f_screenPos
     float3 lightDir : TEXCOORD9;
     
     float4 grabPos : TEXCOORD10;
+
+    #if ATMOSPHERE
+        float3 atmosColor : TEXCOORD11;
+    #endif
     
     LIGHTING_COORDS(3, 4)
 };

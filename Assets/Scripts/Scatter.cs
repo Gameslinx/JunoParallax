@@ -178,6 +178,7 @@ public class Scatter
     List<Vector3> craftWorldPositions = new List<Vector3>();
     public async void ProcessColliderData()
     {
+        Debug.Log("Is processing colliders?" + isProcessingColliderData);
         if (isProcessingColliderData) { return; }
         ProcessAddingColliderData();
         if (colliderData.Count == 0) { return; }
@@ -185,6 +186,7 @@ public class Scatter
         if (manager.quadSphere == null)
         {
             Debug.Log("[Exception] The current quad sphere is null - this has been caught, but may adversely affect colliders");
+            isProcessingColliderData = false;
             return;
         }
         // Get planet local rotation for quadToWorld matrix construction
@@ -277,6 +279,7 @@ public class Scatter
                     {
                         Debug.Log("Thread was running in a scene transition state, cancelling");
                         activeObjects.Clear();
+                        isProcessingColliderData = false;
                         return;
                     }
                     // Determine which objects need to be created and which need to be destroyed
@@ -305,6 +308,7 @@ public class Scatter
         {
             Debug.Log("Thread was running in a scene transition state, cancelling");
             activeObjects.Clear();
+            isProcessingColliderData = false;
             return;
         }
         // Remove the collider data, now that we have established that anything in there must have their objects destroyed

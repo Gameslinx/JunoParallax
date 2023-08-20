@@ -67,6 +67,10 @@ Shader "Custom/ParallaxInstancedUV"
                 o.viewDir = normalize(_WorldSpaceCameraPos.xyz - o.world_vertex.xyz);
                 o.lightDir = normalize(_WorldSpaceLightPos0.xyz);
 				
+				#if ATMOSPHERE
+                    o.atmosColor = GetAtmosphereDataForVertex(o.world_vertex, o.lightDir, _PlanetOrigin, _LightColor0);
+                #endif
+
 				TRANSFER_VERTEX_TO_FRAGMENT(o); //
 				return o;
 			}
@@ -92,6 +96,9 @@ Shader "Custom/ParallaxInstancedUV"
 				float4 color = BlinnPhong(worldNormal, i.worldNormal, surfaceCol, normalize(i.lightDir), normalize(i.viewDir), attenColor);
                 float3 fresnelCol = Fresnel(worldNormal, normalize(i.viewDir), _FresnelPower, _FresnelColor) * saturate(dot(i.worldNormal, _WorldSpaceLightPos0));
                 color.rgb += fresnelCol;
+				#if ATMOSPHERE
+                    color.rgb = ApplyAtmoColor(i.atmosColor, 1, color.rgb);
+                #endif
                 return float4(color);
 			}
 			ENDCG
