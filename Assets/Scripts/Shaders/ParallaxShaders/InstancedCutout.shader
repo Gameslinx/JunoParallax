@@ -46,6 +46,7 @@
 
             v2f vert(appdata_t i, uint instanceID: SV_InstanceID) {
                 v2f o;
+                UNITY_INITIALIZE_OUTPUT(v2f, o);
 
                 float4x4 mat = _Properties[instanceID].mat;
                 float4 pos = mul(mat, i.vertex) + float4(_ShaderOffset, 0);
@@ -65,6 +66,10 @@
 
                 o.viewDir =  normalize(_WorldSpaceCameraPos.xyz - o.world_vertex.xyz);
                 o.lightDir = normalize(_WorldSpaceLightPos0.xyz);
+
+                #if ATMOSPHERE
+                    o.atmosColor = GetAtmosphereDataForVertex(o.world_vertex, o.lightDir, _PlanetOrigin, _LightColor0);
+                #endif
 
                 TRANSFER_VERTEX_TO_FRAGMENT(o);
                 return o;
@@ -93,6 +98,9 @@
                 float4 color = BlinnPhong(worldNormal, i.worldNormal, col, i.lightDir, i.viewDir, attenColor);
                 float3 fresnelCol = Fresnel(worldNormal, normalize(i.viewDir), _FresnelPower, _FresnelColor) * saturate(dot(i.worldNormal, _WorldSpaceLightPos0)) * attenColor;
                 color.rgb += fresnelCol;
+                #if ATMOSPHERE
+                    color.rgb = ApplyAtmoColor(i.atmosColor, 1, color.rgb);
+                #endif
                 //return 0;
                 return float4(color);
             }
@@ -112,6 +120,7 @@
             shadow_v2f vert(shadow_appdata_t v, uint instanceID : SV_InstanceID)
             {
                 shadow_v2f o;
+                UNITY_INITIALIZE_OUTPUT(shadow_v2f, o);
                 float4x4 mat = _Properties[instanceID].mat;
                 float4 pos = mul(mat, v.vertex) + float4(_ShaderOffset, 0);
                 float3 world_vertex = mul(unity_ObjectToWorld, pos);
@@ -138,73 +147,84 @@
             }
             ENDCG
         }
-        //Pass
-        //{
-        //    Tags{ "LightMode" = "ForwardAdd" }
-        //    Blend One OneMinusSrcAlpha
-        //    CGPROGRAM
-        //    #pragma vertex vert
-        //    #pragma fragment frag
-        //    #pragma multi_compile_lightpass
-        //    #include "ParallaxUtilsUV.cginc"
-        //    
-        //    float _Cutoff;
-        //    float3 _FresnelColor;
-        //    float _FresnelPower;
-        //
-        //    v2f_lighting vert(appdata_t i, uint instanceID: SV_InstanceID) {
-        //        v2f_lighting o;
-        //
-        //        float4x4 mat = _Properties[instanceID].mat;
-        //        float4 pos = mul(mat, i.vertex) + float4(_ShaderOffset, 0);
-        //        float3 world_vertex = pos.xyz;
-        //
-        //        pos.xyz += Wind(mat, world_vertex, i.vertex.y);
-        //
-        //        o.pos = UnityObjectToClipPos(pos);
-        //        o.color = 1;
-        //        o.uv = i.uv;
-        //        o.normal = i.normal;
-        //        o.worldNormal = normalize(mul(mat, i.normal));
-        //        o.world_vertex = world_vertex; 
-        //        o.tangentWorld = normalize(mul(mat, i.tangent).xyz);
-        //        o.binormalWorld = normalize(cross(o.worldNormal, o.tangentWorld));
-        //
-        //        o.viewDir =  normalize(_WorldSpaceCameraPos.xyz - o.world_vertex.xyz);
-        //        o.lightDir = normalize(_WorldSpaceLightPos0.xyz - o.world_vertex.xyz);
-        //        return o;
-        //    }
-        //
-        //    fixed4 frag(v2f_lighting i, float facing : VFACE) : SV_Target
-        //    {
-        //        if (InterleavedGradientNoise(i.color.a, i.pos.xy + i.pos.z))
-		//		discard;
-        //
-        //        float faceSign = ( facing >= 0 ? 1 : -1 );
-        //        i.worldNormal *= lerp(faceSign, 1, _Transmission);  //Get subtle shading. Transmission of 1 means lighting on both sides of face
-        //
-        //        float4 col = tex2D(_MainTex, i.uv * _MainTex_ST) * float4(i.color.rgb, 1) * _Color;
-        //        clip(col.a - _Cutoff);
-        //
-        //        float3 normalMap = UnpackNormal(tex2D(_BumpMap, i.uv));
-        //        float3x3 TBN = float3x3(normalize(i.tangentWorld), normalize(i.binormalWorld), i.worldNormal);
-        //        TBN = transpose(TBN);
-        //        float3 worldNormal = mul(TBN, normalMap);
-        //
-        //        UNITY_LIGHT_ATTENUATION(attenuation, i, i.world_vertex.xyz);
-        //        float3 attenColor = attenuation * _LightColor0.rgb;
-        //        //float3 viewDirection = normalize(_WorldSpaceCameraPos.xyz - i.world_vertex.xyz);
-        //        float3 editedNormal = normalize(_WorldSpaceLightPos0 - i.world_vertex);
-        //
-        //        float4 color = BlinnPhong(editedNormal, editedNormal, col, i.lightDir, i.viewDir, attenColor);
-        //
-        //        float3 fresnelCol = Fresnel(worldNormal, normalize(i.viewDir), _FresnelPower, _FresnelColor) * saturate(dot(i.worldNormal, _WorldSpaceLightPos0)) * attenColor;
-        //        color.rgb += fresnelCol;
-        //        return float4(color.rgb * attenuation, attenuation);
-        //    }
-        //
-        //    ENDCG
-        //}
+        Pass
+        {
+            Tags{ "LightMode" = "ForwardAdd" }
+            Blend One OneMinusSrcAlpha
+            CGPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            #pragma multi_compile_lightpass
+            #include "ParallaxUtilsUV.cginc"
+            
+            float _Cutoff;
+            float3 _FresnelColor;
+            float _FresnelPower;
+        
+            v2f_lighting vert(appdata_t i, uint instanceID: SV_InstanceID) {
+                v2f_lighting o;
+                UNITY_INITIALIZE_OUTPUT(v2f_lighting, o);
+
+                float4x4 mat = _Properties[instanceID].mat;
+                float4 pos = mul(mat, i.vertex) + float4(_ShaderOffset, 0);
+                float3 world_vertex = pos.xyz;
+        
+                pos.xyz += Wind(mat, world_vertex, i.vertex.y);
+        
+                o.pos = UnityObjectToClipPos(pos);
+                o.color = 1;
+                o.uv = i.uv;
+                o.normal = i.normal;
+                o.worldNormal = normalize(mul(mat, i.normal));
+                o.world_vertex = world_vertex; 
+                o.tangentWorld = normalize(mul(mat, i.tangent).xyz);
+                o.binormalWorld = normalize(cross(o.worldNormal, o.tangentWorld));
+        
+                o.viewDir =  normalize(_WorldSpaceCameraPos.xyz - o.world_vertex.xyz);
+                o.lightDir = normalize(_WorldSpaceLightPos0.xyz - o.world_vertex.xyz);
+                return o;
+            }
+        
+            fixed4 frag(v2f_lighting i, float facing : VFACE) : SV_Target
+            {
+                if (InterleavedGradientNoise(i.color.a, i.pos.xy + i.pos.z))
+				discard;
+        
+                float faceSign = ( facing >= 0 ? 1 : -1 );
+                i.worldNormal *= lerp(faceSign, 1, _Transmission);  //Get subtle shading. Transmission of 1 means lighting on both sides of face
+        
+                float4 col = tex2D(_MainTex, i.uv * _MainTex_ST) * float4(i.color.rgb, 1) * _Color;
+                clip(col.a - _Cutoff);
+        
+                float3 normalMap = UnpackNormal(tex2D(_BumpMap, i.uv));
+                float3x3 TBN = float3x3(normalize(i.tangentWorld), normalize(i.binormalWorld), i.worldNormal);
+                TBN = transpose(TBN);
+                float3 worldNormal = mul(TBN, normalMap);
+        
+                float attenuation = 1;
+				#if defined (SHADOWS_SCREEN)
+				{
+					attenuation = 1;
+				}
+				#else
+				{
+					UNITY_LIGHT_ATTENUATION(atten, i, i.world_vertex.xyz);
+					attenuation = atten;
+				}
+				#endif
+                float3 attenColor = attenuation * _LightColor0.rgb;
+                //float3 viewDirection = normalize(_WorldSpaceCameraPos.xyz - i.world_vertex.xyz);
+                float3 editedNormal = normalize(_WorldSpaceLightPos0 - i.world_vertex);
+        
+                float4 color = BlinnPhong(editedNormal, editedNormal, col, i.lightDir, i.viewDir, attenColor);
+        
+                float3 fresnelCol = Fresnel(worldNormal, normalize(i.viewDir), _FresnelPower, _FresnelColor) * saturate(dot(i.worldNormal, _WorldSpaceLightPos0)) * attenColor;
+                color.rgb += fresnelCol;
+                return float4(color.rgb * attenuation, attenuation);
+            }
+        
+            ENDCG
+        }
     }
     Fallback "Cutout"
 }

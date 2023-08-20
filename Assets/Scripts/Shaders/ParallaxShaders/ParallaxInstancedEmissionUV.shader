@@ -51,6 +51,7 @@ Shader "Custom/ParallaxInstancedEmissionUV"
 			v2f vert(appdata_t i, uint instanceID: SV_InstanceID)
 			{
 				v2f o;
+				UNITY_INITIALIZE_OUTPUT(v2f, o);
 				float4x4 mat = _Properties[instanceID].mat;
                 float4 pos = mul(mat, i.vertex) + float4(_ShaderOffset, 0);
                 float3 world_vertex = mul(unity_ObjectToWorld, pos);
@@ -110,6 +111,7 @@ Shader "Custom/ParallaxInstancedEmissionUV"
             shadow_v2f vert(shadow_appdata_t v, uint instanceID : SV_InstanceID)
             {
                 shadow_v2f o;
+				UNITY_INITIALIZE_OUTPUT(shadow_v2f, o);
                 float4x4 mat = _Properties[instanceID].mat;
                 float4 pos = mul(mat, v.vertex) + float4(_ShaderOffset, 0);
                 float3 world_vertex = mul(unity_ObjectToWorld, pos);
@@ -150,6 +152,7 @@ Shader "Custom/ParallaxInstancedEmissionUV"
 			v2f_lighting vert(appdata_t i, uint instanceID: SV_InstanceID)
 			{
 				v2f_lighting o;
+				UNITY_INITIALIZE_OUTPUT(v2f_lighting, o);
 				float4x4 mat = _Properties[instanceID].mat;
                 float4 pos = mul(mat, i.vertex) + float4(_ShaderOffset, 0);
                 float3 world_vertex = mul(unity_ObjectToWorld, pos);
@@ -184,7 +187,17 @@ Shader "Custom/ParallaxInstancedEmissionUV"
                 TBN = transpose(TBN);
                 float3 worldNormal = (mul(TBN, normalMap));
 
-				UNITY_LIGHT_ATTENUATION(attenuation, i, i.world_vertex.xyz);
+				float attenuation = 1;
+				#if defined (SHADOWS_SCREEN)
+				{
+					attenuation = 1;
+				}
+				#else
+				{
+					UNITY_LIGHT_ATTENUATION(atten, i, i.world_vertex.xyz);
+					attenuation = atten;
+				}
+				#endif
                 float3 attenColor = attenuation * _LightColor0.rgb;
 
 				float4 color = BlinnPhong(worldNormal, i.worldNormal, surfaceCol, normalize(i.lightDir), normalize(i.viewDir), attenColor);

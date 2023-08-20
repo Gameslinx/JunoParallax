@@ -1,5 +1,5 @@
 #include "ParallaxHelperFunctions.cginc"
-
+#pragma multi_compile ATMOSPHERE
 
 struct appdata_t
 {
@@ -24,6 +24,10 @@ struct v2f
     float3 viewDir : TEXCOORD8;
     float3 lightDir : TEXCOORD9;
     
+    #if ATMOSPHERE
+        float3 atmosColor : TEXCOORD10;
+    #endif
+
     LIGHTING_COORDS(3, 4)
 };
 struct v2f_lighting

@@ -1,7 +1,8 @@
+#include "UnityCG.cginc"
 #include "AutoLight.cginc"
 #include "Lighting.cginc"
-#include "noiseSimplex.cginc"
-#include "UnityCG.cginc"
+#include "AtmoUtils.cginc"
+
 float3 _PlanetOrigin;
 float3 _ShaderOffset;
 float3 _WindSpeed;

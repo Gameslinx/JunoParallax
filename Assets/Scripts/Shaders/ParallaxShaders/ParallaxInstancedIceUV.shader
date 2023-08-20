@@ -61,6 +61,7 @@
 			v2f_screenPos vert(appdata_t i, uint instanceID: SV_InstanceID)
 			{
 				v2f_screenPos o;
+				UNITY_INITIALIZE_OUTPUT(v2f_screenPos, o);
 				float4x4 mat = _Properties[instanceID].mat;
                 float4 pos = mul(mat, i.vertex) + float4(_ShaderOffset, 0);
                 float3 world_vertex = mul(unity_ObjectToWorld, pos);
@@ -78,7 +79,7 @@
                 o.lightDir = normalize(_WorldSpaceLightPos0.xyz);
 				
 				o.grabPos = ComputeGrabScreenPos(o.pos);
-
+				
 				TRANSFER_VERTEX_TO_FRAGMENT(o);
 				return o;
 			}
@@ -179,6 +180,7 @@
 			v2f_screenPos_lighting vert(appdata_t i, uint instanceID: SV_InstanceID)
 			{
 				v2f_screenPos_lighting o;
+				UNITY_INITIALIZE_OUTPUT(v2f_screenPos_lighting, o);
 				float4x4 mat = _Properties[instanceID].mat;
                 float4 pos = mul(mat, i.vertex) + float4(_ShaderOffset, 0);
                 float3 world_vertex = mul(unity_ObjectToWorld, pos);
@@ -216,7 +218,18 @@
                 TBN = transpose(TBN);
                 float3 worldNormal = (mul(TBN, normalMap));
 
-				UNITY_LIGHT_ATTENUATION(attenuation, i, i.world_vertex.xyz);
+				// Prevent build errors - Seems like a silly unity bug
+				float attenuation = 1;
+				#if defined (SHADOWS_SCREEN)
+				{
+					attenuation = 1;
+				}
+				#else
+				{
+					UNITY_LIGHT_ATTENUATION(atten, i, i.world_vertex.xyz);
+					attenuation = atten;
+				}
+				#endif
                 float3 attenColor = attenuation * _LightColor0.rgb;
 
 				float4 color = BlinnPhong(worldNormal, i.worldNormal, surfaceCol, normalize(i.lightDir), normalize(i.viewDir), attenColor);

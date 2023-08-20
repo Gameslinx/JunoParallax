@@ -2,6 +2,7 @@ using Assets.Scripts;
 using Assets.Scripts.Flight.GameView.Cameras;
 using Assets.Scripts.PlanetStudio.Flyouts.CelestialBodyProperties;
 using ModApi.Flight;
+using ModApi.Planet;
 using ModApi.Scenes;
 using ModApi.Scenes.Events;
 using System;
@@ -73,6 +74,11 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
         meshLod0 = Instantiate(mesh);
         meshLod1 = Instantiate(mesh2);
         meshLod2 = Instantiate(mesh3);
+
+        
+
+        //matlod2.EnableKeyword("ATMOSPHERE");
+        
 
         FirstTimeArgs();
     }
@@ -161,7 +167,33 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
         materialLOD1.SetVector("_PlanetOrigin", (Vector3)manager.quadSphere.FramePosition);
         materialLOD2.SetVector("_PlanetOrigin", (Vector3)manager.quadSphere.FramePosition);
 
+        //Vector3 adjustedPos = manager.mainCamera.transform.position - manager.quadSphere.FramePosition.ToVector3();
+        //float unscaledCamHeight = adjustedPos.magnitude;
+        //adjustedPos = adjustedPos.normalized;
+        //adjustedPos = adjustedPos * (unscaledCamHeight / ((float)manager.quadSphere.PlanetData.Radius * manager.quadSphere.PlanetData.TerrainShaderData.AtmosSizeScale));
+
+        //materialLOD2.SetVector("_adjustedCameraPosition", adjustedPos);
+
         //For debugging command buffers:
+
+        //PlanetShaderData data = manager.quadSphere.PlanetData.TerrainShaderData;
+        //materialLOD2.SetFloat("_scaleDepth", data.ScaleDepth);
+        //materialLOD2.SetFloat("_atmosSizeScale", data.AtmosSizeScale);
+        //materialLOD2.SetFloat("_innerRadius", (float)(manager.quadSphere.PlanetData.Radius));
+        //materialLOD2.SetFloat("_outerRadius", (float)(manager.quadSphere.PlanetData.Radius + manager.quadSphere.PlanetData.AtmosphereData.Height));
+        //materialLOD2.SetInt("_samples", data.Samples);
+        //float planetRenderRad = (float)manager.quadSphere.PlanetData.Radius;
+        //float atmoRenderRad = (float)planetRenderRad * data.AtmosSizeScale;
+        //float scale = 1f / (atmoRenderRad / planetRenderRad - 1);
+        //materialLOD2.SetFloat("_scale", scale);
+        //materialLOD2.SetFloat("_atmosScale", data.AtmosScale);
+        //materialLOD2.SetFloat("_scaleOverScaleDepth", scale / data.ScaleDepth);
+        //materialLOD2.SetFloat("_kr4PI", data.Kr * 4f * Mathf.PI);
+        //materialLOD2.SetFloat("_km4PI", data.Km * 4f * Mathf.PI);
+        //materialLOD2.SetFloat("_krESun", data.Kr * data.ESun);
+        //materialLOD2.SetFloat("_kmESun", data.Km * data.ESun);
+        //materialLOD2.SetFloat("_worldPositionScale", 1);
+        //materialLOD2.SetVector("_invWaveLength", data.WaveLengthMag * new Color(Mathf.Pow(1f / data.WaveLength[0], 4f), Mathf.Pow(1f / data.WaveLength[1], 4f), Mathf.Pow(1f / data.WaveLength[2], 4f), data.WaveLength[3]));
 
         Graphics.DrawMeshInstancedIndirect(meshLod0, 0, materialLOD0, rendererBounds, argslod0, 0, null, shadowsLOD0, true, layerlod0, manager.mainCamera);
         Graphics.DrawMeshInstancedIndirect(meshLod1, 0, materialLOD1, rendererBounds, argslod1, 0, null, shadowsLOD1, true, layerlod1, manager.mainCamera);

@@ -42,40 +42,11 @@
             #pragma vertex vert
             #pragma fragment frag
             #pragma multi_compile_fwdbase
-            #include "ParallaxHelperFunctions.cginc"
+            #include "ParallaxUtilsUV.cginc"
             
             float _Cutoff;
-
-
             float3 _FresnelColor;
             float _FresnelPower;
-
-            struct appdata_t 
-            {
-                float4 vertex   : POSITION;
-                float4 color    : COLOR;
-                float2 uv : TEXCOORD0;
-                float3 normal : NORMAL;
-                float4 tangent : TANGENT;
-            };
-
-            struct v2f 
-            {
-                float4 pos   : SV_POSITION;
-                fixed4 color : COLOR;
-                float2 uv : TEXCOORD0;
-                float3 normal : NORMAL;
-                float3 worldNormal : TEXCOORD1;
-                float3 world_vertex : TEXCOORD2;
-
-                float3 tangentWorld: TEXCOORD6;
-                float3 binormalWorld: TEXCOORD7;
-
-                float3 viewDir : TEXCOORD8;
-                float3 lightDir : TEXCOORD9;
-
-                LIGHTING_COORDS(3, 4)
-            };
             
             v2f vert(appdata_t i, uint instanceID: SV_InstanceID) {
                 v2f o;
@@ -94,6 +65,9 @@
                 o.binormalWorld = normalize(cross(o.worldNormal, o.tangentWorld));
                 o.viewDir =  normalize(_WorldSpaceCameraPos.xyz - o.world_vertex.xyz);
                 o.lightDir = normalize(_WorldSpaceLightPos0);
+                #if ATMOSPHERE
+                    o.atmosColor = GetAtmosphereDataForVertex(o.world_vertex, o.lightDir, _PlanetOrigin, _LightColor0);
+                #endif
                 TRANSFER_VERTEX_TO_FRAGMENT(o);
                 
                 return o;
@@ -120,6 +94,9 @@
                 float4 color = BlinnPhong(worldNormal, i.worldNormal, col, i.lightDir, normalize(_WorldSpaceCameraPos - i.world_vertex), attenColor);
                 float3 fresnelCol = Fresnel(worldNormal, normalize(i.viewDir), _FresnelPower, _FresnelColor) * saturate(dot(i.worldNormal, _WorldSpaceLightPos0));
                 color.rgb += fresnelCol;
+                #if ATMOSPHERE
+                    color.rgb = ApplyAtmoColor(i.atmosColor, 1, color.rgb);
+                #endif
                 //clip(color.rgb - _Cutoff);
                 return float4(color);
             }
@@ -132,7 +109,6 @@
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
-            #include "UnityCG.cginc"
             #include "ParallaxUtilsUV.cginc"
            
             float _Cutoff;
