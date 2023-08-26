@@ -6,6 +6,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.Mathematics;
 using UnityEngine;
+using static Rewired.Controller;
 
 public class Utils : MonoBehaviour
 {
@@ -95,5 +96,10 @@ public class Utils : MonoBehaviour
             }
         }
         return minDist;
+    }
+    public static void GetLatLon(Vector3d surfacePosition, out float lat, out float lon)
+    {
+        lon = (float)-Mathd.Atan2(surfacePosition.x, surfacePosition.z);
+        lat = (float)Mathd.Atan2(surfacePosition.y, Mathd.Sqrt(surfacePosition.x * surfacePosition.x + surfacePosition.z * surfacePosition.z));
     }
 }

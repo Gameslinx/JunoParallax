@@ -35,6 +35,8 @@ float _PlanetRadius;
 float _MaxNormalDeviance;
 uint _AbsoluteNoise;
 
+float _BiomeCutoff;
+
 uint _NumTris;
 
 [numthreads(32,1,1)]
@@ -66,7 +68,7 @@ void Distribute (uint3 id : SV_DispatchThreadID)
     }
 
     float avgDistribution = (Distribution[index1] + Distribution[index2] + Distribution[index3]) / 3;
-    if (avgDistribution < 0.5)
+    if (avgDistribution < _BiomeCutoff)
     { 
         return;
     }

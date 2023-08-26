@@ -105,6 +105,11 @@ public static class ParallaxSettings
     public static bool castShadows = true;
     public static bool receiveShadows = true;
 
+    public static bool enableDynamicLOD = false;
+    public static float minLODFactor = 0.5f;
+    public static float maxLODFactor = 1.0f;
+    public static float targetFPS = 59.9f;
+
     public static bool enableColliders = false;
     public static int collisionSizeThreshold = 2;
     public static int computeShaderMemory = 2048;
@@ -128,7 +133,6 @@ public class ConfigLoader : MonoBehaviour
         foreach (XElement shader in shaderNodes )
         {
             string name = shader.GetStringAttribute("name");
-            string requiresScreenTex = shader.GetStringAttribute("requiresScreenTexture");
             Debug.Log("Shader: " + name);
             XElement propertiesNode = shader.Element("Properties");
 
@@ -183,6 +187,12 @@ public class ConfigLoader : MonoBehaviour
         ParallaxSettings.lodChangeMultiplier = qualityNode.Element("scatterLODChangeDistanceMultiplier").Value.ToFloat();
         ParallaxSettings.castShadows = qualityNode.Element("castShadows").Value.ToBoolean();
         ParallaxSettings.receiveShadows = qualityNode.Element("receiveShadows").Value.ToBoolean();
+
+        XElement renderNode = settings.Element("RendererSettings");
+        ParallaxSettings.enableDynamicLOD = renderNode.Element("enableDynamicLOD").Value.ToBoolean();
+        ParallaxSettings.minLODFactor = renderNode.Element("minLODFactor").Value.ToFloat();
+        ParallaxSettings.maxLODFactor = renderNode.Element("maxLODFactor").Value.ToFloat();
+        ParallaxSettings.targetFPS = renderNode.Element("targetFPS").Value.ToFloat();
 
         XElement generalNode = settings.Element("GeneralSettings");
         ParallaxSettings.enableColliders = generalNode.Element("enableColliders").Value.ToBoolean();
@@ -249,6 +259,10 @@ public class ConfigLoader : MonoBehaviour
                     distribution._AlignToTerrainNormal = alignToTerrainNormal == true ? (uint)1 : (uint)0;
                     distribution._MaxNormalDeviance = distributionNode.Element("maxNormalDeviance").Value.ToFloat();
                     distribution._RidgedNoise = false;
+
+                    // Override
+                    XElement biomeOverride = distributionNode.Element("biomeCutoff");
+                    distribution._BiomeOverride = biomeOverride == null ? 0.5f : biomeOverride.Value.ToFloat();
 
                     thisScatter.distribution = distribution;
                     Debug.Log("Parsed distribution");

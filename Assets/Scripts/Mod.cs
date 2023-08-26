@@ -233,7 +233,7 @@ namespace Assets.Scripts
                 scatterRenderers.Add(scatter, renderer);
             }
             Utils utils = managerGO.AddComponent<Utils>();
-
+            FramerateMonitor fpsMonitor = managerGO.AddComponent<FramerateMonitor>();
             
 
             scatterObjects.Add(e.Planet.PlanetData.Id, managerGO);

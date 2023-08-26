@@ -20,6 +20,7 @@ using ModApi.Settings;
 using ModApi.Scenes.Events;
 using System.Threading;
 using UnityEngine.UIElements;
+using Assets.Scripts.Career;
 
 public struct DistributionData
 {
@@ -34,6 +35,7 @@ public struct DistributionData
     public float _MaxNormalDeviance;
     public float _Seed;
     public bool _RidgedNoise;
+    public float _BiomeOverride;
     public Vector3 _MinScale;
     public Vector3 _MaxScale;
     public LOD lod0;
@@ -178,7 +180,6 @@ public class Scatter
     List<Vector3> craftWorldPositions = new List<Vector3>();
     public async void ProcessColliderData()
     {
-        Debug.Log("Is processing colliders?" + isProcessingColliderData);
         if (isProcessingColliderData) { return; }
         ProcessAddingColliderData();
         if (colliderData.Count == 0) { return; }

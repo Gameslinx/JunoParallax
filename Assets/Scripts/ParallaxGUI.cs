@@ -14,7 +14,8 @@ enum ChangeType
 {
     Distribution,
     Material,
-    Renderer
+    Renderer,
+    None
 }
 public class ParallaxGUI : MonoBehaviour
 {
@@ -31,6 +32,10 @@ public class ParallaxGUI : MonoBehaviour
     static ChangeType currentChangeType;
     static bool visible = false;
     static bool showingCollideables = false;
+    static bool showRendererStats = false;
+    static bool showDynamicLOD = false;
+
+    static List<RendererStats[]> rendererStats = new List<RendererStats[]>();
     void Start()
     {
 
@@ -176,6 +181,7 @@ public class ParallaxGUI : MonoBehaviour
             currentScatter.distribution._MinAltitude = TextAreaLabelFloat("Min Altitude", currentScatter.distribution._MinAltitude, ChangeType.Distribution);
             currentScatter.distribution._MaxAltitude = TextAreaLabelFloat("Max Altitude", currentScatter.distribution._MaxAltitude, ChangeType.Distribution);
             currentScatter.distribution._MaxNormalDeviance = TextAreaLabelFloat("Max Normal Deviance", currentScatter.distribution._MaxNormalDeviance, ChangeType.Distribution);
+            currentScatter.distribution._BiomeOverride = TextAreaLabelFloat("Biome Cutoff", currentScatter.distribution._BiomeOverride, ChangeType.Distribution);
             currentScatter.distribution._AlignToTerrainNormal = ((uint)TextAreaLabelFloat("Align To Terrain Normal", currentScatter.distribution._AlignToTerrainNormal == (uint)1 ? 1f : 0f, ChangeType.Distribution));
             if (GUILayout.Button("Show LOD 1"))
             {
@@ -255,12 +261,87 @@ public class ParallaxGUI : MonoBehaviour
             }
         }
 
-        // Debug
+        if (GUILayout.Button("[Debug] Renderer Statistics"))
+        {
+            showRendererStats = !showRendererStats;
+            
+        }
+        if (showRendererStats)
+        {
+            GUILayout.Label("Click 'Get Stats' then see the statistics in Player.log by searching 'Parallax Stats'");
+            if (GUILayout.Button("[Debug] Get Stats"))
+            {
+                rendererStats.Clear();
+                foreach (Scatter scatter in Mod.ParallaxInstance.activeScatters)
+                {
+                    rendererStats.Add(scatter.renderer.GetStats());
+                }
+                Debug.Log("Parallax Stats:");
+            }
+            int totalTris = 0;
+            int totalVerts = 0;
+            int totalObjects = 0;
+            foreach (RendererStats[] stats in rendererStats)
+            {
+                Debug.Log("Scatter: " + stats[0].scatterName);
+                Debug.Log("> LOD 0:");
+                Debug.Log("> > Object Count: " + stats[0].objectCount);
+                Debug.Log("> > Vertex Count: " + stats[0].vertexCount);
+                Debug.Log("> > Triangle Count: " + stats[0].triangleCount);
+                Debug.Log("");
+                Debug.Log("> LOD 1:");
+                Debug.Log("> > Object Count: " + stats[1].objectCount);
+                Debug.Log("> > Vertex Count: " + stats[1].vertexCount);
+                Debug.Log("> > Triangle Count: " + stats[1].triangleCount);
+                Debug.Log("");
+                Debug.Log("> LOD 2:");
+                Debug.Log("> > Object Count: " + stats[2].objectCount);
+                Debug.Log("> > Vertex Count: " + stats[2].vertexCount);
+                Debug.Log("> > Triangle Count: " + stats[2].triangleCount);
 
-        currentScatter.maxObjectsToRender = (int)TextAreaLabelSlider("[DEBUG] Max Objects to Render", currentScatter.maxObjectsToRender, 1, 100000, ChangeType.Renderer);
+                totalObjects += stats[0].objectCount;
+                totalObjects += stats[1].objectCount;
+                totalObjects += stats[2].objectCount;
+
+                totalVerts += stats[0].vertexCount;
+                totalVerts += stats[1].vertexCount;
+                totalVerts += stats[2].vertexCount;
+
+                totalTris += stats[0].triangleCount;
+                totalTris += stats[1].triangleCount;
+                totalTris += stats[2].triangleCount;
+            }
+            if (rendererStats.Count > 0)
+            {
+                Debug.Log("Total Objects: " + totalObjects);
+                Debug.Log("Total Vertices: " + totalVerts);
+                Debug.Log("Total Triangles: " + totalTris);
+            }
+            rendererStats.Clear();
+        }
+        if (GUILayout.Button("Show Dynamic LOD Settings"))
+        {
+            showDynamicLOD = !showDynamicLOD;
+        }
+        if (showDynamicLOD)
+        {
+            GUILayout.Label("Enabled: " + ParallaxSettings.enableDynamicLOD);
+            if (GUILayout.Button("Toggle Enabled"))
+            {
+                ParallaxSettings.enableDynamicLOD = !ParallaxSettings.enableDynamicLOD;
+            }
+            if (ParallaxSettings.enableDynamicLOD)
+            {
+                ParallaxSettings.targetFPS = TextAreaLabelFloat("Target FPS", ParallaxSettings.targetFPS, ChangeType.None);
+                ParallaxSettings.minLODFactor = TextAreaLabelFloat("Minimum LOD Multiplier", ParallaxSettings.minLODFactor, ChangeType.None);
+                ParallaxSettings.maxLODFactor = TextAreaLabelFloat("Maximum LOD Multiplier", ParallaxSettings.maxLODFactor, ChangeType.None);
+            }
+        }
+        // Debug
         GUILayout.EndVertical();
         UnityEngine.GUI.DragWindow();
     }
+    
     enum MaterialType
     {
         LOD0,

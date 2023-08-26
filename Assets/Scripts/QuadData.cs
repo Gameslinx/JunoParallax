@@ -87,6 +87,9 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
 
     public ScatterManager manager;
 
+    // Vertices are more dense at latitudes +-35.26, longitudes -135, -45, 45 and 135 by roughly a factor of 2.
+    public float densityFactor = 1;
+
     public QuadData(QuadScript quad)
     {
         this.quad = quad;
@@ -132,6 +135,8 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
         GetQuadAltitudeRange();
         Profiler.EndSample();
 
+        GetDensityFactor(quad.SphereNormal);
+
         for (int i = 0; i < Mod.Instance.activeScatters.Length; i++)
         {
             Scatter scatter = Mod.Instance.activeScatters[i];
@@ -161,6 +166,24 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
         float fqw = ((Mathf.PI * (float)quad.QuadSphere.PlanetData.Radius * 2.0f) / 4f) / (Mathf.Pow(2.0f, quad.QuadSphere.MaxSubdivisionLevel));
 
         return Mathf.Sqrt(fqw * fqw + fqw * fqw);
+    }
+    float lat = 0;
+    float lon = 0;
+    public void GetDensityFactor(Vector3d sphereNormal)
+    {
+        Utils.GetLatLon(sphereNormal, out lat, out lon);
+        Debug.Log("Quad lat " + (lat * Mathf.Rad2Deg) + ", lon " + (lon * Mathf.Rad2Deg));
+
+        // We want a value of 1 when at each corner - defines reduction factor
+        // Sin function, peaks at -35.266, 35.266, but also -105 and +105. Leading to reduced density at the poles - this is fine!
+        lat = Mathf.Abs(Mathf.Sin(lat * 2.552f));
+        // Sin function, peaks at -135, -45, 45, 135
+        lon = Mathf.Abs(Mathf.Sin(lon * 2));
+
+        // Multiply spawn chance by density factor. At corners, density is 0.4x normal. At edges, density is 0.8x normal.
+        densityFactor = Mathf.Pow((Mathf.Lerp(1, 0.03f, (lat + lon) / 2f)), 0.3333f);
+
+        Debug.Log(" - Density: " + densityFactor);
     }
     void OnQuadDataUpdate(Matrix4x4d m)         //Occurs every time before EvaluatePositions is called on ScatterData
     {
@@ -208,6 +231,7 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
         }
     }
     // Min altitude or max altitude must be between quad min/max altitude, otherwise don't bother generating anything (quad is outside of scatter altitude bounds)
+    float distributionSample = 0;
     private bool ScatterEligible(Scatter scatter)
     {
         if (quad.SubdivisionLevel < scatter.minimumSubdivision)
@@ -220,10 +244,9 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
             return false;
         }
         //return true;
-        // Pick 3 points on a quad to sample the noise. Not hugely accurate but good enough
-        float noiseSample = scatter.sharesNoiseWith.noise[quad].noise[0] + scatter.sharesNoiseWith.noise[quad].noise[28] + scatter.sharesNoiseWith.noise[quad].noise[700];
-        // Absolutely no noise on this quad
-        if (noiseSample == 0)
+        // If all 4 corners of the quad do not have the necessary distribution, it's very very unlikely to be in a biome where this scatter can spawn
+        distributionSample = Mathf.Max(scatter.sharesNoiseWith.noise[quad].distribution[28], scatter.sharesNoiseWith.noise[quad].distribution[52], scatter.sharesNoiseWith.noise[quad].distribution[628], scatter.sharesNoiseWith.noise[quad].distribution[603]);
+        if (distributionSample < 0.5f)
         {
             return false;
         }

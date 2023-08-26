@@ -5,7 +5,6 @@
 		_MainTex("_MainTex", 2D) = "white" {}
 		_IceMask("_IceMask", 2D) = "black" {}
 		_BumpMap("_BumpMap", 2D) = "bump" {}
-		_ScreenTexture("_ScreenTexture", 2D) = "red" {}
 
 		_Metallic("_Metallic", Range(0.001, 20)) = 0.2
 		_Gloss("_Gloss", Range(0, 250)) = 0
@@ -49,7 +48,7 @@
 
 			sampler2D _BackgroundTexture;
 			float4 _BumpMap_ST;
-			uniform sampler2D _IceMask;
+			sampler2D _IceMask;
 
 			float _BumpScale;
 			float3 _IceInteriorColor;
@@ -106,7 +105,7 @@
                 float3 worldNormal = (mul(TBN, normalMap));
 
 				float attenuation = PARALLAX_LIGHT_ATTENUATION(i);
-                float3 attenColor = attenuation * _LightColor0.rgb;
+                float3 attenColor = attenuation * _LightColor0.rgb; //
 
 				float4 color = BlinnPhong(worldNormal, i.worldNormal, surfaceCol, normalize(i.lightDir), normalize(i.viewDir), attenColor);
                 float3 fresnelCol = Fresnel(worldNormal, normalize(i.viewDir), _FresnelPower, _FresnelColor) * saturate(dot(i.worldNormal, _WorldSpaceLightPos0));

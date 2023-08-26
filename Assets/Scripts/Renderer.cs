@@ -14,6 +14,14 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.UIElements;
 
+public struct RendererStats
+{
+    // Object count AFTER culling - What is actually being rendered right now
+    public int objectCount;
+    public int vertexCount;
+    public int triangleCount;
+    public string scatterName;
+}
 public class ScatterRenderer : MonoBehaviour                   //There is an instance of this PER SCATTER, on each quad sphere
 {
     public ScatterManager manager;
@@ -84,8 +92,13 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
     }
     Material SetupMaterial(ScatterShader scatterShader)
     {
-        Debug.Log("Scatter shader name: " + scatterShader.name);
+        Debug.Log("Loading shader: " + scatterShader.name);
         Shader shader = Mod.ParallaxInstance.ResourceLoader.LoadAsset<Shader>($"Assets/Scripts/Shaders/ParallaxShaders/{scatterShader.resourceName}.shader");
+        if (shader == null)
+        {
+            Debug.Log("[Exception] Could not load shader: " + scatterShader.name + ", is it included in the build?");
+        }
+        Debug.Log("Loaded!");
         Material mat = new Material(shader);
 
         // Setup material
@@ -205,6 +218,25 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
         {
             OnEvaluatePositions();
         }
+    }
+    public RendererStats[] GetStats()
+    {
+        // One stat for each LOD
+        RendererStats[] stats = new RendererStats[3];
+
+        uint[] args0 = new uint[5];
+        uint[] args1 = new uint[5];
+        uint[] args2 = new uint[5];
+
+        argslod0.GetData(args0);
+        argslod1.GetData(args1);
+        argslod2.GetData(args2);
+
+        stats[0] = new RendererStats { objectCount = (int)args0[1], triangleCount = (int)args0[1] * (meshLod0.triangles.Length / 3), vertexCount = (int)args0[1] * meshLod0.vertexCount, scatterName = scatter.DisplayName };
+        stats[1] = new RendererStats { objectCount = (int)args1[1], triangleCount = (int)args1[1] * (meshLod1.triangles.Length / 3), vertexCount = (int)args1[1] * meshLod1.vertexCount, scatterName = scatter.DisplayName };
+        stats[2] = new RendererStats { objectCount = (int)args2[1], triangleCount = (int)args2[1] * (meshLod2.triangles.Length / 3), vertexCount = (int)args2[1] * meshLod2.vertexCount, scatterName = scatter.DisplayName };
+
+        return stats;
     }
     public void Cleanup()
     {

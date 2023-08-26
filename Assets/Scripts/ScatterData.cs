@@ -96,19 +96,19 @@ public class ScatterData
         shader.SetInt("_MaxCount", _MaxCount);
         shader.SetFloat("_Seed", scatter.distribution._Seed);
         shader.SetInt("_PopulationMultiplier", scatter.distribution._PopulationMultiplier * populationFactor);
-        shader.SetFloat("_SpawnChance", scatter.distribution._SpawnChance);
+        shader.SetFloat("_SpawnChance", scatter.distribution._SpawnChance * parent.densityFactor);
         shader.SetVector("_MinScale", scatter.distribution._MinScale);
         shader.SetVector("_MaxScale", scatter.distribution._MaxScale);
         shader.SetFloat("_SizeJitterAmount", scatter.distribution._SizeJitterAmount);
         shader.SetFloat("_Coverage", scatter.distribution._Coverage);
         shader.SetFloat("_MinAltitude", scatter.distribution._MinAltitude);
         shader.SetFloat("_MaxAltitude", scatter.distribution._MaxAltitude);
-        shader.SetFloat("_AlignToTerrainNormal", scatter.distribution._AlignToTerrainNormal);
         shader.SetFloat("_MaxNormalDeviance", scatter.distribution._MaxNormalDeviance);
         shader.SetMatrix("_ObjectToWorldMatrix", parent.quadToWorldMatrix);
         shader.SetFloat("_PlanetRadius", (float)parent.quad.QuadSphere.PlanetData.Radius);
         shader.SetVector("_PlanetOrigin", (Vector3)parent.quad.QuadSphere.FramePosition);
         shader.SetInt("_AbsoluteNoise", scatter.distribution._RidgedNoise == true ? 1 : 0);
+        shader.SetFloat("_BiomeCutoff", scatter.distribution._BiomeOverride);
 
         shader.SetInt("_NumTris", parent.triangleCount);
 
@@ -137,6 +137,7 @@ public class ScatterData
         shader.SetFloat("_Lod12Split", scatter.distribution.lod1.distance / scatter.distribution._Range);
         shader.SetFloat("_MaxRange", scatter.distribution._Range);
         shader.SetMatrix("_ObjectToWorldMatrix", parent.quadToWorldMatrix);
+        shader.SetFloat("_AlignToTerrainNormal", scatter.distribution._AlignToTerrainNormal);
 
         shader.SetFloat("_CullRadius", scatter.cullRadius);
         shader.SetFloat("_CullLimit", scatter.cullLimit);
@@ -188,17 +189,22 @@ public class ScatterData
         shader.SetFloats("_CameraFrustumPlanes", Utils.planeNormals);
         shader.SetVector("_WorldSpaceCameraPosition", parent.manager.mainCamera.transform.position);
         shader.SetVector("_PlanetNormal", parent.planetNormal);
+
+        if (ParallaxSettings.enableDynamicLOD)
+        {
+            shader.SetFloat("_Lod01Split", (scatter.distribution.lod0.distance / scatter.distribution._Range) * FramerateMonitor.factor);
+            shader.SetFloat("_Lod12Split", (scatter.distribution.lod1.distance / scatter.distribution._Range) * FramerateMonitor.factor);
+        }
+       
         shader.DispatchIndirect(evaluateKernel, dispatchArgs);
     }
     public void Pause()
     {
         renderer.OnEvaluatePositions -= EvaluatePositions;
-        //ShaderPool.Return(shader);
     }
     public void Resume()
     {
         renderer.OnEvaluatePositions += EvaluatePositions;
-        //shader = ShaderPool.Retrieve();
     }
     public void GUITool_Reinitialize()
     {
@@ -209,6 +215,9 @@ public class ScatterData
         objectLimits?.Release();
 
         scatter.RemoveColliderData(colliderData);
+
+        // If population multiplier changes, it must be updated here
+        _MaxCount = parent.triangleCount * scatter.distribution._PopulationMultiplier;
 
         if (!scatter.inherits)
         {

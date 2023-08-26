@@ -52,6 +52,7 @@ public class ScatterManager : MonoBehaviour         //Manages scatters on a plan
         {
             mainCamera.farClipPlane = 10000;
         }
+
     }
     void FixedUpdate()
     {
