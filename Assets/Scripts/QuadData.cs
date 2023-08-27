@@ -172,7 +172,6 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
     public void GetDensityFactor(Vector3d sphereNormal)
     {
         Utils.GetLatLon(sphereNormal, out lat, out lon);
-        Debug.Log("Quad lat " + (lat * Mathf.Rad2Deg) + ", lon " + (lon * Mathf.Rad2Deg));
 
         // We want a value of 1 when at each corner - defines reduction factor
         // Sin function, peaks at -35.266, 35.266, but also -105 and +105. Leading to reduced density at the poles - this is fine!
@@ -182,8 +181,6 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
 
         // Multiply spawn chance by density factor. At corners, density is 0.4x normal. At edges, density is 0.8x normal.
         densityFactor = Mathf.Pow((Mathf.Lerp(1, 0.03f, (lat + lon) / 2f)), 0.3333f);
-
-        Debug.Log(" - Density: " + densityFactor);
     }
     void OnQuadDataUpdate(Matrix4x4d m)         //Occurs every time before EvaluatePositions is called on ScatterData
     {

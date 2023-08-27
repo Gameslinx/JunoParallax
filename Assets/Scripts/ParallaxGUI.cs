@@ -1,4 +1,5 @@
 using Assets.Scripts;
+using Assets.Scripts.Flight.Sim;
 using Assets.Scripts.Terrain;
 using ModApi.Common;
 using ModApi.Common.SimpleTypes;

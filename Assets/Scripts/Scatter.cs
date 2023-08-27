@@ -134,6 +134,8 @@ public class Scatter
     bool isProcessingColliderData = false;
     public ScatterRenderer renderer;
     public ScatterManager manager;
+    // Number of quads that have this scatter on them. If 0, don't render it    
+    public int numActive = 0;
     public Scatter(string id, string displayName)
     {
         distribution = new DistributionData();
