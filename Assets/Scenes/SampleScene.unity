@@ -137,8 +137,6 @@ GameObject:
   - component: {fileID: 598224622}
   - component: {fileID: 598224626}
   - component: {fileID: 598224627}
-  - component: {fileID: 598224628}
-  - component: {fileID: 598224629}
   - component: {fileID: 598224630}
   m_Layer: 0
   m_Name: Plane
@@ -261,30 +259,6 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0dc151f35c2271648a87d6cd36f96e6d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &598224628
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 598224621}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 07381088f0ffefa4098019d7fa8895ed, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &598224629
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 598224621}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 90c9bdbbc22c47e469f40a840cc35365, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!114 &598224630

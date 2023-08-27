@@ -86,29 +86,29 @@ public class ScatterData
 
         shader.SetBuffer(distributeKernel, "Vertices", parent.vertices);
         shader.SetBuffer(distributeKernel, "Triangles", parent.triangles);
-        //shader.SetBuffer(distributeKernel, "Normals", parent.normals);
-        //shader.SetBuffer(distributeKernel, "Distribution", distribution);
-        //shader.SetBuffer(distributeKernel, "Noise", noise);
+        shader.SetBuffer(distributeKernel, "Normals", parent.normals);
+        shader.SetBuffer(distributeKernel, "Distribution", distribution);
+        shader.SetBuffer(distributeKernel, "Noise", noise);
         shader.SetBuffer(distributeKernel, "Positions", positions);
 
         // Quads subdivide into 4 quads, so in order for a lesser subdivided quad to have the same number of trees (and maintain a constant scatter density), increase its pop mult by 4
         
         shader.SetInt("_MaxCount", _MaxCount);
-        //shader.SetFloat("_Seed", scatter.distribution._Seed);
+        shader.SetFloat("_Seed", scatter.distribution._Seed);
         shader.SetInt("_PopulationMultiplier", scatter.distribution._PopulationMultiplier * populationFactor);
-        //shader.SetFloat("_SpawnChance", scatter.distribution._SpawnChance * parent.densityFactor);
-        //shader.SetVector("_MinScale", scatter.distribution._MinScale);
-        //shader.SetVector("_MaxScale", scatter.distribution._MaxScale);
-        //shader.SetFloat("_SizeJitterAmount", scatter.distribution._SizeJitterAmount);
-        //shader.SetFloat("_Coverage", scatter.distribution._Coverage);
-        //shader.SetFloat("_MinAltitude", scatter.distribution._MinAltitude);
-        //shader.SetFloat("_MaxAltitude", scatter.distribution._MaxAltitude);
-        //shader.SetFloat("_MaxNormalDeviance", scatter.distribution._MaxNormalDeviance);
+        shader.SetFloat("_SpawnChance", scatter.distribution._SpawnChance * parent.densityFactor);
+        shader.SetVector("_MinScale", scatter.distribution._MinScale);
+        shader.SetVector("_MaxScale", scatter.distribution._MaxScale);
+        shader.SetFloat("_SizeJitterAmount", scatter.distribution._SizeJitterAmount);
+        shader.SetFloat("_Coverage", scatter.distribution._Coverage);
+        shader.SetFloat("_MinAltitude", scatter.distribution._MinAltitude);
+        shader.SetFloat("_MaxAltitude", scatter.distribution._MaxAltitude);
+        shader.SetFloat("_MaxNormalDeviance", scatter.distribution._MaxNormalDeviance);
         shader.SetMatrix("_ObjectToWorldMatrix", parent.quadToWorldMatrix);
-        //shader.SetFloat("_PlanetRadius", (float)parent.quad.QuadSphere.PlanetData.Radius);
-        //shader.SetVector("_PlanetOrigin", (Vector3)parent.quad.QuadSphere.FramePosition);
-        //shader.SetInt("_AbsoluteNoise", scatter.distribution._RidgedNoise == true ? 1 : 0);
-        //shader.SetFloat("_BiomeCutoff", scatter.distribution._BiomeOverride);
+        shader.SetFloat("_PlanetRadius", (float)parent.quad.QuadSphere.PlanetData.Radius);
+        shader.SetVector("_PlanetOrigin", (Vector3)parent.quad.QuadSphere.FramePosition);
+        shader.SetInt("_AbsoluteNoise", scatter.distribution._RidgedNoise == true ? 1 : 0);
+        shader.SetFloat("_BiomeCutoff", scatter.distribution._BiomeOverride);
 
         shader.SetInt("_NumTris", parent.triangleCount);
 

@@ -119,7 +119,7 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
         triangleCount = triangleData.Length / 3;
 
         vertices = new ComputeBuffer(vertexCount, 12, ComputeBufferType.Structured);
-        triangles = new ComputeBuffer(triangleCount, 12, ComputeBufferType.Structured);
+        triangles = new ComputeBuffer(triangleCount * 3, 4, ComputeBufferType.Structured);
         normals = new ComputeBuffer(vertexCount, 12, ComputeBufferType.Structured);
         
         vertices.SetData(vertexData);

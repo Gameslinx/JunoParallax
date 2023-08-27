@@ -105,7 +105,7 @@ namespace Assets.Scripts
             Debug.Log("Events added");
             terrainShader = Instance.ResourceLoader.LoadAsset<Shader>("Assets/Resources/Wireframe.shader");
 
-            quadShader = Instance.ResourceLoader.LoadAsset<ComputeShader>("Assets/Scripts/Shaders/DebugDistribution.compute");
+            quadShader = Instance.ResourceLoader.LoadAsset<ComputeShader>("Assets/Scripts/Shaders/Parallax.compute");
             renderShader = Instance.ResourceLoader.LoadAsset<ComputeShader>("Assets/Scripts/Shaders/Cascades.compute");
 
             Profiler.BeginSample("Initialize shader pool");
@@ -367,6 +367,10 @@ namespace Assets.Scripts
             //QuadData qd = new QuadData(e.Quad);
             //quadData.Add(e.Quad, qd);
             Profiler.EndSample();
+
+
+            e.Quad.RenderingData.TerrainMaterial = new Material(ParallaxInstance.ResourceLoader.LoadAsset<Shader>("Assets/Scripts/Shaders/ParallaxShaders/Wireframe.shader"));
+            e.Quad.RenderingData.TerrainMaterial.SetColor("_Color", new Color(0,0,0,0.25f));
         }
         private void OnUnloadQuadStarted(object sender, UnloadQuadScriptEventArgs e)
         {
