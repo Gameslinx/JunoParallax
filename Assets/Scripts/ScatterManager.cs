@@ -26,9 +26,7 @@ public class ScatterManager : MonoBehaviour         //Manages scatters on a plan
     public Scatter[] activeScatters = new Scatter[0];
 
     // Stuff for capturing screen texture
-    public RenderTexture screenTexture;
     public GameObject cameraObject;
-    public bool requiresScreenTexture = false;
 
     void OnEnable()
     {

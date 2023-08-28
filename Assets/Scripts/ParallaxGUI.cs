@@ -5,6 +5,7 @@ using ModApi.Common.SimpleTypes;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.Mathematics;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 using static ModApi.Utilities;
@@ -20,7 +21,8 @@ enum ChangeType
 public class ParallaxGUI : MonoBehaviour
 {
     public static ScatterManager manager;
-    private static Rect window = new Rect(100, 100, 450, 200);
+    private static Rect window = new Rect(100, 100, 450, 300);
+    private static Rect windowDefault = new Rect(100, 100, 450, 300);
     static Scatter currentScatter;
     static int currentScatterIndex = 0;
     static bool showDistribution = false;
@@ -36,14 +38,6 @@ public class ParallaxGUI : MonoBehaviour
     static bool showDynamicLOD = false;
 
     static List<RendererStats[]> rendererStats = new List<RendererStats[]>();
-    void Start()
-    {
-
-    }
-    private void OnDisable()
-    {
-
-    }
     void Update()
     {
         bool flag = UnityEngine.Input.GetKey(KeyCode.LeftAlt) && UnityEngine.Input.GetKeyDown(KeyCode.P); 
@@ -126,10 +120,14 @@ public class ParallaxGUI : MonoBehaviour
 
         GUIStyle alignment = UnityEngine.GUI.skin.GetStyle("Label");
         alignment.alignment = TextAnchor.MiddleCenter;
-
+        if (!showMaterial && !showDistribution && !showDynamicLOD && !showRendererStats && !showingCollideables)
+        {
+            window.height = windowDefault.height;
+        }
+        alignment.alignment = TextAnchor.MiddleLeft;
         GUILayout.Label("Currently displaying scatter: " + Mod.ParallaxInstance.activeScatters[currentScatterIndex].DisplayName);
         GUILayout.BeginHorizontal();
-
+        alignment.alignment = TextAnchor.MiddleCenter;
         // Advance previous scatter
         if (GUILayout.Button("Previous Scatter"))
         {
@@ -153,7 +151,9 @@ public class ParallaxGUI : MonoBehaviour
         GUILayout.EndHorizontal();
 
         currentScatter = Mod.ParallaxInstance.activeScatters[currentScatterIndex];
-
+        alignment.alignment = TextAnchor.MiddleLeft;
+        GUILayout.Label("Scatter Settings");
+        alignment.alignment = TextAnchor.MiddleCenter;
         if (GUILayout.Button("Show Material Settings"))
         {
             showMaterial = !showMaterial;
@@ -204,8 +204,11 @@ public class ParallaxGUI : MonoBehaviour
                 ShowMaterial(currentScatter.distribution.lod1.material, MaterialType.LOD2);
             }
         }
+        alignment.alignment = TextAnchor.MiddleLeft;
+        GUILayout.Label("Global Settings");
+        alignment.alignment = TextAnchor.MiddleCenter;
         // This doesn't work, and I'm not sure exactly why
-        if (GUILayout.Button("[Debug] Show Collideable Scatters"))
+        if (GUILayout.Button("Show Collideable Scatters"))
         {
             showingCollideables = !showingCollideables;
             if (!showingCollideables)
@@ -260,7 +263,24 @@ public class ParallaxGUI : MonoBehaviour
                 }
             }
         }
-
+        if (GUILayout.Button("Show Dynamic LOD Settings"))
+        {
+            showDynamicLOD = !showDynamicLOD;
+        }
+        if (showDynamicLOD)
+        {
+            GUILayout.Label("Enabled: " + ParallaxSettings.enableDynamicLOD);
+            if (GUILayout.Button("Toggle Enabled"))
+            {
+                ParallaxSettings.enableDynamicLOD = !ParallaxSettings.enableDynamicLOD;
+            }
+            if (ParallaxSettings.enableDynamicLOD)
+            {
+                ParallaxSettings.targetFPS = TextAreaLabelFloat("Target FPS", ParallaxSettings.targetFPS, ChangeType.None);
+                ParallaxSettings.minLODFactor = TextAreaLabelFloat("Minimum LOD Multiplier", ParallaxSettings.minLODFactor, ChangeType.None);
+                ParallaxSettings.maxLODFactor = TextAreaLabelFloat("Maximum LOD Multiplier", ParallaxSettings.maxLODFactor, ChangeType.None);
+            }
+        }
         if (GUILayout.Button("[Debug] Renderer Statistics"))
         {
             showRendererStats = !showRendererStats;
@@ -319,24 +339,8 @@ public class ParallaxGUI : MonoBehaviour
             }
             rendererStats.Clear();
         }
-        if (GUILayout.Button("Show Dynamic LOD Settings"))
-        {
-            showDynamicLOD = !showDynamicLOD;
-        }
-        if (showDynamicLOD)
-        {
-            GUILayout.Label("Enabled: " + ParallaxSettings.enableDynamicLOD);
-            if (GUILayout.Button("Toggle Enabled"))
-            {
-                ParallaxSettings.enableDynamicLOD = !ParallaxSettings.enableDynamicLOD;
-            }
-            if (ParallaxSettings.enableDynamicLOD)
-            {
-                ParallaxSettings.targetFPS = TextAreaLabelFloat("Target FPS", ParallaxSettings.targetFPS, ChangeType.None);
-                ParallaxSettings.minLODFactor = TextAreaLabelFloat("Minimum LOD Multiplier", ParallaxSettings.minLODFactor, ChangeType.None);
-                ParallaxSettings.maxLODFactor = TextAreaLabelFloat("Maximum LOD Multiplier", ParallaxSettings.maxLODFactor, ChangeType.None);
-            }
-        }
+        alignment.alignment = TextAnchor.MiddleLeft;
+        GUILayout.Label("Note: These settings do not save, you must save them in the configs manually.");
         // Debug
         GUILayout.EndVertical();
         UnityEngine.GUI.DragWindow();

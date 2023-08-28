@@ -66,9 +66,9 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
         Mesh mesh2 = Mod.Instance.ResourceLoader.LoadAsset<Mesh>(scatter.distribution.lod0.material._Mesh);
         Mesh mesh3 = Mod.Instance.ResourceLoader.LoadAsset<Mesh>(scatter.distribution.lod1.material._Mesh);
 
-        shadowsLOD0 = scatter.material.castShadows ? ShadowCastingMode.On : ShadowCastingMode.Off;
-        shadowsLOD1 = scatter.distribution.lod0.material.castShadows ? ShadowCastingMode.On : ShadowCastingMode.Off;
-        shadowsLOD2 = scatter.distribution.lod1.material.castShadows ? ShadowCastingMode.On : ShadowCastingMode.Off;
+        shadowsLOD0 = scatter.material.castShadows ? (ParallaxSettings.castShadows ? ShadowCastingMode.On : ShadowCastingMode.Off) : ShadowCastingMode.Off;
+        shadowsLOD1 = scatter.distribution.lod0.material.castShadows ? (ParallaxSettings.castShadows ? ShadowCastingMode.On : ShadowCastingMode.Off) : ShadowCastingMode.Off;
+        shadowsLOD2 = scatter.distribution.lod1.material.castShadows ? (ParallaxSettings.castShadows ? ShadowCastingMode.On : ShadowCastingMode.Off) : ShadowCastingMode.Off;
 
         Material mat = SetupMaterial(scatter.material._Shader);
         materialLOD0 = Instantiate(mat);
@@ -83,22 +83,41 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
         meshLod1 = Instantiate(mesh2);
         meshLod2 = Instantiate(mesh3);
 
-        
+        // Calculate the maximum size of the mesh - this is for collisions
 
-        //matlod2.EnableKeyword("ATMOSPHERE");
-        
+        GetMeshRadius();
 
         FirstTimeArgs();
     }
+    void GetMeshRadius()
+    {
+        Vector3[] verts = meshLod1.vertices;
+        // First get the furthest vertex away from the origin in local space
+        float furthestDist = 0;
+        Vector3 furthestVert = Vector3.zero;
+        for (int i = 0; i < verts.Length; i++)
+        {
+            float distance = Vector3.SqrMagnitude(verts[i]);
+            if (distance > furthestDist)
+            {
+                furthestDist = distance;
+                furthestVert = verts[i];
+            }
+        }
+
+        // Construct a TRS matrix with a translation of 0, rotation of 0, and scale = max scale. Now we can get world space distance to furthest vert - essentially radius of mesh
+        Matrix4x4 objectToWorld = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, scatter.distribution._MaxScale);
+        furthestVert = objectToWorld.MultiplyPoint3x4(furthestVert);
+        // Get sqr distance from origin
+        scatter.sqrCollisionMeshRadius = Vector3.SqrMagnitude(furthestVert);
+    }
     Material SetupMaterial(ScatterShader scatterShader)
     {
-        Debug.Log("Loading shader: " + scatterShader.name);
         Shader shader = Mod.ParallaxInstance.ResourceLoader.LoadAsset<Shader>($"Assets/Scripts/Shaders/ParallaxShaders/{scatterShader.resourceName}.shader");
         if (shader == null)
         {
             Debug.Log("[Exception] Could not load shader: " + scatterShader.name + ", is it included in the build?");
         }
-        Debug.Log("Loaded!");
         Material mat = new Material(shader);
 
         // Setup material
@@ -111,7 +130,6 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
     public void Initialize()
     {
         Prerequisites();
-        Debug.Log("[ScatterRenderer] Initializing...");
 
         shader = UnityEngine.Object.Instantiate(Mod.ParallaxInstance.renderShader);
 
@@ -119,8 +137,8 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
 
         rendererBounds = new Bounds(Vector3.zero, Vector3.one * 100000);
 
-        lod0 = new ComputeBuffer(_MaxCount, TransformData.Size(), ComputeBufferType.Append);
-        lod1 = new ComputeBuffer(_MaxCount, TransformData.Size(), ComputeBufferType.Append);
+        lod0 = new ComputeBuffer(_MaxCount / 10, TransformData.Size(), ComputeBufferType.Append);
+        lod1 = new ComputeBuffer(_MaxCount / 2, TransformData.Size(), ComputeBufferType.Append);
         lod2 = new ComputeBuffer(_MaxCount, TransformData.Size(), ComputeBufferType.Append);
 
         materialLOD0.SetBuffer("_Properties", lod0);
@@ -135,19 +153,19 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
     {
         uint[] argumentsLod0 = new uint[5] { 0, 0, 0, 0, 0 };
         argumentsLod0[0] = (uint)meshLod0.GetIndexCount(0);
-        argumentsLod0[1] = 1; //This is the count, but we will use copycount to fill this in to avoid reading back
+        argumentsLod0[1] = 0; //This is the count, but we will use copycount to fill this in to avoid reading back
         argumentsLod0[2] = (uint)meshLod0.GetIndexStart(0);
         argumentsLod0[3] = (uint)meshLod0.GetBaseVertex(0);
 
         uint[] argumentsLod1 = new uint[5] { 0, 0, 0, 0, 0 };
         argumentsLod1[0] = (uint)meshLod1.GetIndexCount(0);
-        argumentsLod1[1] = 1; //This is the count, but we will use copycount to fill this in to avoid reading back
+        argumentsLod1[1] = 0; //This is the count, but we will use copycount to fill this in to avoid reading back
         argumentsLod1[2] = (uint)meshLod1.GetIndexStart(0);
         argumentsLod1[3] = (uint)meshLod1.GetBaseVertex(0);
 
         uint[] argumentsLod2 = new uint[5] { 0, 0, 0, 0, 0 };
         argumentsLod2[0] = (uint)meshLod2.GetIndexCount(0);
-        argumentsLod2[1] = 1; //This is the count, but we will use copycount to fill this in to avoid reading back
+        argumentsLod2[1] = 0; //This is the count, but we will use copycount to fill this in to avoid reading back
         argumentsLod2[2] = (uint)meshLod2.GetIndexStart(0);
         argumentsLod2[3] = (uint)meshLod2.GetBaseVertex(0);
 
@@ -162,6 +180,8 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
     }
     void Update()       //Evaluate cascades, render
     {
+        if (scatter.numActive == 0) { return; }
+        if (!manager.mainCamera.isActiveAndEnabled) { return; }
         //Control evaluate points
 
         rendererBounds.center = Vector3.zero;
@@ -180,37 +200,9 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
         materialLOD1.SetVector("_PlanetOrigin", (Vector3)manager.quadSphere.FramePosition);
         materialLOD2.SetVector("_PlanetOrigin", (Vector3)manager.quadSphere.FramePosition);
 
-        //Vector3 adjustedPos = manager.mainCamera.transform.position - manager.quadSphere.FramePosition.ToVector3();
-        //float unscaledCamHeight = adjustedPos.magnitude;
-        //adjustedPos = adjustedPos.normalized;
-        //adjustedPos = adjustedPos * (unscaledCamHeight / ((float)manager.quadSphere.PlanetData.Radius * manager.quadSphere.PlanetData.TerrainShaderData.AtmosSizeScale));
-
-        //materialLOD2.SetVector("_adjustedCameraPosition", adjustedPos);
-
-        //For debugging command buffers:
-
-        //PlanetShaderData data = manager.quadSphere.PlanetData.TerrainShaderData;
-        //materialLOD2.SetFloat("_scaleDepth", data.ScaleDepth);
-        //materialLOD2.SetFloat("_atmosSizeScale", data.AtmosSizeScale);
-        //materialLOD2.SetFloat("_innerRadius", (float)(manager.quadSphere.PlanetData.Radius));
-        //materialLOD2.SetFloat("_outerRadius", (float)(manager.quadSphere.PlanetData.Radius + manager.quadSphere.PlanetData.AtmosphereData.Height));
-        //materialLOD2.SetInt("_samples", data.Samples);
-        //float planetRenderRad = (float)manager.quadSphere.PlanetData.Radius;
-        //float atmoRenderRad = (float)planetRenderRad * data.AtmosSizeScale;
-        //float scale = 1f / (atmoRenderRad / planetRenderRad - 1);
-        //materialLOD2.SetFloat("_scale", scale);
-        //materialLOD2.SetFloat("_atmosScale", data.AtmosScale);
-        //materialLOD2.SetFloat("_scaleOverScaleDepth", scale / data.ScaleDepth);
-        //materialLOD2.SetFloat("_kr4PI", data.Kr * 4f * Mathf.PI);
-        //materialLOD2.SetFloat("_km4PI", data.Km * 4f * Mathf.PI);
-        //materialLOD2.SetFloat("_krESun", data.Kr * data.ESun);
-        //materialLOD2.SetFloat("_kmESun", data.Km * data.ESun);
-        //materialLOD2.SetFloat("_worldPositionScale", 1);
-        //materialLOD2.SetVector("_invWaveLength", data.WaveLengthMag * new Color(Mathf.Pow(1f / data.WaveLength[0], 4f), Mathf.Pow(1f / data.WaveLength[1], 4f), Mathf.Pow(1f / data.WaveLength[2], 4f), data.WaveLength[3]));
-
-        Graphics.DrawMeshInstancedIndirect(meshLod0, 0, materialLOD0, rendererBounds, argslod0, 0, null, shadowsLOD0, true, layerlod0, manager.mainCamera);
-        Graphics.DrawMeshInstancedIndirect(meshLod1, 0, materialLOD1, rendererBounds, argslod1, 0, null, shadowsLOD1, true, layerlod1, manager.mainCamera);
-        Graphics.DrawMeshInstancedIndirect(meshLod2, 0, materialLOD2, rendererBounds, argslod2, 0, null, shadowsLOD2, true, layerlod2, manager.mainCamera);
+        Graphics.DrawMeshInstancedIndirect(meshLod0, 0, materialLOD0, rendererBounds, argslod0, 0, null, shadowsLOD0, ParallaxSettings.receiveShadows, layerlod0, manager.mainCamera);
+        Graphics.DrawMeshInstancedIndirect(meshLod1, 0, materialLOD1, rendererBounds, argslod1, 0, null, shadowsLOD1, ParallaxSettings.receiveShadows, layerlod1, manager.mainCamera);
+        Graphics.DrawMeshInstancedIndirect(meshLod2, 0, materialLOD2, rendererBounds, argslod2, 0, null, shadowsLOD2, ParallaxSettings.receiveShadows, layerlod2, manager.mainCamera);
     }
     void EvaluatePoints()
     {

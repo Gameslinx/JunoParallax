@@ -95,14 +95,11 @@ namespace Assets.Scripts
 
             PlanetTerrainDataScript.TerrainDataInitializing += OnTerrainDataInitializing;
 
-            Debug.Log("Mod loaded");
             Terrain.QuadScript.CreateQuadCompleted += OnCreateQuadCompleted;
             Terrain.QuadScript.UnloadQuadStarted += OnUnloadQuadStarted;
             Terrain.QuadScript.UnloadQuadCompleted += OnUnloadQuadCompleted;
                 //Do this for every scatter, though :)
-            Debug.Log("Trying to add event");
             Assets.Scripts.Flight.GameView.Planet.PlanetScript.Initialized += OnPlanetInitialized;
-            Debug.Log("Events added");
             terrainShader = Instance.ResourceLoader.LoadAsset<Shader>("Assets/Resources/Wireframe.shader");
 
             quadShader = Instance.ResourceLoader.LoadAsset<ComputeShader>("Assets/Scripts/Shaders/Parallax.compute");
@@ -158,7 +155,6 @@ namespace Assets.Scripts
                             {
                                 Dictionary<string, SubBiome> scatterSubBiomes = scatterBiomes[biome.name].subBiomes;
                                 var subBiomes = biome.GetSubBiomes();
-                                Debug.Log("SubBiomes count: " + subBiomes.Count);
                                 int subBiomeCount = -1;
                                 foreach (var subBiome in subBiomes)
                                 {
@@ -182,16 +178,16 @@ namespace Assets.Scripts
         private void OnPlanetInitialized(object sender, EventArgs e)
         {
             PlanetScriptEventArgs args = (PlanetScriptEventArgs)e;
-            Debug.Log("Planet initialized: " + args.PlanetScript.name);
             args.PlanetScript.QuadSphereLoading += OnQuadSphereLoading;
             args.PlanetScript.QuadSphereLoaded += OnQuadSphereLoaded;
 
             args.PlanetScript.QuadSphereUnloading += OnQuadSphereUnloading;
             args.PlanetScript.QuadSphereUnloaded += OnQuadSphereUnloaded;
         }
+        public int activePlanetVertexCount = 29;
         private void OnQuadSphereLoading(object sender, PlanetQuadSphereEventArgs e)
         {
-            Debug.Log("Sphere loading: " + e.Planet.PlanetNode.Name);
+            activePlanetVertexCount = e.Planet.PlanetData.TerrainData.Quality.TerrainQuadEdgeVertexCount;
             if (!ConfigLoader.bodies.ContainsKey(e.Planet.PlanetNode.Name))
             {
                 Debug.Log(" - This is not a Parallax body");
@@ -213,16 +209,15 @@ namespace Assets.Scripts
             ParallaxGUI gui = manager.gameObject.AddComponent<ParallaxGUI>();
             ParallaxGUI.manager = manager;
 
-            Debug.Log("Planet name: " + e.Planet.PlanetNode.Name);
             ScatterBody body = ConfigLoader.bodies[e.Planet.PlanetNode.Name];
             Scatter[] scatters = body.scatters.Values.ToArray();
             activeScatters = scatters;
             manager.activeScatters = activeScatters;
-            Debug.Log("Active scatter count: " + activeScatters.Length);
             foreach (Scatter scatter in scatters)
             {
                 //scatter.Register();
                 ScatterRenderer renderer = managerGO.AddComponent<ScatterRenderer>();
+                scatter.numActive = 0;
                 manager.scatterRenderers.Add(renderer);
                 renderer.scatter = scatter;
                 scatter.renderer = renderer;
@@ -239,9 +234,10 @@ namespace Assets.Scripts
             scatterObjects.Add(e.Planet.PlanetData.Id, managerGO);
             scatterManagers.Add(e.Planet.PlanetData.Id, manager);
         }
+        
         private void OnQuadSphereUnloading(object sender, PlanetQuadSphereEventArgs e)
         {
-            Debug.Log("Sphere unloading: " + e.Planet.PlanetNode.Name);
+            
             if (!ConfigLoader.bodies.ContainsKey(e.Planet.PlanetNode.Name))
             {
                 Debug.Log(" - This is not a Parallax body");
@@ -276,7 +272,6 @@ namespace Assets.Scripts
         private void OnQuadSphereUnloaded(object sender, PlanetQuadSphereEventArgs e)
         {
             quadSphereIsUnloading = false;
-            Debug.Log("Quad sphere unloaded: " + e.Planet.PlanetData.Name);
         }
         public Scatter[] activeScatters = new Scatter[0];   //Scatters that are currently active right now - This holds every scatter on the current planet
         private void OnCreateQuadStarted(object sender, CreateQuadScriptEventArgs e)
@@ -308,7 +303,10 @@ namespace Assets.Scripts
             //    }
             //}
             //return;
-
+            if (!ConfigLoader.bodies.ContainsKey(e.QuadSphere.PlanetData.Name))
+            {
+                return;
+            }
             Profiler.BeginSample("OnCreateQuadStarted (Parallax)");
             CreateQuadData data = e.CreateQuadData;
             ScatterNoise sn;
@@ -328,7 +326,6 @@ namespace Assets.Scripts
         }
         private void OnQuadSphereLoaded(object sender, PlanetQuadSphereEventArgs e)
         {
-            Debug.Log("Quad Sphere Loaded: " + e.Planet.PlanetData.Name);
             if (!ConfigLoader.bodies.ContainsKey(e.Planet.PlanetNode.Name))
             {
                 Debug.Log(" - This is not a Parallax body");
@@ -350,6 +347,10 @@ namespace Assets.Scripts
         }
         private void OnCreateQuadCompleted(object sender, CreateQuadScriptEventArgs e) 
         {
+            if (!ConfigLoader.bodies.ContainsKey(e.QuadSphere.PlanetData.Name))
+            {
+                return;
+            }
             if (e.Quad.RenderingData.TerrainMesh == null || e.Quad.SubdivisionLevel < e.QuadSphere.MaxSubdivisionLevel - 2) 
             {
                 return;
@@ -367,10 +368,6 @@ namespace Assets.Scripts
             //QuadData qd = new QuadData(e.Quad);
             //quadData.Add(e.Quad, qd);
             Profiler.EndSample();
-
-
-            e.Quad.RenderingData.TerrainMaterial = new Material(ParallaxInstance.ResourceLoader.LoadAsset<Shader>("Assets/Scripts/Shaders/ParallaxShaders/Wireframe.shader"));
-            e.Quad.RenderingData.TerrainMaterial.SetColor("_Color", new Color(0,0,0,0.25f));
         }
         private void OnUnloadQuadStarted(object sender, UnloadQuadScriptEventArgs e)
         {
@@ -406,7 +403,6 @@ namespace Assets.Scripts
         // Utilities
         private void SplitDistChanged(object sender, SettingChangedEventArgs<float> e)
         {
-            Debug.Log("LOD split distance changed");
             splitDist = e.Setting;
             CalculateNewLODDistances(splitDist);
         }
@@ -416,20 +412,17 @@ namespace Assets.Scripts
         private void CalculateNewLODDistances(float splitDistance)
         {
             if (currentBody == null) { Debug.Log("Current body null"); return; }
-            Debug.Log("Quad sphere maximum subdivision: " + currentBody.MaxSubdivisionLevel);
             lodDistances = new float[currentBody.MaxSubdivisionLevel + 1];
             float quadRootSize = 2 * Mathf.PI * (float)currentBody.PlanetData.Radius / 4f;
             for (int i = 0; i <= currentBody.MaxSubdivisionLevel; i++)
             {
                 float num = quadRootSize / Mathf.Pow(2.0f, (float)i);
                 lodDistances[i] = num * splitDistance;
-                Debug.Log("Subdivision level " + i + " requires a distance of " + lodDistances[i]);
             }
             foreach (Scatter scatter in activeScatters)
             {
                 float maxRange = scatter.distribution._Range;
                 scatter.minimumSubdivision = currentBody.MaxSubdivisionLevel - lodDistances.Where(x => x < maxRange).Count();  //Get number of subdivisionLevels that can contain this scatter
-                Debug.Log("Scatter: " + scatter.DisplayName + " has a minimum subdivision of " + scatter.minimumSubdivision);
             }
         }
     }

@@ -146,6 +146,7 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
                 ScatterData sd = new ScatterData(this, scatter, Mod.ParallaxInstance.scatterRenderers[scatter]);
                 sd.Start();
                 data.Add(sd);
+                scatter.numActive++;
             }
         }
 
@@ -172,7 +173,6 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
     public void GetDensityFactor(Vector3d sphereNormal)
     {
         Utils.GetLatLon(sphereNormal, out lat, out lon);
-        Debug.Log("Quad lat " + (lat * Mathf.Rad2Deg) + ", lon " + (lon * Mathf.Rad2Deg));
 
         // We want a value of 1 when at each corner - defines reduction factor
         // Sin function, peaks at -35.266, 35.266, but also -105 and +105. Leading to reduced density at the poles - this is fine!
@@ -182,8 +182,6 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
 
         // Multiply spawn chance by density factor. At corners, density is 0.4x normal. At edges, density is 0.8x normal.
         densityFactor = Mathf.Pow((Mathf.Lerp(1, 0.03f, (lat + lon) / 2f)), 0.3333f);
-
-        Debug.Log(" - Density: " + densityFactor);
     }
     void OnQuadDataUpdate(Matrix4x4d m)         //Occurs every time before EvaluatePositions is called on ScatterData
     {
@@ -245,7 +243,7 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
         }
         //return true;
         // If all 4 corners of the quad do not have the necessary distribution, it's very very unlikely to be in a biome where this scatter can spawn
-        distributionSample = Mathf.Max(scatter.sharesNoiseWith.noise[quad].distribution[28], scatter.sharesNoiseWith.noise[quad].distribution[52], scatter.sharesNoiseWith.noise[quad].distribution[628], scatter.sharesNoiseWith.noise[quad].distribution[603]);
+        distributionSample = Mathf.Max(scatter.sharesNoiseWith.noise[quad].distribution[Mod.ParallaxInstance.activePlanetVertexCount + 3], scatter.sharesNoiseWith.noise[quad].distribution[Mod.ParallaxInstance.activePlanetVertexCount * 2 + 2], scatter.sharesNoiseWith.noise[quad].distribution[vertexCount - Mod.ParallaxInstance.activePlanetVertexCount - 1], scatter.sharesNoiseWith.noise[quad].distribution[vertexCount - Mod.ParallaxInstance.activePlanetVertexCount * 2 - 2]);
         if (distributionSample < 0.5f)
         {
             return false;
@@ -273,6 +271,7 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
         if (cleaned) { return; }
         for (int i = 0; i < data.Count; i++)
         {
+            data[i].scatter.numActive--;
             data[i].Cleanup();
         }
         data.Clear();

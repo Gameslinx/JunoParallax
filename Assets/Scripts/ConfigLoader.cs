@@ -112,6 +112,7 @@ public static class ParallaxSettings
 
     public static bool enableColliders = false;
     public static int collisionSizeThreshold = 2;
+    public static float craftSizeTolerance = 25;
     public static int computeShaderMemory = 2048;
 }
 public class ConfigLoader : MonoBehaviour
@@ -133,7 +134,7 @@ public class ConfigLoader : MonoBehaviour
         foreach (XElement shader in shaderNodes )
         {
             string name = shader.GetStringAttribute("name");
-            Debug.Log("Shader: " + name);
+            Debug.Log(" - Shader: " + name);
             XElement propertiesNode = shader.Element("Properties");
 
             // Defined as such in the config so that when using reflection to assign the values to the shader instance, the correct types are used
@@ -175,11 +176,11 @@ public class ConfigLoader : MonoBehaviour
                 scatterShader.colors.Add(element.Attribute("name").Value.ToString(), Color.white);
             }
             shaderTemplates.Add(name, scatterShader);
-            Debug.Log(" - Parsed " + shader.Name);
         }
     }
     public static void LoadSettings(string directoryPath)
     {
+        Debug.Log("Loading Parallax settings");
         settings = Directory.GetFiles(directoryPath, "ParallaxSettings.xml").Select(filePath => XElement.Load(filePath)).First();
         XElement qualityNode = settings.Element("QualitySettings");
         ParallaxSettings.rangeMultiplier = qualityNode.Element("scatterRangeMultiplier").Value.ToFloat();
@@ -197,7 +198,11 @@ public class ConfigLoader : MonoBehaviour
         XElement generalNode = settings.Element("GeneralSettings");
         ParallaxSettings.enableColliders = generalNode.Element("enableColliders").Value.ToBoolean();
         ParallaxSettings.collisionSizeThreshold = generalNode.Element("minimumSizeForColliders").Value.ToInt();
+        ParallaxSettings.craftSizeTolerance = generalNode.Element("colliderCraftSizeTolerance").Value.ToFloat();
         ParallaxSettings.computeShaderMemory = generalNode.Element("memoryReservedForComputeShaders").Value.ToInt();
+
+        ParallaxSettings.craftSizeTolerance *= ParallaxSettings.craftSizeTolerance;
+        Debug.Log(" - Parallax settings loaded");
     }
     public static void LoadConfigs(string directoryPath)
     {
@@ -208,9 +213,7 @@ public class ConfigLoader : MonoBehaviour
         foreach (XElement config in configs)
         {
             // Get all planet nodes
-            Debug.Log("Name: " + config.Name);
             List<XElement> planetNodes = config.Elements("CelestialBody").ToList();
-            Debug.Log("Got planet nodes");
             foreach (XElement planetNode in planetNodes)
             {
                 // Get celestial body name attribute
@@ -238,6 +241,7 @@ public class ConfigLoader : MonoBehaviour
 
                     XElement maxObjectsToRender = scatter.Element("maxObjects");
                     thisScatter.maxObjectsToRender = maxObjectsToRender == null ? 1000 : maxObjectsToRender.Value.ToInt();
+                    thisScatter.maxObjectsToRender *= Mathf.CeilToInt(ParallaxSettings.rangeMultiplier * ParallaxSettings.rangeMultiplier * ParallaxSettings.densityMultiplier);
 
                     thisScatter.collisionLevel = scatter.Element("collisionLevel").Value.ToInt();
 
@@ -260,12 +264,22 @@ public class ConfigLoader : MonoBehaviour
                     distribution._MaxNormalDeviance = distributionNode.Element("maxNormalDeviance").Value.ToFloat();
                     distribution._RidgedNoise = false;
 
+                    if (distribution._PopulationMultiplier == 1 && distribution._SpawnChance <= (1f / ParallaxSettings.densityMultiplier))
+                    {
+                        distribution._SpawnChance *= ParallaxSettings.densityMultiplier;
+                    }
+                    else
+                    {
+                        distribution._PopulationMultiplier = Mathf.CeilToInt((float)distribution._PopulationMultiplier * ParallaxSettings.densityMultiplier);
+                    }
+
+                    distribution._Range *= ParallaxSettings.rangeMultiplier;
+
                     // Override
                     XElement biomeOverride = distributionNode.Element("biomeCutoff");
                     distribution._BiomeOverride = biomeOverride == null ? 0.5f : biomeOverride.Value.ToFloat();
 
                     thisScatter.distribution = distribution;
-                    Debug.Log("Parsed distribution");
 
                     // Compute sqr range for optimizing number of shader dispatches in EvaluatePositions()
                     thisScatter.sqrRange = distribution._Range * distribution._Range;
@@ -285,32 +299,27 @@ public class ConfigLoader : MonoBehaviour
                     XElement[] lodNodes = distributionNode.Element("LODs").Elements().ToArray();
                     LOD lod0 = new LOD();
                     LOD lod1 = new LOD();
-                    lod0.distance = lodNodes[0].Element("distance").Value.ToFloat();
-                    lod1.distance = lodNodes[1].Element("distance").Value.ToFloat();
+                    lod0.distance = lodNodes[0].Element("distance").Value.ToFloat() * ParallaxSettings.lodChangeMultiplier;
+                    lod1.distance = lodNodes[1].Element("distance").Value.ToFloat() * ParallaxSettings.lodChangeMultiplier;
                     lod0.material = ParseScatterMaterial(lodNodes[0].Element("Material"));
                     lod1.material = ParseScatterMaterial(lodNodes[1].Element("Material"));
 
                     thisScatter.distribution.lod0 = lod0;
                     thisScatter.distribution.lod1 = lod1;
 
-                    Debug.Log("Parsed LODs");
-
                     // Parse biomes
                     XElement[] biomeNodes = distributionNode.Element("Biomes").Elements().ToArray();
-                    Debug.Log("Length of biome nodes: " + biomeNodes.Length);
                     thisScatter.distribution.biomes = new Dictionary<string, Biome>();
                     foreach (XElement biomeNode in biomeNodes)
                     {
                         Biome biome = new Biome();
                         biome.subBiomes = new Dictionary<string, SubBiome>();
                         string biomeName = biomeNode.Attribute("name").Value;
-                        Debug.Log("Biome name: " + biomeName); 
                         foreach (XElement subBiomeNode in biomeNode.Elements())
                         {
                             string name = subBiomeNode.GetStringAttribute("name");
                             string value = subBiomeNode.GetStringAttribute("value");
                             string slope = subBiomeNode.GetStringAttribute("slope");
-                            Debug.Log("Sub Biome name: " + name);
                             SubBiome subBiome = new SubBiome();
                             subBiome.flatNoiseIntensity = value.ToFloat();
                             subBiome.slopeNoiseIntensity = slope.ToFloat();
@@ -322,8 +331,6 @@ public class ConfigLoader : MonoBehaviour
                     XElement materialNode = scatter.Element("Material");
                     ScatterMaterial material = ParseScatterMaterial(materialNode);
                     thisScatter.material = material;
-
-                    Debug.Log("Parsed Material");
 
                     if (!thisScatter.sharesNoise)
                     {
@@ -349,47 +356,34 @@ public class ConfigLoader : MonoBehaviour
         string castShadows = materialNode.GetStringAttribute("castShadows", "True");
         material.castShadows = castShadows.ToBoolean();
 
-        Debug.Log("Using shader: " + shaderName);
         ScatterShader shader = shaderTemplates[shaderName].Clone() as ScatterShader;
 
         // Consult the shader bank and search for the config value corresponding to that property
         // All properties MUST be defined in the scatter material node
         // Parse texture paths
 
-        Debug.Log("Loading properties");
-
         string[] textureProperties = shader.textures.Keys.ToArray();
         foreach (string textureProperty in textureProperties)
         {
-            Debug.Log("Loading texture property: " + textureProperty);
-            Debug.Log("This node name: " + materialNode.Name);
             XElement el = materialNode.Element(textureProperty);
-            if (el == null)
-            {
-                Debug.Log("Element is null?");
-            }
-            Debug.Log("Value: " + el.Value);
             shader.textures[textureProperty] = materialNode.Element(textureProperty).Value;
         }
         // Parse float values
         string[] floatProperties = shader.floats.Keys.ToArray();
         foreach (string floatProperty in floatProperties)
         {
-            Debug.Log("Loading float property: " + floatProperty);
             shader.floats[floatProperty] = materialNode.Element(floatProperty).Value.ToFloat();
         }
         // Parse vector values
         string[] vectorProperties = shader.vectors.Keys.ToArray();
         foreach (string vectorProperty in vectorProperties)
         {
-            Debug.Log("Loading vector property: " + vectorProperty);
             shader.vectors[vectorProperty] = materialNode.Element(vectorProperty).Value.ToVector3();
         }
         // Parse texture scales
         string[] scaleProperties = shader.scales.Keys.ToArray();
         foreach (string scaleProperty in scaleProperties)
         {
-            Debug.Log("Loading scale property: " + scaleProperty);
             shader.scales[scaleProperty] = materialNode.Element(scaleProperty).Value.ToVector2();
         }
         // Parse color values
@@ -397,7 +391,6 @@ public class ConfigLoader : MonoBehaviour
         foreach (string colorProperty in colorProperties)
         {
             // XML "ToColor" does not support 0-1 colour ranges, sadly
-            Debug.Log("Loading color property: " + colorProperty);
             // Get colour string as definite "1,1,1,1" or "1,1,1"
             string rgbaColours = Regex.Replace(materialNode.Element(colorProperty).Value, @"s", "");
             List<string> colors = rgbaColours.Split(',').ToList();
@@ -436,7 +429,6 @@ public class ConfigLoader : MonoBehaviour
             modifier = ParseFractalNoise(noiseNode, scatter);
         }
 
-        Debug.Log("Modifier parsed from config to XML:" + modifier);
         return modifier;
     }
     public static string ParsePerlinNoise(XElement noiseNode, Scatter scatter)

@@ -75,7 +75,7 @@ public class ScatterData
     {
         //Initialize Generation - Skipped if this scatter inherits from another
         populationFactor = (int)Mathf.Pow(2, parent.quad.QuadSphere.MaxSubdivisionLevel - parent.quad.SubdivisionLevel);
-        _MaxCount *= populationFactor;
+        _MaxCount *= Mathf.CeilToInt((float)populationFactor * ParallaxSettings.densityMultiplier);
 
         distribution = new ComputeBuffer(parent.vertexCount, 4, ComputeBufferType.Structured);
         noise = new ComputeBuffer(parent.vertexCount, 4, ComputeBufferType.Structured);
@@ -95,7 +95,7 @@ public class ScatterData
         
         shader.SetInt("_MaxCount", _MaxCount);
         shader.SetFloat("_Seed", scatter.distribution._Seed);
-        shader.SetInt("_PopulationMultiplier", scatter.distribution._PopulationMultiplier * populationFactor);
+        shader.SetInt("_PopulationMultiplier", (int)Mathf.Min(scatter.distribution._PopulationMultiplier, 200));
         shader.SetFloat("_SpawnChance", scatter.distribution._SpawnChance * parent.densityFactor);
         shader.SetVector("_MinScale", scatter.distribution._MinScale);
         shader.SetVector("_MaxScale", scatter.distribution._MaxScale);
@@ -109,6 +109,7 @@ public class ScatterData
         shader.SetVector("_PlanetOrigin", (Vector3)parent.quad.QuadSphere.FramePosition);
         shader.SetInt("_AbsoluteNoise", scatter.distribution._RidgedNoise == true ? 1 : 0);
         shader.SetFloat("_BiomeCutoff", scatter.distribution._BiomeOverride);
+        shader.SetFloat("_PlanetEdgeVertexCount", (Mod.ParallaxInstance.activePlanetVertexCount + 1) * 2);
 
         shader.SetInt("_NumTris", parent.triangleCount);
 

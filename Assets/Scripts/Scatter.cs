@@ -134,6 +134,9 @@ public class Scatter
     bool isProcessingColliderData = false;
     public ScatterRenderer renderer;
     public ScatterManager manager;
+    // Number of scatters that are active. If 0, don't bother with renderer.Update()
+    public int numActive = 0;
+    public float sqrCollisionMeshRadius = 0;
     public Scatter(string id, string displayName)
     {
         distribution = new DistributionData();
@@ -284,8 +287,8 @@ public class Scatter
                         return;
                     }
                     // Determine which objects need to be created and which need to be destroyed
-                    distance = Utils.SqrMinDistanceToACraft(position, craftWorldPositions);
-                    if (distance < 625 && !outgoingColliderData.Contains(data))
+                    distance = Utils.SqrMinDistanceToACraft(position, craftWorldPositions) - sqrCollisionMeshRadius;
+                    if (distance < ParallaxSettings.craftSizeTolerance && !outgoingColliderData.Contains(data))
                     {
                         if (!activeObjects.ContainsKey(mat))
                         {
