@@ -46,18 +46,15 @@ public static class TextureLoader
     }
     public static Texture2D LoadPNG(string filePath)
     {
-        Profiler.BeginSample("LoadTexture (PNG)");
         Texture2D tex;
         tex = new Texture2D(2, 2);
         tex.LoadRawTextureData(File.ReadAllBytes(filePath));
         tex.Apply(true, false);
         Debug.Log("Warning: Loading PNG texture - This uses sRGB mode and normal maps may not work properly when loaded this way!");
-        Profiler.EndSample();
         return tex;
     }
     public static Texture2D LoadDDS(string filePath)
     {
-        Profiler.BeginSample("LoadTexture (DDS)");
         byte[] data = File.ReadAllBytes(filePath);
         byte ddsSizeCheck = data[4];
         if (ddsSizeCheck != 124)
@@ -107,7 +104,6 @@ public static class TextureLoader
             Debug.Log("Please check the format for this texture");
         }
         texture.Apply(false, true);  //Recalculate mips, mark as no longer readable (to save memory)
-        Profiler.EndSample();
         return (texture);
     }
     public static void UnloadAll()

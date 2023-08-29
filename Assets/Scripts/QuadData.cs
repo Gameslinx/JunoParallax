@@ -106,7 +106,6 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
     }
     public void Initialize()        //Initialize buffers, then scatters
     {
-        Profiler.BeginSample("Initialize QuadData");
         quadDiagLength = GetQuadDiagLength();
         sqrHalfQuadDiagLength = (quadDiagLength / 2.0f) * (quadDiagLength / 2.0f);
         bounds.size = Vector3.one * quadDiagLength * 1.11f;
@@ -131,9 +130,7 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
         // Request a planet matrix to construct quad to world matrix for determining world space positions in distribution shader (for min/max altitude constraints)
         OnQuadDataUpdate(manager.RequestPlanetMatrixNow());
 
-        Profiler.BeginSample("Quad Altitude Range");
         GetQuadAltitudeRange();
-        Profiler.EndSample();
 
         GetDensityFactor(quad.SphereNormal);
 
@@ -151,8 +148,6 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
         }
 
         cleaned = false;
-
-        Profiler.EndSample();
     }
     public float GetQuadDiagLength()
     {

@@ -171,14 +171,12 @@ public class ScatterData
     int[] count = new int[] { 0, 0, 0 };
     public void GetCount(AsyncGPUReadbackRequest req)
     {
-        Profiler.BeginSample("Async Readback");
         count = req.GetData<int>().ToArray(); //Creates garbage, unfortunate
         
         rawColliderData = new PositionData[count[0]];
         positions.GetData(rawColliderData);
         colliderData = new RawColliderData(parent.quad, rawColliderData);
         scatter.AddColliderData(colliderData);
-        Profiler.EndSample();
     }
     public void EvaluatePositions()     //Evaluate LODs and frustum cull
     {

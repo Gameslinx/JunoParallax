@@ -85,11 +85,9 @@ namespace Assets.Scripts
             string settingsPath = modDataPath + "/Assets/_Common";
             TextureLoader.Initialize(modDataPath);
 
-            Profiler.BeginSample("Load Parallax Configs");
             ConfigLoader.LoadShaderBank(shaderBankPath);
             ConfigLoader.LoadSettings(settingsPath);
             ConfigLoader.LoadConfigs(configsPath);
-            Profiler.EndSample();
 
             ParallaxInstance = this;
 
@@ -105,13 +103,11 @@ namespace Assets.Scripts
             quadShader = Instance.ResourceLoader.LoadAsset<ComputeShader>("Assets/Scripts/Shaders/Parallax.compute");
             renderShader = Instance.ResourceLoader.LoadAsset<ComputeShader>("Assets/Scripts/Shaders/Cascades.compute");
 
-            Profiler.BeginSample("Initialize shader pool");
             int numShaders = (int)((float)ParallaxSettings.computeShaderMemory / memoryUsagePerComputeShader);
             Debug.Log("Initializing shader pool with " + numShaders + " compute shaders");
             ShaderPool.Initialize(numShaders);
             ColliderPool.initAmount = 5000;
             Game.Instance.SceneManager.SceneLoading += ColliderPool.SceneLoading;
-            Profiler.EndSample();
 
             NumericSetting<float> lodDistance = Game.Instance.QualitySettings.Terrain.LodDistance;
             splitDist = lodDistance;
@@ -307,7 +303,6 @@ namespace Assets.Scripts
             {
                 return;
             }
-            Profiler.BeginSample("OnCreateQuadStarted (Parallax)");
             CreateQuadData data = e.CreateQuadData;
             ScatterNoise sn;
             for (int i = 0; i < activeScatters.Length; i++)
@@ -322,7 +317,6 @@ namespace Assets.Scripts
             }
             QuadData qd = new QuadData(e.Quad);                                     //Change this to iterate through scatters
             quadData.Add(e.Quad, qd);
-            Profiler.EndSample();
         }
         private void OnQuadSphereLoaded(object sender, PlanetQuadSphereEventArgs e)
         {
@@ -355,7 +349,6 @@ namespace Assets.Scripts
             {
                 return;
             }
-            Profiler.BeginSample("OnCreateQuadComplete (Parallax)");
             // Determine if quad has any parents. If it does, we need to clean up the QuadData. Similarly, on quad unload we need to reinitialize the quaddata on its parent if it has any
             // If quad has just subdivided, clean up parent data:
             if (quadData.ContainsKey(e.Quad.Parent) && e.Quad.Parent.Children[0] == e.Quad)
@@ -367,7 +360,6 @@ namespace Assets.Scripts
             quadData[e.Quad].Initialize();
             //QuadData qd = new QuadData(e.Quad);
             //quadData.Add(e.Quad, qd);
-            Profiler.EndSample();
         }
         private void OnUnloadQuadStarted(object sender, UnloadQuadScriptEventArgs e)
         {
@@ -376,7 +368,6 @@ namespace Assets.Scripts
 
             // For some reason, flying over a planet in the planet studio quickly will result in exceptions because the quad is null. Stop this from happening
             if (e.Quad.Parent.Children == null) { return; }
-            Profiler.BeginSample("OnUnloadQuadStarted (Parallax)");
             // We need to reinitialize the parent data, should it be contained
             if (quadData.ContainsKey(e.Quad.Parent))
             {
@@ -386,11 +377,9 @@ namespace Assets.Scripts
                     quadData[e.Quad.Parent].Resume();
                 }
             }
-            Profiler.EndSample();
         }
         private void OnUnloadQuadCompleted(object sender, UnloadQuadScriptEventArgs e)
         {
-            Profiler.BeginSample("OnUnloadQuadComplete (Parallax)");
             quadData[e.Quad].Cleanup();
             quadData.Remove(e.Quad);
 
@@ -398,7 +387,6 @@ namespace Assets.Scripts
             {
                 activeScatters[i].noise.Remove(e.Quad);
             }
-            Profiler.EndSample();
         }
         // Utilities
         private void SplitDistChanged(object sender, SettingChangedEventArgs<float> e)
