@@ -74,7 +74,7 @@ public class ScatterData
     public void InitializeDistribute()
     {
         //Initialize Generation - Skipped if this scatter inherits from another
-        populationFactor = (int)Mathf.Pow(2, parent.quad.QuadSphere.MaxSubdivisionLevel - parent.quad.SubdivisionLevel);
+        populationFactor = (int)Mathf.Pow(3, parent.quad.QuadSphere.MaxSubdivisionLevel - parent.quad.SubdivisionLevel);
         _MaxCount *= Mathf.CeilToInt((float)populationFactor * ParallaxSettings.densityMultiplier);
 
         distribution = new ComputeBuffer(parent.vertexCount, 4, ComputeBufferType.Structured);

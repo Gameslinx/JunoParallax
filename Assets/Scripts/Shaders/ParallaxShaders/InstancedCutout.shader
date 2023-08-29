@@ -150,7 +150,7 @@
         Pass
         {
             Tags{ "LightMode" = "ForwardAdd" }
-            Blend One OneMinusSrcAlpha
+            Blend SrcAlpha One
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
@@ -212,6 +212,7 @@
 					attenuation = atten;
 				}
 				#endif
+
                 float3 attenColor = attenuation * _LightColor0.rgb;
                 //float3 viewDirection = normalize(_WorldSpaceCameraPos.xyz - i.world_vertex.xyz);
                 float3 editedNormal = normalize(_WorldSpaceLightPos0 - i.world_vertex);

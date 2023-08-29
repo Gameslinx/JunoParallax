@@ -164,7 +164,7 @@
 		Pass
 		{
 			Tags { "LightMode" = "ForwardAdd" }
-			Blend One OneMinusSrcAlpha
+			Blend SrcAlpha One
 			CGPROGRAM
 			#pragma vertex vert		
 			#pragma fragment pixel_shader

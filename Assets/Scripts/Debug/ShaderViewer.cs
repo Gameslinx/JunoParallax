@@ -13,15 +13,16 @@ public class ShaderViewer : MonoBehaviour
     public Bounds bounds;
     void Start()
     {
-        Matrix4x4[] mat = new Matrix4x4[100];
+        int count = 2000;
+        Matrix4x4[] mat = new Matrix4x4[count];
         Random.InitState(0);
-        for (int i = 0; i < 100; i++)
+        for (int i = 0; i < count; i++)
         {
             Vector3 pos = new Vector3(Random.value, 0, Random.value);
             pos.x -= 0.5f;
             pos.z -= 0.5f;
             pos *= 10;
-            mat[i] = Matrix4x4.TRS(pos, Quaternion.identity, Vector3.one);
+            mat[i] = Matrix4x4.TRS(pos, Quaternion.identity, Vector3.one * 0.1f);
         }
 
         //mat = new Matrix4x4[] { Matrix4x4.TRS(Vector3.zero, Quaternion.identity, Vector3.one)};

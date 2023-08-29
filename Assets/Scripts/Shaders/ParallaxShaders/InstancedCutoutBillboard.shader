@@ -144,50 +144,24 @@
         //{
         //
         //    Tags{ "LightMode" = "ForwardAdd" }
-        //    Blend One OneMinusSrcAlpha
+        //    Blend SrcAlpha One
         //    CGPROGRAM
         //    #pragma vertex vert
         //    #pragma fragment frag
-        //    #pragma multi_compile_lightpass
-        //    #include "ParallaxHelperFunctions.cginc"
+        //    #pragma multi_compile_fwdbase
+        //    #include "ParallaxUtilsUV.cginc"
         //    
         //    float _Cutoff;
-        //
-        //
         //    float3 _FresnelColor;
         //    float _FresnelPower;
-        //
-        //    struct appdata_t 
-        //    {
-        //        float4 vertex   : POSITION;
-        //        float4 color    : COLOR;
-        //        float2 uv : TEXCOORD0;
-        //        float3 normal : NORMAL;
-        //        float4 tangent : TANGENT;
-        //    };
-        //
-        //    struct v2f 
-        //    {
-        //        float4 pos   : SV_POSITION;
-        //        fixed4 color : COLOR;
-        //        float2 uv : TEXCOORD0;
-        //        float3 normal : NORMAL;
-        //        float3 worldNormal : TEXCOORD1;
-        //        float3 world_vertex : TEXCOORD2;
-        //
-        //        float3 tangentWorld: TEXCOORD6;
-        //        float3 binormalWorld: TEXCOORD7;
-        //
-        //        float3 viewDir : TEXCOORD8;
-        //        float3 lightDir : TEXCOORD9;
-        //    };
         //    
-        //    v2f vert(appdata_t i, uint instanceID: SV_InstanceID) {
-        //        v2f o;
+        //    v2f_lighting vert(appdata_t i, uint instanceID: SV_InstanceID) {
+        //        v2f_lighting o;
+        //        UNITY_INITIALIZE_OUTPUT(v2f_lighting, o);
         //        Billboard(i.vertex, _Properties[instanceID].mat);
         //        float4 pos = mul(_Properties[instanceID].mat, i.vertex) + float4(_ShaderOffset, 0);
         //        
-        //        float3 world_vertex = mul(unity_ObjectToWorld, pos.xyz);
+        //        float3 world_vertex = pos.xyz;
         //
         //        o.pos = UnityObjectToClipPos(pos);
         //        o.color = 1;//_Properties[instanceID].color;
@@ -198,12 +172,14 @@
         //        o.tangentWorld = normalize(mul(_Properties[instanceID].mat, i.tangent).xyz);
         //        o.binormalWorld = normalize(cross(o.worldNormal, o.tangentWorld));
         //        o.viewDir =  normalize(_WorldSpaceCameraPos.xyz - o.world_vertex.xyz);
-        //        o.lightDir = normalize(_WorldSpaceLightPos0 - o.world_vertex.xyz);
+        //        o.lightDir = normalize(_WorldSpaceLightPos0.xyz - o.world_vertex.xyz);
+        //
+        //        TRANSFER_VERTEX_TO_FRAGMENT(o);
         //        
         //        return o;
         //    }
         //
-        //    fixed4 frag(v2f i, uint instanceID : SV_InstanceID) : SV_Target
+        //    fixed4 frag(v2f_lighting i, uint instanceID : SV_InstanceID) : SV_Target
         //    {
         //        if (InterleavedGradientNoise(i.color.a, i.pos.xy + i.pos.z))
 		//		discard;
@@ -218,11 +194,21 @@
         //        TBN = transpose(TBN);
         //        float3 worldNormal = mul(TBN, normalMap);
         //
-        //        UNITY_LIGHT_ATTENUATION(attenuation, i, i.world_vertex.xyz);
+        //        float attenuation = 1;
+		//		#if defined (SHADOWS_SCREEN)
+		//		{
+		//			attenuation = 1;
+		//		}
+		//		#else
+		//		{
+		//			UNITY_LIGHT_ATTENUATION(atten, i, i.world_vertex.xyz);
+		//			attenuation = atten;
+		//		}
+		//		#endif
         //        float3 attenColor = attenuation * _LightColor0.rgb;
-        //
-        //        float4 color = BlinnPhong(worldNormal, i.worldNormal, col, i.lightDir, normalize(_WorldSpaceCameraPos - i.world_vertex), attenColor);
-        //        float3 fresnelCol = Fresnel(worldNormal, normalize(i.viewDir), _FresnelPower, _FresnelColor) * saturate(dot(i.worldNormal, _WorldSpaceLightPos0));
+        //        return attenuation;
+        //        float4 color = BlinnPhong(worldNormal, i.worldNormal, col, i.lightDir, i.viewDir, attenColor);
+        //        float3 fresnelCol = Fresnel(worldNormal, normalize(i.viewDir), _FresnelPower, _FresnelColor) * saturate(dot(i.worldNormal, _WorldSpaceLightPos0)) * attenColor;
         //        color.rgb += fresnelCol;
         //        //clip(color.rgb - _Cutoff);
         //        return float4(color.rgb * attenuation, attenuation);
