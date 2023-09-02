@@ -2,9 +2,11 @@ using Assets.Scripts;
 using Assets.Scripts.Flight.GameView.Cameras;
 using Assets.Scripts.Terrain;
 using ModApi.Planet;
+using ModApi.Planet.Events;
 using ModApi.Settings.Core;
 using ModApi.Settings.Core.Events;
 using RootMotion;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,6 +29,7 @@ public class ScatterManager : MonoBehaviour         //Manages scatters on a plan
 
     // Stuff for capturing screen texture
     public GameObject cameraObject;
+    EventHandler<QuadSphereFrameStateRecalculatedEventArgs> floatingOriginEvent;
 
     void OnEnable()
     {
@@ -38,9 +41,10 @@ public class ScatterManager : MonoBehaviour         //Manages scatters on a plan
         RegisterEvents();
     }
     int i = 0;
-    void Update()
+    public void Update()
     {
         m.SetTRS(quadSphere.FramePosition, new Quaterniond(quadSphere.transform.parent.localRotation), Vector3.one);    //Responsible for computing quadToWorld matrix
+        Debug.Log("Frame Position: " + quadSphere.FramePosition);
         if (OnQuadUpdate != null)
         {
             OnQuadUpdate(m);                         //Distance checks, recalculate matrix, etc
@@ -81,6 +85,25 @@ public class ScatterManager : MonoBehaviour         //Manages scatters on a plan
         if (CameraManagerScript.Instance == null) { Debug.Log("Camera manager instance is null, not unregistering events"); return; }
         CameraManagerScript.Instance.CameraModeChanged -= OnCameraModeChanged;
     }
+    public void RegisterFloatingOriginEvent()
+    {
+        floatingOriginEvent = new EventHandler<QuadSphereFrameStateRecalculatedEventArgs>(OnFloatingOriginUpdated);
+        quadSphere.FrameStateRecalculated += floatingOriginEvent;
+    }
+    public void UnregisterFloatingOriginEvent()
+    {
+        quadSphere.FrameStateRecalculated -= floatingOriginEvent;
+    }
+    void OnFloatingOriginUpdated(object sender, EventArgs e)
+    {
+        return;
+        Debug.Log("Floating origin updated");
+        m.SetTRS(quadSphere.FramePosition, new Quaterniond(quadSphere.transform.parent.localRotation), Vector3.one);    //Responsible for computing quadToWorld matrix
+        if (OnQuadUpdate != null)
+        {
+            OnQuadUpdate(m);                         //Distance checks, recalculate matrix, etc
+        }
+    }
     void OnCameraModeChanged(CameraMode newMode, CameraMode oldMode)
     {
         Debug.Log("Camera Mode Changed from " + oldMode?.Name + " to " + newMode?.Name);
@@ -96,6 +119,7 @@ public class ScatterManager : MonoBehaviour         //Manages scatters on a plan
         }
         TextureLoader.UnloadAll();
         UnregisterEvents();
+        UnregisterFloatingOriginEvent();
     }
     private void OnDestroy()
     {

@@ -179,6 +179,7 @@ void Evaluate (uint3 id : SV_DispatchThreadID)
     {
         return;
     }
+    //lodDist = _Lod12Split + 0.1;
 
     uint index1 = Triangles[pos.index];
     uint index2 = Triangles[pos.index + 1];

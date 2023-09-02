@@ -127,14 +127,12 @@ public class ConfigLoader : MonoBehaviour
     public static void LoadShaderBank(string directoryPath)
     {
         shaderBank = Directory.GetFiles(directoryPath, "ShaderBank.xml").Select(filePath => XElement.Load(filePath)).First();
-        Debug.Log("Attempting to load ShaderBank config");
         //XElement bankNode = shaderBank.Element("ParallaxShaderBank");
         List<XElement> shaderNodes = shaderBank.Elements("Shader").ToList();
         // For every shader defined in the shader bank node
         foreach (XElement shader in shaderNodes )
         {
             string name = shader.GetStringAttribute("name");
-            Debug.Log(" - Shader: " + name);
             XElement propertiesNode = shader.Element("Properties");
 
             // Defined as such in the config so that when using reflection to assign the values to the shader instance, the correct types are used
@@ -180,7 +178,6 @@ public class ConfigLoader : MonoBehaviour
     }
     public static void LoadSettings(string directoryPath)
     {
-        Debug.Log("Loading Parallax settings");
         settings = Directory.GetFiles(directoryPath, "ParallaxSettings.xml").Select(filePath => XElement.Load(filePath)).First();
         XElement qualityNode = settings.Element("QualitySettings");
         ParallaxSettings.rangeMultiplier = qualityNode.Element("scatterRangeMultiplier").Value.ToFloat();
@@ -202,13 +199,11 @@ public class ConfigLoader : MonoBehaviour
         ParallaxSettings.computeShaderMemory = generalNode.Element("memoryReservedForComputeShaders").Value.ToInt();
 
         ParallaxSettings.craftSizeTolerance *= ParallaxSettings.craftSizeTolerance;
-        Debug.Log(" - Parallax settings loaded");
     }
     public static void LoadConfigs(string directoryPath)
     {
         // Load all configs
         configs = Directory.GetFiles(directoryPath, "*.xml").Select(filePath => XElement.Load(filePath)).ToArray();
-        Debug.Log("Attempting to load " + configs.Length + " Parallax configs");
         // For each config
         foreach (XElement config in configs)
         {
@@ -219,7 +214,6 @@ public class ConfigLoader : MonoBehaviour
                 // Get celestial body name attribute
                 string planetName = planetNode.Attribute("name").Value;
                 ScatterBody body = new ScatterBody(planetName);
-                Debug.Log("Parsing planet: " + planetName);
 
                 // Get all scatters on this body
                 List<XElement> scatters = planetNode.Element("Scatters").Elements("Scatter").ToList();
@@ -229,7 +223,6 @@ public class ConfigLoader : MonoBehaviour
                     string scatterName = scatter.Attribute("name").Value;
                     Scatter thisScatter = new Scatter(planetName + "_" + scatterName, scatterName);
                     thisScatter.planetName = planetName;
-                    Debug.Log("Parsing scatter: " + scatterName);
 
                     XElement inheritsFrom = scatter.Element("inheritsFrom");
                     thisScatter.inherits = inheritsFrom == null ? false : true;
@@ -345,7 +338,6 @@ public class ConfigLoader : MonoBehaviour
                 bodies.Add(planetName, body);
             }
         }
-        Debug.Log("Config loading complete");
     }
     public static ScatterMaterial ParseScatterMaterial(XElement materialNode)
     {

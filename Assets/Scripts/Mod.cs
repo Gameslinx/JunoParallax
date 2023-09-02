@@ -333,9 +333,9 @@ namespace Assets.Scripts
             if (e.QuadSphere == null) { Debug.Log("Quad sphere is null??"); }
             if (managerGO == null) { Debug.Log("Manager is null??"); }
             if (managerGO.GetComponent<ScatterManager>() == null) { Debug.Log("Manager is null"); }
-
-            managerGO.GetComponent<ScatterManager>().quadSphere = script;
-
+            ScatterManager manager = managerGO.GetComponent<ScatterManager>();
+            manager.quadSphere = script;
+            manager.RegisterFloatingOriginEvent();
             managerGO.transform.SetParent(e.QuadSphere.Transform);
             quadSphereIsLoading = false;
         }

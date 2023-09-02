@@ -184,11 +184,12 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
         UpdateVisibility();
         GetCameraDistance();
     }
+    Matrix4x4 mQuad;
+    Vector3d qpos;
     private void GetQuadToWorldMatrix(Matrix4x4d m)
     {
-        if (quad.RenderingData == null) { Debug.Log("Quad rendering data was null"); return; }
-        Matrix4x4 mQuad = m.ToMatrix4x4();
-        Vector3d qpos = quad.RenderingData.LocalPosition;
+        mQuad = m.ToMatrix4x4();
+        qpos = quad.RenderingData.LocalPosition;
         mQuad.m03 = (float)((m.m00 * qpos.x) + (m.m01 * qpos.y) + (m.m02 * qpos.z) + m.m03);
         mQuad.m13 = (float)((m.m10 * qpos.x) + (m.m11 * qpos.y) + (m.m12 * qpos.z) + m.m13);
         mQuad.m23 = (float)((m.m20 * qpos.x) + (m.m21 * qpos.y) + (m.m22 * qpos.z) + m.m23);

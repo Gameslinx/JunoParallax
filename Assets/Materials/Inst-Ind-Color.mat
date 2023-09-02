@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Inst-Ind-Color
-  m_Shader: {fileID: 4800000, guid: 6ecb039510b63ff42986debb07ea38b2, type: 3}
+  m_Shader: {fileID: 4800000, guid: 361f21dcaaf8f8c40a3e7bcf819c5bd9, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -87,8 +87,8 @@ Material:
     - _Hapke: 0.6
     - _HeightCutoff: 0.69
     - _HeightFactor: 1.66
-    - _IceDistortion: 0.001
-    - _IceTransparency: 0
+    - _IceDistortion: 0.0531
+    - _IceTransparency: 0.755
     - _InitialTime: 0
     - _MaxBrightness: 1
     - _Metallic: 0.001

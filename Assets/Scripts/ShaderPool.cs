@@ -27,7 +27,10 @@ public class ShaderPool
         {
             // Pool is about to run out!
             memoryOverBudget += 0.41f;
-            Debug.Log("[Parallax] WARNING: Compute shader pool is empty - this will lead to frame stuttering. Increase the allocated memory in ParallaxSettings.xml. Additional " + memoryOverBudget + "mb required!");
+            if (memoryOverBudget % 25 < 0.42f)
+            {
+                Debug.Log("[Parallax] WARNING: Compute shader pool is empty - this will lead to frame stuttering. Increase the allocated memory in ParallaxSettings.xml. Additional " + memoryOverBudget + "mb required!");
+            }
             return UnityEngine.Object.Instantiate(Mod.ParallaxInstance.quadShader);
         }
         return computeShaders.Dequeue();
@@ -78,8 +81,6 @@ public class ColliderPool
         if (objects.Count - 1 == 0)
         {
             // Pool is about to run out!
-            memoryOverBudget += 0.41f;
-            Debug.Log("[Parallax] WARNING: Object pool is empty - this will lead to frame stuttering. Increase the allocated memory in ParallaxSettings.xml. Additional " + memoryOverBudget + "mb required!");
             return UnityEngine.Object.Instantiate(originalObject);
         }
         return objects.Dequeue();

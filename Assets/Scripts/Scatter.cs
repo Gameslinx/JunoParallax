@@ -189,7 +189,6 @@ public class Scatter
         isProcessingColliderData = true;
         if (manager.quadSphere == null)
         {
-            Debug.Log("[Exception] The current quad sphere is null - this has been caught, but may adversely affect colliders");
             isProcessingColliderData = false;
             return;
         }
@@ -281,7 +280,6 @@ public class Scatter
                     Utils.GetTRSMatrix(data.data[i].pos, new Vector3(0, data.data[i].rot, 0), data.data[i].scale, avgNormal, ref mat);
                     if (Game.Instance.SceneManager.SceneTransitionState == ModApi.Scenes.SceneTransitionState.SceneUnloading)
                     {
-                        Debug.Log("Thread was running in a scene transition state, cancelling");
                         activeObjects.Clear();
                         isProcessingColliderData = false;
                         return;
@@ -310,7 +308,6 @@ public class Scatter
         });
         if (Game.Instance.SceneManager.SceneTransitionState == ModApi.Scenes.SceneTransitionState.SceneUnloading)
         {
-            Debug.Log("Thread was running in a scene transition state, cancelling");
             activeObjects.Clear();
             isProcessingColliderData = false;
             return;

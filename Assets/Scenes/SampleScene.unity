@@ -244,7 +244,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3c6ea0aac7ff41c4d938d87c6560f770, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mesh: {fileID: -150120879314253014, guid: 3d2946818c73bd447829cbb877fa8f7a, type: 3}
+  mesh: {fileID: 4711208715938537054, guid: 0cf310474f80afe4ca1b97b742253f84, type: 3}
   material: {fileID: 2100000, guid: 7a79bac22a0b7094e8a03e1b02e618bb, type: 2}
   bounds:
     m_Center: {x: 0, y: 0, z: 0}

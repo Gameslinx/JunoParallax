@@ -3,6 +3,7 @@ using Assets.Scripts.Flight.GameView.Cameras;
 using Assets.Scripts.PlanetStudio.Flyouts.CelestialBodyProperties;
 using ModApi.Flight;
 using ModApi.Planet;
+using ModApi.Planet.Events;
 using ModApi.Scenes;
 using ModApi.Scenes.Events;
 using System;
@@ -149,6 +150,7 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
         lod1.SetCounterValue(0);
         lod2.SetCounterValue(0);
     }
+
     void FirstTimeArgs()
     {
         uint[] argumentsLod0 = new uint[5] { 0, 0, 0, 0, 0 };
@@ -178,7 +180,7 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
         argslod2 = new ComputeBuffer(1, argumentsLod2.Length * sizeof(uint), ComputeBufferType.IndirectArguments);
         argslod2.SetData(argumentsLod2);
     }
-    void Update()       //Evaluate cascades, render
+    void LateUpdate()       //Evaluate cascades, render
     {
         if (scatter.numActive == 0) { return; }
         if (!manager.mainCamera.isActiveAndEnabled) { return; }
