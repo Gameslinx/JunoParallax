@@ -117,16 +117,6 @@ namespace Assets.Scripts
         public const string keyword = "Parallax Support Scatter (V1)";
         private void OnTerrainDataInitializing(object sender, PlanetTerrainDataEventArgs e)
         {
-            Debug.Log("Logging all biomes and subbiomes for planet: " + e.TerrainData.PlanetData.Name);
-            foreach (var biome in e.TerrainData.Biomes)
-            {
-                Debug.Log("Biome: " + biome.name);
-                var subBiomes = biome.GetSubBiomes();
-                foreach (var subBiome in subBiomes)
-                {
-                    Debug.Log(" - SubBiome: " + subBiome.Name);
-                }
-            }
             e.TerrainData.PlanetData.ModKeywords.Add(keyword);
             foreach (ScatterBody body in ConfigLoader.bodies.Values)
             {

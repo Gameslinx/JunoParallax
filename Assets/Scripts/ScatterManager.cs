@@ -44,7 +44,6 @@ public class ScatterManager : MonoBehaviour         //Manages scatters on a plan
     public void Update()
     {
         m.SetTRS(quadSphere.FramePosition, new Quaterniond(quadSphere.transform.parent.localRotation), Vector3.one);    //Responsible for computing quadToWorld matrix
-        Debug.Log("Frame Position: " + quadSphere.FramePosition);
         if (OnQuadUpdate != null)
         {
             OnQuadUpdate(m);                         //Distance checks, recalculate matrix, etc
