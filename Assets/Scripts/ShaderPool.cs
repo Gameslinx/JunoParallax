@@ -45,7 +45,6 @@ public class ColliderPool
     public static int initAmount = 0;
     public static void Initialize(int count)
     {
-        Debug.Log("Object pool initialized");
         mat = new Material(Shader.Find("Standard"));
         for (int i = 0; i < count; i++)
         {

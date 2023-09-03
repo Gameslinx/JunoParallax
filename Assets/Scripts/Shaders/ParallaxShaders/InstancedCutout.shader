@@ -17,7 +17,6 @@
         _Hapke("_Hapke", Range(0.3, 5)) = 1
         _MetallicTint("_MetallicTint", COLOR) = (1,1,1)
         _Gloss("_Gloss", Range(0, 250)) = 0
-        _PlanetOrigin("_PlanetOrigin", vector) = (0,0,0)
         _ShaderOffset("_ShaderOffset", vector) = (0,0,0)
         _DitherFactor("_DitherFactor", Range(0, 1)) = 1
         _InitialTime("_InitialTime", float) = 0
@@ -52,6 +51,8 @@
                 float4 pos = mul(mat, i.vertex) + float4(_ShaderOffset, 0);
                 float3 world_vertex = pos.xyz;
 
+                // Get the terrain normal from the transformation matrix
+
                 pos.xyz += Wind(mat, world_vertex, i.vertex.y);
 
                 o.pos = UnityObjectToClipPos(pos);
@@ -70,7 +71,7 @@
                 #if ATMOSPHERE
                     o.atmosColor = GetAtmosphereDataForVertex(o.world_vertex, o.lightDir, _PlanetOrigin, _LightColor0);
                 #endif
-
+                o.up = PARALLAX_UP_VECTOR(mat);
                 TRANSFER_VERTEX_TO_FRAGMENT(o);
                 return o;
             }
@@ -95,7 +96,7 @@
                 float3 attenColor = attenuation * _LightColor0.rgb;
 
                 //float3 viewDirection = normalize(_WorldSpaceCameraPos.xyz - i.world_vertex.xyz);
-                float4 color = BlinnPhong(worldNormal, i.worldNormal, col, i.lightDir, i.viewDir, attenColor);
+                float4 color = BlinnPhongAlbedo(worldNormal, i.worldNormal, i.up, col, i.lightDir, i.viewDir, attenColor);
                 float3 fresnelCol = Fresnel(worldNormal, normalize(i.viewDir), _FresnelPower, _FresnelColor) * saturate(dot(i.worldNormal, _WorldSpaceLightPos0)) * attenColor;
                 color.rgb += fresnelCol;
                 #if ATMOSPHERE
@@ -217,7 +218,7 @@
                 //float3 viewDirection = normalize(_WorldSpaceCameraPos.xyz - i.world_vertex.xyz);
                 float3 editedNormal = normalize(_WorldSpaceLightPos0 - i.world_vertex);
         
-                float4 color = BlinnPhong(editedNormal, editedNormal, col, i.lightDir, i.viewDir, attenColor);
+                float4 color = BlinnPhongLight(editedNormal, editedNormal, col, i.lightDir, i.viewDir, attenColor);
         
                 float3 fresnelCol = Fresnel(worldNormal, normalize(i.viewDir), _FresnelPower, _FresnelColor) * saturate(dot(i.worldNormal, _WorldSpaceLightPos0)) * attenColor;
                 color.rgb += fresnelCol;

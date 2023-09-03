@@ -50,7 +50,6 @@ public static class TextureLoader
         tex = new Texture2D(2, 2);
         tex.LoadRawTextureData(File.ReadAllBytes(filePath));
         tex.Apply(true, false);
-        Debug.Log("Warning: Loading PNG texture - This uses sRGB mode and normal maps may not work properly when loaded this way!");
         return tex;
     }
     public static Texture2D LoadDDS(string filePath)

@@ -17,7 +17,6 @@
         _MetallicTint("_MetallicTint", COLOR) = (1,1,1)
         _Gloss("_Gloss", Range(0.001, 200)) = 1
         _Hapke("_Hapke", Range(0.3, 5)) = 1
-        _PlanetOrigin("_PlanetOrigin", vector) = (0,0,0)
         _ShaderOffset("_ShaderOffset", vector) = (0,0,0)
         _DitherFactor("_DitherFactor", Range(0, 1)) = 1
         _InitialTime("_InitialTime", float) = 0
@@ -65,6 +64,7 @@
                 o.binormalWorld = normalize(cross(o.worldNormal, o.tangentWorld));
                 o.viewDir =  normalize(_WorldSpaceCameraPos.xyz - o.world_vertex.xyz);
                 o.lightDir = normalize(_WorldSpaceLightPos0);
+                o.up = PARALLAX_UP_VECTOR(_Properties[instanceID].mat);
                 #if ATMOSPHERE
                     o.atmosColor = GetAtmosphereDataForVertex(o.world_vertex, o.lightDir, _PlanetOrigin, _LightColor0);
                 #endif
@@ -91,7 +91,7 @@
                 float attenuation = PARALLAX_LIGHT_ATTENUATION(i);
                 float3 attenColor = attenuation * _LightColor0.rgb;
 
-                float4 color = BlinnPhong(worldNormal, i.worldNormal, col, i.lightDir, normalize(_WorldSpaceCameraPos - i.world_vertex), attenColor);
+                float4 color = BlinnPhongAlbedo(worldNormal, i.worldNormal, i.up, col, i.lightDir, normalize(_WorldSpaceCameraPos - i.world_vertex), attenColor);
                 float3 fresnelCol = Fresnel(worldNormal, normalize(i.viewDir), _FresnelPower, _FresnelColor) * saturate(dot(i.worldNormal, _WorldSpaceLightPos0));
                 color.rgb += fresnelCol;
                 #if ATMOSPHERE

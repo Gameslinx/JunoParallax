@@ -14,7 +14,11 @@ public class Utils : MonoBehaviour
     public static Plane[] planes = new Plane[6];
     private void Update()
     {
+        if (!Game.Instance.SceneManager.InFlightScene) { return; }
+        if (!Mod.ParallaxInstance.scatterObjects.ContainsKey(Game.Instance.FlightScene.CraftNode.Parent.PlanetData.Id)) { return; }
         ConstructFrustumPlanes(CameraManagerScript.Instance.CurrentCameraController.CameraTransform.gameObject.GetComponent<Camera>(), out planeNormals);  //Compute frustum planes for frustum culling
+        Shader.SetGlobalVector("_SunDir", -Game.Instance.FlightScene.CraftNode.CraftScript.FlightData.SolarRadiationFrameDirection);
+        Shader.SetGlobalVector("_PlanetOrigin", (Vector3)Mod.Instance.activeScatters[0].manager.quadSphere.FramePosition);
     }
     public static void ConstructFrustumPlanes(Camera camera, out float[] planeNormals)
     {

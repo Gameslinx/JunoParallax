@@ -27,6 +27,8 @@ float _Metallic = 1;
 float3 _MetallicTint;
 float4 _Color;
 
+float3 _SunDir;
+
 struct GrassData
 {
     float4x4 mat;
@@ -75,7 +77,34 @@ float InterleavedGradientNoise(float alpha, float2 uv)
     float ditherFactor = (_Time.y - alpha) / (timeLim - alpha);
     return frac(sin(dot(uv / 10, float2(12.9898, 78.233))) * 43758.5453123) > ditherFactor;
 }
-float4 BlinnPhong(float3 normal, float3 basicNormal, float4 diffuseCol, float3 lightDir, float3 viewDir, float3 attenCol)
+float4 BlinnPhongAlbedo(float3 normal, float3 basicNormal, float3 terrainNormal, float4 diffuseCol, float3 lightDir, float3 viewDir, float3 attenCol)
+{
+
+    half3 halfDir = normalize(lightDir + viewDir);
+
+    // Dot
+    half NdotL = max(0, dot(normal, lightDir));
+    NdotL = pow(NdotL, _Hapke);
+
+    // Fake shadows from terrain
+    NdotL *= saturate(dot(terrainNormal, normalize(_SunDir)) * 2.5);
+
+    half NdotH = max(0, dot(normal, halfDir)); //
+    // Color
+    fixed3 ambient = UNITY_LIGHTMODEL_AMBIENT.rgb * diffuseCol.rgb;
+    fixed3 diffuse =  attenCol * diffuseCol.rgb * NdotL;
+    fixed3 specular = pow(NdotH, _Gloss * diffuseCol.a) * _Metallic * diffuseCol.a;
+    
+    float angle = saturate(dot(normalize(basicNormal), _WorldSpaceLightPos0));
+    angle = 1 - pow(1 - angle, 7);
+    specular *= saturate(angle - 0.2);
+    
+    specular = specular * _MetallicTint.rgb;
+    fixed4 color = fixed4(ambient + diffuse + specular, 1.0);
+
+    return color;
+}
+float4 BlinnPhongLight(float3 normal, float3 basicNormal, float4 diffuseCol, float3 lightDir, float3 viewDir, float3 attenCol)
 {
 
     half3 halfDir = normalize(lightDir + viewDir);
@@ -127,3 +156,4 @@ void Billboard(inout float4 vertex, float4x4 mat)
     vertex = float4(offset + position, 1);
 }
 #define PARALLAX_LIGHT_ATTENUATION(v2f) attenuation = LIGHT_ATTENUATION(v2f); attenuation = 1 - pow(1 - attenuation, 3);
+#define PARALLAX_UP_VECTOR(mat) o.up = normalize(mul(mat, float3(0, 1, 0)) - mul(mat, float3(0, 0, 0)));

@@ -21,12 +21,14 @@ struct v2f
     float3 binormalWorld : TEXCOORD7;
 
     float3 viewDir : TEXCOORD8;
-    float3 lightDir : TEXCOORD9;
+    float3 lightDir : TEXCOORD9; 
 
     #if ATMOSPHERE
         float3 atmosColor : TEXCOORD10;
     #endif
     
+    float3 up : TEXCOORD11;
+
     LIGHTING_COORDS(3, 4)
 };
 struct v2f_lighting
@@ -65,6 +67,8 @@ struct v2f_screenPos
         float3 atmosColor : TEXCOORD11;
     #endif
     
+    float3 up : TEXCOORD12;
+
     LIGHTING_COORDS(3, 4)
 };
 struct v2f_screenPos_lighting

@@ -179,14 +179,12 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
 
         argslod2 = new ComputeBuffer(1, argumentsLod2.Length * sizeof(uint), ComputeBufferType.IndirectArguments);
         argslod2.SetData(argumentsLod2);
+        
     }
-    void LateUpdate()       //Evaluate cascades, render
+    void Update()       //Evaluate cascades, render
     {
         if (scatter.numActive == 0) { return; }
         if (!manager.mainCamera.isActiveAndEnabled) { return; }
-        //Control evaluate points
-
-        rendererBounds.center = Vector3.zero;
 
         lod0.SetCounterValue(0);
         lod1.SetCounterValue(0);
@@ -197,10 +195,6 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
         ComputeBuffer.CopyCount(lod0, argslod0, 4);
         ComputeBuffer.CopyCount(lod1, argslod1, 4);
         ComputeBuffer.CopyCount(lod2, argslod2, 4);
-
-        materialLOD0.SetVector("_PlanetOrigin", (Vector3)manager.quadSphere.FramePosition);
-        materialLOD1.SetVector("_PlanetOrigin", (Vector3)manager.quadSphere.FramePosition);
-        materialLOD2.SetVector("_PlanetOrigin", (Vector3)manager.quadSphere.FramePosition);
 
         Graphics.DrawMeshInstancedIndirect(meshLod0, 0, materialLOD0, rendererBounds, argslod0, 0, null, shadowsLOD0, ParallaxSettings.receiveShadows, layerlod0, manager.mainCamera);
         Graphics.DrawMeshInstancedIndirect(meshLod1, 0, materialLOD1, rendererBounds, argslod1, 0, null, shadowsLOD1, ParallaxSettings.receiveShadows, layerlod1, manager.mainCamera);

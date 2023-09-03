@@ -176,7 +176,6 @@ namespace Assets.Scripts
             activePlanetVertexCount = e.Planet.PlanetData.TerrainData.Quality.TerrainQuadEdgeVertexCount;
             if (!ConfigLoader.bodies.ContainsKey(e.Planet.PlanetNode.Name))
             {
-                Debug.Log(" - This is not a Parallax body");
                 return;
             }
             quadSphereIsLoading = true;
@@ -226,7 +225,6 @@ namespace Assets.Scripts
             
             if (!ConfigLoader.bodies.ContainsKey(e.Planet.PlanetNode.Name))
             {
-                Debug.Log(" - This is not a Parallax body");
                 return;
             }
             quadSphereIsUnloading = true;
@@ -312,7 +310,6 @@ namespace Assets.Scripts
         {
             if (!ConfigLoader.bodies.ContainsKey(e.Planet.PlanetNode.Name))
             {
-                Debug.Log(" - This is not a Parallax body");
                 return;
             }
             currentBody = e.QuadSphere;
@@ -320,9 +317,6 @@ namespace Assets.Scripts
             QuadSphereScript script = e.QuadSphere as QuadSphereScript;
             GameObject managerGO = scatterObjects[e.Planet.PlanetData.Id];
 
-            if (e.QuadSphere == null) { Debug.Log("Quad sphere is null??"); }
-            if (managerGO == null) { Debug.Log("Manager is null??"); }
-            if (managerGO.GetComponent<ScatterManager>() == null) { Debug.Log("Manager is null"); }
             ScatterManager manager = managerGO.GetComponent<ScatterManager>();
             manager.quadSphere = script;
             manager.RegisterFloatingOriginEvent();
@@ -389,7 +383,7 @@ namespace Assets.Scripts
         // NOTE 2: On further testing it seems this might be correct. If there are instances of scatters being cut off with straight lines, come look at this
         private void CalculateNewLODDistances(float splitDistance)
         {
-            if (currentBody == null) { Debug.Log("Current body null"); return; }
+            if (currentBody == null) { return; }
             lodDistances = new float[currentBody.MaxSubdivisionLevel + 1];
             float quadRootSize = 2 * Mathf.PI * (float)currentBody.PlanetData.Radius / 4f;
             for (int i = 0; i <= currentBody.MaxSubdivisionLevel; i++)

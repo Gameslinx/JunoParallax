@@ -87,8 +87,8 @@ Material:
     - _Hapke: 0.6
     - _HeightCutoff: 0.69
     - _HeightFactor: 1.66
-    - _IceDistortion: 0.0531
-    - _IceTransparency: 0.755
+    - _IceDistortion: 0.0244
+    - _IceTransparency: 1
     - _InitialTime: 0
     - _MaxBrightness: 1
     - _Metallic: 0.001

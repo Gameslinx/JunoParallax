@@ -33,7 +33,6 @@ public class ScatterManager : MonoBehaviour         //Manages scatters on a plan
 
     void OnEnable()
     {
-        Debug.Log("Scatter manager enabled");
         foreach (ScatterRenderer renderer in scatterRenderers)
         {
             renderer.Initialize();
@@ -43,6 +42,7 @@ public class ScatterManager : MonoBehaviour         //Manages scatters on a plan
     int i = 0;
     public void Update()
     {
+        if (!Game.Instance.SceneManager.InFlightScene) { return; }
         m.SetTRS(quadSphere.FramePosition, new Quaterniond(quadSphere.transform.parent.localRotation), Vector3.one);    //Responsible for computing quadToWorld matrix
         if (OnQuadUpdate != null)
         {
@@ -76,12 +76,12 @@ public class ScatterManager : MonoBehaviour         //Manages scatters on a plan
     }
     public void RegisterEvents()
     {
-        if (CameraManagerScript.Instance == null) { Debug.Log("Camera manager instance is null, not registering events"); return; }
+        if (CameraManagerScript.Instance == null) { return; }
         CameraManagerScript.Instance.CameraModeChanged += OnCameraModeChanged;
     }
     public void UnregisterEvents()
     {
-        if (CameraManagerScript.Instance == null) { Debug.Log("Camera manager instance is null, not unregistering events"); return; }
+        if (CameraManagerScript.Instance == null) { return; }
         CameraManagerScript.Instance.CameraModeChanged -= OnCameraModeChanged;
     }
     public void RegisterFloatingOriginEvent()
@@ -96,22 +96,16 @@ public class ScatterManager : MonoBehaviour         //Manages scatters on a plan
     void OnFloatingOriginUpdated(object sender, EventArgs e)
     {
         return;
-        Debug.Log("Floating origin updated");
-        m.SetTRS(quadSphere.FramePosition, new Quaterniond(quadSphere.transform.parent.localRotation), Vector3.one);    //Responsible for computing quadToWorld matrix
-        if (OnQuadUpdate != null)
-        {
-            OnQuadUpdate(m);                         //Distance checks, recalculate matrix, etc
-        }
+        if (quadSphere == null || mainCamera == null) { return; }
+        Update();
     }
     void OnCameraModeChanged(CameraMode newMode, CameraMode oldMode)
     {
-        Debug.Log("Camera Mode Changed from " + oldMode?.Name + " to " + newMode?.Name);
         // Hacky way of getting the main camera (IT IS NOT CAMERA.MAIN THAT DOESN'T WORK IN SOME CASES) but only needed on camera mode changed
         mainCamera = CameraManagerScript.Instance.CurrentCameraController.CameraTransform.GetComponent<Camera>();
     }
     void OnDisable()
     {
-        Debug.Log("Scatter manager disabled");
         foreach (ScatterRenderer renderer in scatterRenderers)
         {
             renderer.Cleanup();
@@ -122,7 +116,6 @@ public class ScatterManager : MonoBehaviour         //Manages scatters on a plan
     }
     private void OnDestroy()
     {
-        Debug.Log("Scatter manager destroyed - Unregistering");
         foreach (QuadData quad in Mod.Instance.quadData.Values)     //I kinda wanna change this, it's a bit hacky
         {
             quad.Cleanup();

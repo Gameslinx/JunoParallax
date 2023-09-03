@@ -27,7 +27,7 @@ struct v2f
     #if ATMOSPHERE
         float3 atmosColor : TEXCOORD10;
     #endif
-
+    float3 up : TEXCOORD11;
     LIGHTING_COORDS(3, 4)
 };
 struct v2f_lighting

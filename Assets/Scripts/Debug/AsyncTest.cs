@@ -15,7 +15,6 @@ public class AsyncTest : MonoBehaviour
     private void Start()
     {
         Random.InitState(0);
-        Debug.Log("Populating collider data");
         for (int i = 0; i < 1000000; i++)
         {
             Matrix4x4 matrix;
@@ -23,8 +22,6 @@ public class AsyncTest : MonoBehaviour
             matrix = Matrix4x4.TRS(pos, Quaternion.identity, Vector3.one);
             colliderData.AddLast(matrix);
         }
-
-        Debug.Log("Processing collider data");
         //ProcessColliderDataAsync();
         Debug.Log("Start() finished");
     }

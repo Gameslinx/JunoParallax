@@ -13,7 +13,6 @@
 		_IceInteriorColor("_IceInteriorColor", COLOR) = (1,1,1)
 		_FresnelPower("_FresnelPower", Range(0.001, 20)) = 1
 		_FresnelColor("_FresnelColor", COLOR) = (0,0,0)
-		_PlanetOrigin("_PlanetOrigin", vector) = (0,0,0)
 
 		_Hapke("_Hapke", Range(0.3, 5)) = 1
 
@@ -35,7 +34,7 @@
         {
             "_BackgroundTexture"
         }
-		Tags {"Queue" = "Transparent+1001" }
+		Tags {"Queue" = "Geometry+1" }
 		Pass
 		{
 			Tags { "LightMode" = "ForwardBase" }
@@ -78,7 +77,7 @@
                 o.lightDir = normalize(_WorldSpaceLightPos0.xyz);
 				
 				o.grabPos = ComputeGrabScreenPos(o.pos);
-				
+				o.up = PARALLAX_UP_VECTOR(mat);
 				#if ATMOSPHERE
                     o.atmosColor = GetAtmosphereDataForVertex(o.world_vertex, o.lightDir, _PlanetOrigin, _LightColor0);
                 #endif
@@ -107,7 +106,7 @@
 				float attenuation = PARALLAX_LIGHT_ATTENUATION(i);
                 float3 attenColor = attenuation * _LightColor0.rgb; //
 
-				float4 color = BlinnPhong(worldNormal, i.worldNormal, surfaceCol, normalize(i.lightDir), normalize(i.viewDir), attenColor);
+				float4 color = BlinnPhongAlbedo(worldNormal, i.worldNormal, i.up, surfaceCol, normalize(i.lightDir), normalize(i.viewDir), attenColor);
                 float3 fresnelCol = Fresnel(worldNormal, normalize(i.viewDir), _FresnelPower, _FresnelColor) * saturate(dot(i.worldNormal, _WorldSpaceLightPos0));
                 color.rgb += fresnelCol;
 
@@ -126,6 +125,8 @@
 			ENDCG
 
 		}
+		//Don't cast shadows it looks really weird
+
 		//Pass
         //{
         //    Tags{ "LightMode" = "ShadowCaster" }
@@ -239,7 +240,7 @@
 				#endif
                 float3 attenColor = attenuation * _LightColor0.rgb;
 
-				float4 color = BlinnPhong(worldNormal, i.worldNormal, surfaceCol, normalize(i.lightDir), normalize(i.viewDir), attenColor);
+				float4 color = BlinnPhongLight(worldNormal, i.worldNormal, surfaceCol, normalize(i.lightDir), normalize(i.viewDir), attenColor);
                 float3 fresnelCol = Fresnel(worldNormal, normalize(i.viewDir), _FresnelPower, _FresnelColor) * saturate(dot(i.worldNormal, _WorldSpaceLightPos0));
                 color.rgb += fresnelCol;
 

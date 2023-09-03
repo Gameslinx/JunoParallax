@@ -12,8 +12,6 @@ Shader "Custom/ParallaxInstancedUV"
 		_Gloss("_Gloss", Range(0, 250)) = 0
 		_MetallicTint("_MetallicTint", COLOR) = (0,0,0)
 
-		_PlanetOrigin("_PlanetOrigin", vector) = (0,0,0)
-
 		_Hapke("_Hapke", Range(0.3, 5)) = 1
 
 		_BumpScale("_BumpScale", Range(0, 10)) = 1
@@ -70,7 +68,7 @@ Shader "Custom/ParallaxInstancedUV"
 				#if ATMOSPHERE
                     o.atmosColor = GetAtmosphereDataForVertex(o.world_vertex, o.lightDir, _PlanetOrigin, _LightColor0);
                 #endif
-
+				o.up = PARALLAX_UP_VECTOR(mat);
 				TRANSFER_VERTEX_TO_FRAGMENT(o); //
 				return o;
 			}
@@ -93,7 +91,7 @@ Shader "Custom/ParallaxInstancedUV"
 				float attenuation = PARALLAX_LIGHT_ATTENUATION(i);
                 float3 attenColor = attenuation * _LightColor0.rgb;
 
-				float4 color = BlinnPhong(worldNormal, i.worldNormal, surfaceCol, normalize(i.lightDir), normalize(i.viewDir), attenColor);
+				float4 color = BlinnPhongAlbedo(worldNormal, i.worldNormal, i.up, surfaceCol, normalize(i.lightDir), normalize(i.viewDir), attenColor);
                 float3 fresnelCol = Fresnel(worldNormal, normalize(i.viewDir), _FresnelPower, _FresnelColor) * saturate(dot(i.worldNormal, _WorldSpaceLightPos0));
                 color.rgb += fresnelCol;
 				#if ATMOSPHERE
@@ -210,7 +208,7 @@ Shader "Custom/ParallaxInstancedUV"
 
                 float3 attenColor = attenuation * _LightColor0.rgb;
 
-				float4 color = BlinnPhong(worldNormal, i.worldNormal, surfaceCol, normalize(i.lightDir), normalize(i.viewDir), attenColor);
+				float4 color = BlinnPhongLight(worldNormal, i.worldNormal, surfaceCol, normalize(i.lightDir), normalize(i.viewDir), attenColor);
                 float3 fresnelCol = Fresnel(worldNormal, normalize(i.viewDir), _FresnelPower, _FresnelColor) * saturate(dot(i.worldNormal, _WorldSpaceLightPos0));
                 color.rgb += fresnelCol;
                 return float4(color.rgb * attenuation, attenuation);
