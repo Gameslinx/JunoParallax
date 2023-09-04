@@ -155,11 +155,14 @@ public class ScatterData
         uint[] indirectArgs = { 1, 1, 1 };
         dispatchArgs.SetData(indirectArgs);
         objectLimits.SetData(indirectArgs);
+
+        shader.SetBuffer(countKernel, "DispatchArgs", dispatchArgs);
+        shader.SetBuffer(evaluateKernel, "ObjectLimits", objectLimits);
+
         ComputeBuffer.CopyCount(positions, dispatchArgs, 0);    //This count is used for dispatchIndirect
         ComputeBuffer.CopyCount(positions, objectLimits, 0);    //This count is unmodified and used in EvaluatePositions to early return
 
-        shader.SetBuffer(countKernel, "DispatchArgs", dispatchArgs);
-        shader.SetBuffer(evaluateKernel, "ObjectLimits", objectLimits);     //We need to early return out from evaluation if the thread exceeds the number of objects - prevents funny floaters
+        //We need to early return out from evaluation if the thread exceeds the number of objects - prevents funny floaters
         shader.Dispatch(countKernel, 1, 1, 1);
 
         if (ParallaxSettings.enableColliders && scatter.collisionLevel >= ParallaxSettings.collisionSizeThreshold && parent.quad.SubdivisionLevel == parent.quad.QuadSphere.MaxSubdivisionLevel)

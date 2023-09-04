@@ -103,15 +103,22 @@ namespace Assets.Scripts
             quadShader = Instance.ResourceLoader.LoadAsset<ComputeShader>("Assets/Scripts/Shaders/Parallax.compute");
             renderShader = Instance.ResourceLoader.LoadAsset<ComputeShader>("Assets/Scripts/Shaders/Cascades.compute");
 
-            int numShaders = (int)((float)ParallaxSettings.computeShaderMemory / memoryUsagePerComputeShader);
+            NumericSetting<float> lodDistance = Game.Instance.QualitySettings.Terrain.LodDistance;
+            splitDist = lodDistance;
+            lodDistance.Changed += SplitDistChanged;
+
+            float areaLODSetting = Mathf.PI * splitDist * splitDist;
+            float areaLOD6 = Mathf.PI * 6f * 6f;
+            float changeInArea = areaLODSetting / areaLOD6;
+            float computeShaderFactor = Math.Max(1, changeInArea);
+
+            int numShaders = (int)(((float)ParallaxSettings.computeShaderMemory / memoryUsagePerComputeShader) * computeShaderFactor);
             Debug.Log("Initializing shader pool with " + numShaders + " compute shaders");
             ShaderPool.Initialize(numShaders);
             ColliderPool.initAmount = 5000;
             Game.Instance.SceneManager.SceneLoading += ColliderPool.SceneLoading;
 
-            NumericSetting<float> lodDistance = Game.Instance.QualitySettings.Terrain.LodDistance;
-            splitDist = lodDistance;
-            lodDistance.Changed += SplitDistChanged;
+            
             QuadScript.CreateQuadStarted += OnCreateQuadStarted;
         }
         public const string keyword = "Parallax Support Scatter (V1)";
@@ -319,7 +326,6 @@ namespace Assets.Scripts
 
             ScatterManager manager = managerGO.GetComponent<ScatterManager>();
             manager.quadSphere = script;
-            manager.RegisterFloatingOriginEvent();
             managerGO.transform.SetParent(e.QuadSphere.Transform);
             quadSphereIsLoading = false;
         }

@@ -87,7 +87,7 @@ float4 BlinnPhongAlbedo(float3 normal, float3 basicNormal, float3 terrainNormal,
     NdotL = pow(NdotL, _Hapke);
 
     // Fake shadows from terrain
-    NdotL *= saturate(dot(terrainNormal, normalize(_SunDir)) * 2.5);
+    NdotL *= saturate(dot(terrainNormal, normalize(_WorldSpaceLightPos0)) * 4);
 
     half NdotH = max(0, dot(normal, halfDir)); //
     // Color

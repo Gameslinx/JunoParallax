@@ -181,11 +181,11 @@ public class ScatterRenderer : MonoBehaviour                   //There is an ins
         argslod2.SetData(argumentsLod2);
         
     }
-    void Update()       //Evaluate cascades, render
+    public void Render()
     {
         if (scatter.numActive == 0) { return; }
         if (!manager.mainCamera.isActiveAndEnabled) { return; }
-
+        
         lod0.SetCounterValue(0);
         lod1.SetCounterValue(0);
         lod2.SetCounterValue(0);

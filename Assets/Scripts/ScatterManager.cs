@@ -40,13 +40,17 @@ public class ScatterManager : MonoBehaviour         //Manages scatters on a plan
         RegisterEvents();
     }
     int i = 0;
-    public void Update()
+    public void LateUpdate()
     {
-        if (!Game.Instance.SceneManager.InFlightScene) { return; }
+        if (!Game.Instance.SceneManager.InFlightScene || mainCamera == null) { return; }
         m.SetTRS(quadSphere.FramePosition, new Quaterniond(quadSphere.transform.parent.localRotation), Vector3.one);    //Responsible for computing quadToWorld matrix
         if (OnQuadUpdate != null)
         {
             OnQuadUpdate(m);                         //Distance checks, recalculate matrix, etc
+        }
+        for (i = 0; i < scatterRenderers.Count; i++)
+        {
+            scatterRenderers[i].Render();
         }
         // Hacky as all hell but... seems to work?
         if (mainCamera.farClipPlane < 10000)
@@ -84,21 +88,6 @@ public class ScatterManager : MonoBehaviour         //Manages scatters on a plan
         if (CameraManagerScript.Instance == null) { return; }
         CameraManagerScript.Instance.CameraModeChanged -= OnCameraModeChanged;
     }
-    public void RegisterFloatingOriginEvent()
-    {
-        floatingOriginEvent = new EventHandler<QuadSphereFrameStateRecalculatedEventArgs>(OnFloatingOriginUpdated);
-        quadSphere.FrameStateRecalculated += floatingOriginEvent;
-    }
-    public void UnregisterFloatingOriginEvent()
-    {
-        quadSphere.FrameStateRecalculated -= floatingOriginEvent;
-    }
-    void OnFloatingOriginUpdated(object sender, EventArgs e)
-    {
-        return;
-        if (quadSphere == null || mainCamera == null) { return; }
-        Update();
-    }
     void OnCameraModeChanged(CameraMode newMode, CameraMode oldMode)
     {
         // Hacky way of getting the main camera (IT IS NOT CAMERA.MAIN THAT DOESN'T WORK IN SOME CASES) but only needed on camera mode changed
@@ -112,7 +101,6 @@ public class ScatterManager : MonoBehaviour         //Manages scatters on a plan
         }
         TextureLoader.UnloadAll();
         UnregisterEvents();
-        UnregisterFloatingOriginEvent();
     }
     private void OnDestroy()
     {
