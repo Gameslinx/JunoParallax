@@ -29,6 +29,7 @@ namespace Assets.Scripts
     using ModApi.Scenes.Events;
     using ModApi.Settings.Core;
     using ModApi.Settings.Core.Events;
+    using ModApi.Ui;
     using Unity.Mathematics;
     using UnityEditor;
     using UnityEngine;
@@ -73,10 +74,6 @@ namespace Assets.Scripts
         private Mod() : base()
         {
         }
-        ~Mod()
-        {
-            countKernelDispatchArgs.Release();
-        }
         public static Mod Instance { get; } = GetModInstance<Mod>();
         public static string modDataPath = "";
         protected override void OnModInitialized()
@@ -95,6 +92,11 @@ namespace Assets.Scripts
             ConfigLoader.LoadShaderBank(shaderBankPath);
             ConfigLoader.LoadSettings(settingsPath);
             ConfigLoader.LoadConfigs(configsPath);
+
+            //if (!Directory.Exists((modDataPath + "aaa/")))
+            //{ //
+                //MessageDialogScript script = Game.Instance.UserInterface.CreateMessageDialog("Parallax Error: Could not find the assets directory. This directory should be: " + modDataPath);
+            //}
 
             ParallaxInstance = this;
 
@@ -348,23 +350,21 @@ namespace Assets.Scripts
             {
                 return;
             }
-            Profiler.BeginSample("OnCreateQuadComplete");
             // Determine if quad has any parents. If it does, we need to clean up the QuadData. Similarly, on quad unload we need to reinitialize the quaddata on its parent if it has any
             // If quad has just subdivided, clean up parent data:
             if (quadData.ContainsKey(e.Quad.Parent) && e.Quad.Parent.Children[0] == e.Quad)
             {
                 quadData[e.Quad.Parent].Pause();
             }
-            Profiler.EndSample();
-            Profiler.BeginSample("Init QuadData");
+            if (Game.Instance.SceneManager.InPlanetStudioScene) { return; }
             quadData[e.Quad].RegisterEvents();
             quadData[e.Quad].Initialize();
-            Profiler.EndSample();
             //QuadData qd = new QuadData(e.Quad);
             //quadData.Add(e.Quad, qd);
         }
         private void OnUnloadQuadStarted(object sender, UnloadQuadScriptEventArgs e)
         {
+            if (Game.Instance.SceneManager.InPlanetStudioScene) { return; }
             // Quad sphere is unloading - all quads will be destroyed
             if (quadSphereIsUnloading) { return; }
 
