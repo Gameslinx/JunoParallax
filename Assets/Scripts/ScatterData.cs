@@ -151,25 +151,15 @@ public class ScatterData
     uint[] indirectArgs = { 1, 1, 1 };
     private void ComputeDispatchArgs()  //Determine dispatch args and store them on the GPU
     {
-        dispatchArgs = new ComputeBuffer(3, sizeof(int), ComputeBufferType.IndirectArguments);
-        objectLimits = new ComputeBuffer(3, sizeof(int), ComputeBufferType.IndirectArguments);     //IndirectArgs must be size 3 at least
         
-        dispatchArgs.SetData(indirectArgs);
+        objectLimits = new ComputeBuffer(3, sizeof(int), ComputeBufferType.IndirectArguments);     //IndirectArgs must be size 3 at least
         objectLimits.SetData(indirectArgs);
-
-        shader.SetBuffer(countKernel, "DispatchArgs", dispatchArgs);
+        
         shader.SetBuffer(evaluateKernel, "ObjectLimits", objectLimits);
-        ComputeBuffer.CopyCount(positions, dispatchArgs, 0);    //This count is used for dispatchIndirect
         ComputeBuffer.CopyCount(positions, objectLimits, 0);    //This count is unmodified and used in EvaluatePositions to early return
         //We need to early return out from evaluation if the thread exceeds the number of objects - prevents funny floaters
 
-        //shader.DispatchIndirect(countKernel, Mod.ParallaxInstance.countKernelDispatchArgs);
-
-
-        //if (ParallaxSettings.enableColliders && scatter.collisionLevel >= ParallaxSettings.collisionSizeThreshold && parent.quad.SubdivisionLevel == parent.quad.QuadSphere.MaxSubdivisionLevel)
-        //{
-            AsyncGPUReadback.Request(objectLimits, GetCount);
-        //}
+        AsyncGPUReadback.Request(objectLimits, GetCount);
     }
     int[] count = new int[] { 0, 0, 0 };
     public void GetCount(AsyncGPUReadbackRequest req)
@@ -184,8 +174,9 @@ public class ScatterData
             scatter.AddColliderData(colliderData);
         }
         count[0] = Mathf.CeilToInt((float)count[0] / 32f);
+        dispatchArgs = new ComputeBuffer(3, sizeof(int), ComputeBufferType.IndirectArguments);
         dispatchArgs.SetData(count);
-
+        shader.SetBuffer(countKernel, "DispatchArgs", dispatchArgs);
         ready = true;
     }
     public void EvaluatePositions()     //Evaluate LODs and frustum cull

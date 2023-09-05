@@ -93,10 +93,10 @@ namespace Assets.Scripts
             ConfigLoader.LoadSettings(settingsPath);
             ConfigLoader.LoadConfigs(configsPath);
 
-            //if (!Directory.Exists((modDataPath + "aaa/")))
-            //{ //
-                //MessageDialogScript script = Game.Instance.UserInterface.CreateMessageDialog("Parallax Error: Could not find the assets directory. This directory should be: " + modDataPath);
-            //}
+            if (!Directory.Exists(modDataPath))
+            { 
+                MessageDialogScript script = Game.Instance.UserInterface.CreateMessageDialog("Parallax Error: Could not find the assets directory. This directory should be: " + modDataPath);
+            }
 
             ParallaxInstance = this;
 
