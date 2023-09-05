@@ -128,11 +128,22 @@ void Distribute (uint3 id : SV_DispatchThreadID)
 //////INDIRECT ARGS//////
 /////////////////////////
 
-RWStructuredBuffer<uint> DispatchArgs;
+RWStructuredBuffer<int> DispatchArgs;
 [numthreads(1,1,1)]
 void DetermineCount(uint3 id : SV_DispatchThreadID)
 {
-    DispatchArgs[0] = (uint)ceil((float)(DispatchArgs[0]) / 32.0);
+    // Index 0 would be int[3]
+
+    //float dispatchArgs = DispatchArgs[0];
+    //int newArgs = ceil(dispatchArgs / 32.0);
+    //DispatchArgs[0] = dispatchArgs;
+
+    // Check if the thread ID is (0, 0, 0) to ensure only one thread does the division
+    if (id.x == 0 && id.y == 0 && id.z == 0)
+    {
+        // Divide the first value by 32
+        DispatchArgs[0] = (int)ceil((float)DispatchArgs[0] / 32.0);
+    }
 }
 
 ///////////////////////////////

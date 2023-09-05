@@ -67,8 +67,15 @@ namespace Assets.Scripts
         bool quadSphereIsLoading = false;
         bool quadSphereIsUnloading = false;
 
+        // Dispatches 1,1,1 for the count kernel, used in DispatchIndirect
+        public ComputeBuffer countKernelDispatchArgs;
+
         private Mod() : base()
         {
+        }
+        ~Mod()
+        {
+            countKernelDispatchArgs.Release();
         }
         public static Mod Instance { get; } = GetModInstance<Mod>();
         public static string modDataPath = "";
@@ -118,8 +125,10 @@ namespace Assets.Scripts
             ColliderPool.initAmount = 5000;
             Game.Instance.SceneManager.SceneLoading += ColliderPool.SceneLoading;
 
-            
             QuadScript.CreateQuadStarted += OnCreateQuadStarted;
+            countKernelDispatchArgs = new ComputeBuffer(1, 12, ComputeBufferType.IndirectArguments);
+            int[] args = new int[] { 1, 1, 1 };
+            countKernelDispatchArgs.SetData(args);
         }
         public const string keyword = "Parallax Support Scatter (V1)";
         private void OnTerrainDataInitializing(object sender, PlanetTerrainDataEventArgs e)
@@ -339,15 +348,18 @@ namespace Assets.Scripts
             {
                 return;
             }
+            Profiler.BeginSample("OnCreateQuadComplete");
             // Determine if quad has any parents. If it does, we need to clean up the QuadData. Similarly, on quad unload we need to reinitialize the quaddata on its parent if it has any
             // If quad has just subdivided, clean up parent data:
             if (quadData.ContainsKey(e.Quad.Parent) && e.Quad.Parent.Children[0] == e.Quad)
             {
                 quadData[e.Quad.Parent].Pause();
             }
-
+            Profiler.EndSample();
+            Profiler.BeginSample("Init QuadData");
             quadData[e.Quad].RegisterEvents();
             quadData[e.Quad].Initialize();
+            Profiler.EndSample();
             //QuadData qd = new QuadData(e.Quad);
             //quadData.Add(e.Quad, qd);
         }

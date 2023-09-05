@@ -134,11 +134,13 @@ public class QuadData       //Holds the data for the quad - Verts, normals, tria
 
         GetDensityFactor(quad.SphereNormal);
 
+        bool eligible = false;
         for (int i = 0; i < Mod.Instance.activeScatters.Length; i++)
         {
             Scatter scatter = Mod.Instance.activeScatters[i];
             // Does the scatter lie in the given altitude range?
-            if (ScatterEligible(scatter))
+            eligible = ScatterEligible(scatter);
+            if (eligible)
             {
                 ScatterData sd = new ScatterData(this, scatter, Mod.ParallaxInstance.scatterRenderers[scatter]);
                 sd.Start();

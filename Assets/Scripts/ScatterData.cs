@@ -59,7 +59,7 @@ public class ScatterData
             GeneratePositions();
         }
         ComputeDispatchArgs();
-        ready = true;
+        //ready = true;
     }
     public void InitializeShader()
     {
@@ -148,38 +148,45 @@ public class ScatterData
         shader.Dispatch(distributeKernel, Mathf.CeilToInt((float)parent.triangleCount / 32f), 1, 1);
         
     }
+    uint[] indirectArgs = { 1, 1, 1 };
     private void ComputeDispatchArgs()  //Determine dispatch args and store them on the GPU
     {
-        dispatchArgs = new ComputeBuffer(1, 12, ComputeBufferType.IndirectArguments);
-        objectLimits = new ComputeBuffer(1, 12, ComputeBufferType.IndirectArguments);     //IndirectArgs must be size 3 at least
-        uint[] indirectArgs = { 1, 1, 1 };
+        dispatchArgs = new ComputeBuffer(3, sizeof(int), ComputeBufferType.IndirectArguments);
+        objectLimits = new ComputeBuffer(3, sizeof(int), ComputeBufferType.IndirectArguments);     //IndirectArgs must be size 3 at least
+        
         dispatchArgs.SetData(indirectArgs);
         objectLimits.SetData(indirectArgs);
 
         shader.SetBuffer(countKernel, "DispatchArgs", dispatchArgs);
         shader.SetBuffer(evaluateKernel, "ObjectLimits", objectLimits);
-
         ComputeBuffer.CopyCount(positions, dispatchArgs, 0);    //This count is used for dispatchIndirect
         ComputeBuffer.CopyCount(positions, objectLimits, 0);    //This count is unmodified and used in EvaluatePositions to early return
-
         //We need to early return out from evaluation if the thread exceeds the number of objects - prevents funny floaters
-        shader.Dispatch(countKernel, 1, 1, 1);
 
-        if (ParallaxSettings.enableColliders && scatter.collisionLevel >= ParallaxSettings.collisionSizeThreshold && parent.quad.SubdivisionLevel == parent.quad.QuadSphere.MaxSubdivisionLevel)
-        {
-            // Process colliders
+        //shader.DispatchIndirect(countKernel, Mod.ParallaxInstance.countKernelDispatchArgs);
+
+
+        //if (ParallaxSettings.enableColliders && scatter.collisionLevel >= ParallaxSettings.collisionSizeThreshold && parent.quad.SubdivisionLevel == parent.quad.QuadSphere.MaxSubdivisionLevel)
+        //{
             AsyncGPUReadback.Request(objectLimits, GetCount);
-        }
+        //}
     }
     int[] count = new int[] { 0, 0, 0 };
     public void GetCount(AsyncGPUReadbackRequest req)
     {
         count = req.GetData<int>().ToArray(); //Creates garbage, unfortunate
         
-        rawColliderData = new PositionData[count[0]];
-        positions.GetData(rawColliderData);
-        colliderData = new RawColliderData(parent.quad, rawColliderData);
-        scatter.AddColliderData(colliderData);
+        if (ParallaxSettings.enableColliders && scatter.collisionLevel >= ParallaxSettings.collisionSizeThreshold && parent.quad.SubdivisionLevel == parent.quad.QuadSphere.MaxSubdivisionLevel)
+        {
+            rawColliderData = new PositionData[count[0]];
+            positions.GetData(rawColliderData);
+            colliderData = new RawColliderData(parent.quad, rawColliderData);
+            scatter.AddColliderData(colliderData);
+        }
+        count[0] = Mathf.CeilToInt((float)count[0] / 32f);
+        dispatchArgs.SetData(count);
+
+        ready = true;
     }
     public void EvaluatePositions()     //Evaluate LODs and frustum cull
     {
@@ -187,6 +194,7 @@ public class ScatterData
         if (!ready) { return; }
         if (!parent.isVisible) { return; }
         if (parent.sqrQuadCameraDistance > scatter.sqrRange + (parent.quadDiagLength * 1.5f * parent.quadDiagLength)) { return; }
+
         shader.SetMatrix("_ObjectToWorldMatrix", parent.quadToWorldMatrix);
         shader.SetFloats("_CameraFrustumPlanes", Utils.planeNormals);
         shader.SetVector("_WorldSpaceCameraPosition", parent.manager.mainCamera.transform.position);
